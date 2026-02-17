@@ -71,9 +71,10 @@ int main() {
     // Add desktop icons (32x32 icons from sysicons.icl)
     try {
         desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::Computer);      // My Computer
-        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::ComputerNet);   // Network
-        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::FileTxt);       // Text file
-        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::BinFull);       // Recycle Bin
+        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::BinEmpty);      // Recycle Bin
+        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::FolderLibrary); // Library
+        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::DriveHdd);      // Hard Drive
+        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::StoreCdrom);    // CD-ROM
     } catch (...) {
         // If icon loading fails, continue without icons
     }
