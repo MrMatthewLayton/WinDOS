@@ -532,10 +532,12 @@ public:
     // Cursor
     void SetCursor(const Image& cursorImage);
     void LoadCursorFromLibrary(const char* path, Int32 iconIndex);
+    void LoadCursorFromLibrary(const char* path, const char* iconName);
 
     // Desktop icons
     void AddIcon(const Image& icon);
     void AddIconFromLibrary(const char* path, Int32 iconIndex);
+    void AddIconFromLibrary(const char* path, const char* iconName);
 
     // TaskBar and StartMenu integration
     void SetTaskBar(TaskBar* taskBar) { _taskBar = taskBar; }

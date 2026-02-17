@@ -867,6 +867,15 @@ void Desktop::AddIconFromLibrary(const char* path, Int32 iconIndex) {
     AddIcon(icon);
 }
 
+void Desktop::LoadCursorFromLibrary(const char* path, const char* iconName) {
+    _cursorImage = Image::FromIconLibrary(path, iconName, Size::IconCursor);
+}
+
+void Desktop::AddIconFromLibrary(const char* path, const char* iconName) {
+    Image icon = Image::FromIconLibrary(path, iconName, Size::IconMedium);
+    AddIcon(icon);
+}
+
 void Desktop::DrawIcons() {
     GraphicsBuffer* fb = GraphicsBuffer::GetFrameBuffer();
     if (!fb) return;
@@ -2026,24 +2035,24 @@ StartMenu::~StartMenu() {
 
 void StartMenu::LoadIcons() {
     // Map menu items to system icons by name
-    static const int iconIndices[ITEM_COUNT] = {
-        Drawing::SystemIcons::Programs,       // Programs
-        Drawing::SystemIcons::Documents,      // Documents
-        Drawing::SystemIcons::Settings,       // Settings
-        Drawing::SystemIcons::Find,           // Find
-        Drawing::SystemIcons::Help,           // Help
-        Drawing::SystemIcons::Run,            // Run
-        Drawing::SystemIcons::Favorites,      // Favorites
-        Drawing::SystemIcons::Recent,         // Recent
+    static const char* iconNames[ITEM_COUNT] = {
+        Drawing::SystemIcons::FolderApps,     // Programs
+        Drawing::SystemIcons::FolderDocs,     // Documents
+        Drawing::SystemIcons::DisplaySettings1,// Settings
+        Drawing::SystemIcons::FolderOpen,     // Find
+        Drawing::SystemIcons::DialogInfo1,    // Help
+        Drawing::SystemIcons::AppWindos,      // Run
+        Drawing::SystemIcons::FolderLibrary,  // Favorites
+        Drawing::SystemIcons::FolderOpenFiles,// Recent
         Drawing::SystemIcons::Computer,       // My Computer
-        Drawing::SystemIcons::Network,        // Network
-        Drawing::SystemIcons::ShutDown,       // Shut Down
-        Drawing::SystemIcons::LogOff          // Log Off
+        Drawing::SystemIcons::ComputerNet,    // Network
+        Drawing::SystemIcons::DialogWarning1, // Shut Down
+        Drawing::SystemIcons::DialogQuestion1 // Log Off
     };
 
     for (int i = 0; i < ITEM_COUNT && i < _items.Length(); i++) {
         try {
-            Image icon = Drawing::SystemIcons::Load(iconIndices[i], Size::IconSmall);
+            Image icon = Drawing::SystemIcons::Load(iconNames[i], Size::IconSmall);
             _items[i]->SetIcon(icon);
         } catch (...) {
             // Icon loading failed - item will show without icon

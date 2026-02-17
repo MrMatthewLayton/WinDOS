@@ -361,8 +361,8 @@ typedef Image Image32;
 /******************************************************************************/
 /*    System::Drawing::SystemIcons                                            */
 /*                                                                            */
-/*    Named constants for standard icons in sysicons.icl. These map friendly  */
-/*    names to icon indices in the Windows 95-style system icon library.      */
+/*    Named constants for icons in sysicons.icl. Use these string names with  */
+/*    Image::FromIconLibrary(path, name, size) or SystemIcons::Load(name).    */
 /******************************************************************************/
 
 class SystemIcons {
@@ -370,83 +370,142 @@ public:
     // System icon library path
     static constexpr const char* LibraryPath = "sysicons.icl";
 
-    // Application and document icons
-    static constexpr int Application     = 0;   // Generic application
-    static constexpr int Document        = 1;   // Generic document
-    static constexpr int Folder          = 2;   // Closed folder
-    static constexpr int FolderOpen      = 3;   // Open folder
-    static constexpr int Drive           = 4;   // Hard drive
-    static constexpr int DriveCD         = 5;   // CD-ROM drive
-    static constexpr int DriveFloppy     = 6;   // Floppy drive
-    static constexpr int DriveNetwork    = 7;   // Network drive
-    static constexpr int Computer        = 8;   // My Computer
-    static constexpr int Network         = 9;   // Network Neighborhood
-    static constexpr int Printer         = 10;  // Printer
-    static constexpr int RecycleBin      = 11;  // Recycle Bin (empty)
-    static constexpr int RecycleBinFull  = 12;  // Recycle Bin (full)
-    static constexpr int Cursor          = 13;  // Mouse cursor/pointer
+    // Application icons
+    static constexpr const char* AppLogo        = "app-logo";
+    static constexpr const char* AppMixer       = "app-mixer";
+    static constexpr const char* AppMsdos       = "app-msdos";
+    static constexpr const char* AppWindos      = "app-windos";
+    static constexpr const char* AppWinfx1      = "app-winfx-1";
+    static constexpr const char* AppWinfx2      = "app-winfx-2";
 
-    // Control Panel and Settings
-    static constexpr int ControlPanel    = 14;  // Control Panel
-    static constexpr int Settings        = 15;  // Settings/gear
-    static constexpr int Display         = 16;  // Display settings
-    static constexpr int Keyboard        = 17;  // Keyboard
-    static constexpr int Mouse           = 18;  // Mouse
-    static constexpr int Sound           = 19;  // Sound/speaker
-    static constexpr int DateTime        = 20;  // Date/time
+    // Recycle bin
+    static constexpr const char* BinEmpty       = "bin-empty";
+    static constexpr const char* BinFull        = "bin-full";
 
-    // Status and message icons
-    static constexpr int Information     = 21;  // Info (i)
-    static constexpr int Warning         = 22;  // Warning (!)
-    static constexpr int Error           = 23;  // Error (X)
-    static constexpr int Question        = 24;  // Question (?)
-    static constexpr int Shield          = 25;  // Security/shield
+    // Computer and network
+    static constexpr const char* Computer       = "computer";
+    static constexpr const char* ComputerNet    = "computer-net";
+    static constexpr const char* ComputerSync   = "computer-sync";
 
-    // File type icons
-    static constexpr int FileText        = 26;  // Text file
-    static constexpr int FileImage       = 27;  // Image file
-    static constexpr int FileAudio       = 28;  // Audio file
-    static constexpr int FileVideo       = 29;  // Video file
-    static constexpr int FileArchive     = 30;  // Archive/ZIP file
-    static constexpr int FileExecutable  = 31;  // Executable file
+    // Cursors
+    static constexpr const char* CursorHand     = "cursor-hand";
+    static constexpr const char* CursorLoading  = "cursor-loading";
+    static constexpr const char* CursorPointer  = "cursor-pointer";
 
-    // Action icons
-    static constexpr int Find            = 32;  // Find/search
-    static constexpr int Help            = 33;  // Help
-    static constexpr int Run             = 34;  // Run program
-    static constexpr int ShutDown        = 35;  // Shut down
-    static constexpr int LogOff          = 36;  // Log off
+    // Devices
+    static constexpr const char* DeviceKeyboard = "device-keyboard";
+    static constexpr const char* DeviceMouse    = "device-mouse";
 
-    // Window control icons
-    static constexpr int Minimize        = 37;  // Minimize window
-    static constexpr int Maximize        = 38;  // Maximize window
-    static constexpr int Restore         = 39;  // Restore window
-    static constexpr int Close           = 40;  // Close window
+    // Dialog icons (message boxes)
+    static constexpr const char* DialogError1   = "dialog-error-1";
+    static constexpr const char* DialogError2   = "dialog-error-2";
+    static constexpr const char* DialogInfo1    = "dialog-info-1";
+    static constexpr const char* DialogInfo2    = "dialog-info-2";
+    static constexpr const char* DialogQuestion1= "dialog-question-1";
+    static constexpr const char* DialogQuestion2= "dialog-question-2";
+    static constexpr const char* DialogSuccess1 = "dialog-success-1";
+    static constexpr const char* DialogSuccess2 = "dialog-success-2";
+    static constexpr const char* DialogWarning1 = "dialog-warning-1";
+    static constexpr const char* DialogWarning2 = "dialog-warning-2";
 
-    // Programs
-    static constexpr int Programs        = 41;  // Programs folder
-    static constexpr int Documents       = 42;  // Documents folder
-    static constexpr int Favorites       = 43;  // Favorites
-    static constexpr int Recent          = 44;  // Recent documents
-    static constexpr int StartMenu       = 45;  // Start menu
+    // Display
+    static constexpr const char* Display        = "display";
+    static constexpr const char* DisplaySettings1 = "display-settings-1";
+    static constexpr const char* DisplaySettings2 = "display-settings-2";
 
-    // User interface
-    static constexpr int User            = 46;  // User account
-    static constexpr int Users           = 47;  // Multiple users
-    static constexpr int Key             = 48;  // Key/password
-    static constexpr int Lock            = 49;  // Lock/security
+    // Drives
+    static constexpr const char* DriveCdrom     = "drive-cdrom";
+    static constexpr const char* DriveFloppy    = "drive-floppy";
+    static constexpr const char* DriveHdd       = "drive-hdd";
+    static constexpr const char* DriveUsb       = "drive-usb";
 
-    // Miscellaneous
-    static constexpr int Globe           = 50;  // Internet/world
-    static constexpr int Mail            = 51;  // Email
-    static constexpr int Calendar        = 52;  // Calendar
-    static constexpr int Clock           = 53;  // Clock
-    static constexpr int Calculator      = 54;  // Calculator
-    static constexpr int Notepad         = 55;  // Notepad/text editor
+    // Files
+    static constexpr const char* File           = "file";
+    static constexpr const char* FileAudioMidi  = "file-audio-midi";
+    static constexpr const char* FileAudioPcm   = "file-audio-pcm";
+    static constexpr const char* FileBinary     = "file-binary";
+    static constexpr const char* FileFont       = "file-font";
+    static constexpr const char* FileImage      = "file-image";
+    static constexpr const char* FileIso        = "file-iso";
+    static constexpr const char* FileMedia      = "file-media";
+    static constexpr const char* FileRtf        = "file-rtf";
+    static constexpr const char* FileSrcAssembly= "file-src-assembly";
+    static constexpr const char* FileSrcBasic   = "file-src-basic";
+    static constexpr const char* FileSrcC       = "file-src-c";
+    static constexpr const char* FileSrcCpp     = "file-src-cpp";
+    static constexpr const char* FileSrcH       = "file-src-h";
+    static constexpr const char* FileSrcHpp     = "file-src-hpp";
+    static constexpr const char* FileSystem     = "file-system";
+    static constexpr const char* FileTxt        = "file-txt";
+    static constexpr const char* FileXlChart    = "file-xl-chart";
+    static constexpr const char* FileXlSheet    = "file-xl-sheet";
 
-    // Helper to load icon by constant
-    static Image Load(int iconIndex, const Size& size) {
-        return Image::FromIconLibrary(LibraryPath, Int32(iconIndex), size);
+    // Folders
+    static constexpr const char* FolderApps     = "folder-apps";
+    static constexpr const char* FolderClosed   = "folder-closed";
+    static constexpr const char* FolderDocs     = "folder-docs";
+    static constexpr const char* FolderLibrary  = "folder-library";
+    static constexpr const char* FolderOpen     = "folder-open";
+    static constexpr const char* FolderOpenFiles= "folder-open-files";
+
+    // Mixer/Sound
+    static constexpr const char* Mixer          = "mixer";
+    static constexpr const char* Sound          = "sound";
+
+    // Network signal strength
+    static constexpr const char* NetworkSignal0 = "network-signal-0";
+    static constexpr const char* NetworkSignal1 = "network-signal-1";
+    static constexpr const char* NetworkSignal2 = "network-signal-2";
+    static constexpr const char* NetworkSignal3 = "network-signal-3";
+
+    // Overlays (for composite icons)
+    static constexpr const char* OverlayError   = "overlay-error";
+    static constexpr const char* OverlayShortcut= "overlay-shortcut";
+    static constexpr const char* OverlaySuccess = "overlay-success";
+    static constexpr const char* OverlayWarning = "overlay-warning";
+
+    // Shields (security)
+    static constexpr const char* Shield         = "shield";
+    static constexpr const char* ShieldDanger   = "shield-danger";
+    static constexpr const char* ShieldFull     = "shield-full";
+    static constexpr const char* ShieldInfo     = "shield-info";
+    static constexpr const char* ShieldSuccess  = "shield-success";
+    static constexpr const char* ShieldWarning  = "shield-warning";
+
+    // Storage
+    static constexpr const char* StoreCdrom     = "store-cdrom";
+    static constexpr const char* StoreFloppy    = "store-floppy";
+    static constexpr const char* StoreUsb       = "store-usb";
+
+    // Text
+    static constexpr const char* TextPwrd       = "text-pwrd";
+    static constexpr const char* TextSelect     = "text-select";
+
+    // Transfer indicators
+    static constexpr const char* TxAsync        = "tx-async";
+    static constexpr const char* TxIdle         = "tx-idle";
+    static constexpr const char* TxReceive      = "tx-receive";
+    static constexpr const char* TxSend         = "tx-send";
+
+    // UI elements
+    static constexpr const char* UiArrowDown    = "ui-arrow-down";
+    static constexpr const char* UiArrowLeft    = "ui-arrow-left";
+    static constexpr const char* UiArrowRight   = "ui-arrow-right";
+    static constexpr const char* UiArrowUp      = "ui-arrow-up";
+    static constexpr const char* UiCheck0       = "ui-check-0";
+    static constexpr const char* UiCheck1       = "ui-check-1";
+    static constexpr const char* UiCheck2       = "ui-check-2";
+    static constexpr const char* UiRadio0       = "ui-radio-0";
+    static constexpr const char* UiRadio1       = "ui-radio-1";
+    static constexpr const char* UiScroll       = "ui-scroll";
+    static constexpr const char* UiScrollDown   = "ui-scroll-down";
+    static constexpr const char* UiScrollLeft   = "ui-scroll-left";
+    static constexpr const char* UiScrollRight  = "ui-scroll-right";
+    static constexpr const char* UiScrollUp     = "ui-scroll-up";
+
+    // Helper to load icon by name
+    static Image Load(const char* iconName, const Size& size) {
+        return Image::FromIconLibrary(LibraryPath, iconName, size);
     }
 };
 

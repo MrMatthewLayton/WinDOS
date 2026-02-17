@@ -63,7 +63,7 @@ int main() {
 
     // Load cursor from icon library
     try {
-        desktop.LoadCursorFromLibrary(SystemIcons::LibraryPath, SystemIcons::Cursor);
+        desktop.LoadCursorFromLibrary(SystemIcons::LibraryPath, SystemIcons::CursorPointer);
     } catch (...) {
         // If cursor loading fails, desktop will use fallback cursor
     }
@@ -71,9 +71,9 @@ int main() {
     // Add desktop icons (32x32 icons from sysicons.icl)
     try {
         desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::Computer);      // My Computer
-        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::Network);       // Network
-        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::Notepad);       // Notepad
-        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::RecycleBinFull);// Recycle Bin
+        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::ComputerNet);   // Network
+        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::FileTxt);       // Text file
+        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::BinFull);       // Recycle Bin
     } catch (...) {
         // If icon loading fails, continue without icons
     }
