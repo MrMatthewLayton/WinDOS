@@ -271,7 +271,7 @@ All HIGH and MEDIUM priority features have been ported from legacy code.
 | Feature | Location | Description |
 |---------|----------|-------------|
 | ~~File I/O System~~ | System/IO/IO.hpp | `File::ReadAllBytes()`, `File::Exists()`, `File::GetSize()` ✓ DONE |
-| ~~Icon Loading~~ | System/Drawing/Drawing.hpp | `Image::FromIcon()`, `Image::FromIconLibrary()` with scaling ✓ DONE |
+| ~~Icon Loading~~ | System/Drawing/Drawing.hpp | `Image::FromIcon()`, `Image::FromIconLibrary()` with scaling and named icon support ✓ DONE |
 | ~~Desktop Icons~~ | System/Windows/Forms/Forms.hpp | `Desktop::AddIcon()`, `DesktopIcon` struct, grid layout ✓ DONE |
 | ~~Palette Fade~~ | System/Devices/Devices.hpp | `Display::FadeIn(ms)`, `FadeOut(ms)` - VGA and VBE modes ✓ DONE |
 | ~~Custom Cursors~~ | System/Windows/Forms/Forms.hpp | `Desktop::SetCursor()`, `LoadCursorFromLibrary()` ✓ DONE |
@@ -603,27 +603,139 @@ window->PerformLayout();
     - Added `_isToggled` and `_isMouseDown` separation in Button class
     - Visual state = toggled OR mouse down
 
+### COMPLETED - Recent Features
+
+24. **[x] Named Icon Support** - ✓ DONE
+    - `Image::FromIconLibrary(path, iconName, size)` - Load icons by name from PE resources
+    - `Image::GetIconLibraryNames(path)` - Get all icon names in a library
+    - `Image::GetIconLibraryIndex(path, iconName)` - Get index for a named icon
+    - `SystemIcons` class with 98 named constants (Computer, FolderOpen, etc.)
+    - Parses PE resource directory for RT_GROUP_ICON named entries
+    - UTF-16LE name strings converted to ASCII
+
+25. **[x] VBE 3.0 Gamma Ramp Support** - ✓ DONE (future compatibility)
+    - `Display::IsGammaSupported()` - Check if VBE 3.0 gamma is available
+    - `Display::SetGammaScale(scale)` - Set brightness via gamma table
+    - Platform layer: `IsGammaSupported()`, `SetGammaTable()`, `GetGammaTable()`
+    - Uses INT 10h AX=4F15h (VBE 3.0 gamma/DAC functions)
+    - Note: QEMU's vgabios only implements VBE 2.0; gamma functions return unsupported
+    - FadeIn/FadeOut attempts gamma ramp first, falls back to pixel processing
+
 ### LOW PRIORITY - Layout System Future Work
 
-19. **[ ] Wrap support** - Add `wrap` property for multi-line layouts
+26. **[ ] Wrap support** - Add `wrap` property for multi-line layouts
     - When children exceed container, wrap to next line
     - Similar to CSS `flex-wrap`
 
-20. **[ ] Layout animations** - Smooth transitions when layout changes
+27. **[ ] Layout animations** - Smooth transitions when layout changes
     - Interpolate between old and new positions
     - Useful for window minimize/maximize effects
 
-21. **[ ] Auto-layout on resize** - Trigger layout when control size changes
+28. **[ ] Auto-layout on resize** - Trigger layout when control size changes
     - Currently requires manual PerformLayout() call
     - Could integrate with SetBounds() automatically
 
-22. **[ ] Layout for TaskBar buttons** - Use flexbox for auto-arrangement
+29. **[ ] Layout for TaskBar buttons** - Use flexbox for auto-arrangement
     - Currently uses manual positioning in AddWindowButton/RemoveWindowButton
     - Could use Row layout with FlexGrow for automatic distribution
 
-23. **[ ] StartMenu/MenuItem relative positioning** - Refactor to use layout system
+30. **[ ] StartMenu/MenuItem relative positioning** - Refactor to use layout system
     - Currently uses some hardcoded coordinates
     - Could benefit from Column layout for menu items
+
+---
+
+## Named Icon Support (Complete)
+
+### Overview
+
+PE-format icon libraries (.icl, .dll, .exe) store icons with both numeric IDs and string names. The named icon support allows loading icons by their human-readable names instead of opaque indices.
+
+### What Was Implemented
+
+#### Image Class Extensions (`src/System/Drawing/Drawing.hpp/.cpp`)
+- `FromIconLibrary(path, iconName, size)` - Load icon by name with automatic scaling
+- `GetIconLibraryNames(path)` - Returns Array<String> of all named icons
+- `GetIconLibraryIndex(path, iconName)` - Get numeric index for a named icon
+- PE resource directory parsing for RT_GROUP_ICON entries
+- UTF-16LE name string decoding
+
+#### SystemIcons Class (`src/System/Drawing/Drawing.hpp`)
+Provides 98 named constants for the standard icon library:
+```cpp
+class SystemIcons {
+public:
+    static constexpr const char* LibraryPath = "sysicons.icl";
+
+    // Hardware icons
+    static constexpr const char* Computer = "computer";
+    static constexpr const char* ComputerNet = "computer-net";
+    static constexpr const char* Disk35 = "disk-35";
+    static constexpr const char* DiskHard = "disk-hard";
+    static constexpr const char* DiskCD = "disk-cd";
+
+    // Folder icons
+    static constexpr const char* Folder = "folder";
+    static constexpr const char* FolderOpen = "folder-open";
+    static constexpr const char* FolderApps = "folder-apps";
+    static constexpr const char* FolderDocs = "folder-docs";
+
+    // File icons
+    static constexpr const char* FileBlank = "file-blank";
+    static constexpr const char* FileTxt = "file-txt";
+    static constexpr const char* FileExe = "file-exe";
+
+    // UI icons
+    static constexpr const char* CursorPointer = "cursor-pointer";
+    static constexpr const char* StartFlag = "start-flag";
+    // ... 83 more icons
+
+    static Image Load(const char* iconName, const Size& size);
+};
+```
+
+#### Desktop Integration (`src/System/Windows/Forms/Forms.hpp/.cpp`)
+- `Desktop::LoadCursorFromLibrary(path, iconName)` - Load cursor by name
+- `Desktop::AddIconFromLibrary(path, iconName)` - Add desktop icon by name
+- `StartMenu::LoadIcons()` - Uses SystemIcons for menu item icons
+
+### PE Resource Directory Structure
+
+Icon libraries use the PE (Portable Executable) format with a resource section:
+```
+.rsrc section
+└── Root Directory
+    └── Type Directory (RT_GROUP_ICON = 14)
+        ├── Named Entry: bit 31 set in nameOrId → offset to UTF-16LE string
+        │   └── Language Directory → Data Entry → GRPICONDIR
+        └── ID Entry: bit 31 clear → numeric ID
+            └── Language Directory → Data Entry → GRPICONDIR
+```
+
+Name strings are length-prefixed UTF-16LE (2-byte little-endian characters).
+
+### Usage Example
+
+```cpp
+using namespace System::Drawing;
+
+// Load icon by name with specific size
+Image computerIcon = SystemIcons::Load(SystemIcons::Computer, Size::Icon32);
+
+// Or load directly from any icon library
+Image customIcon = Image::FromIconLibrary("myicons.icl", "my-icon-name", Size(48, 48));
+
+// Get all available icon names
+Array<String> names = Image::GetIconLibraryNames("sysicons.icl");
+for (int i = 0; i < names.Length(); i++) {
+    Console::WriteLine(names[i]);
+}
+
+// Desktop integration
+Desktop desktop(Color::Cyan);
+desktop.LoadCursorFromLibrary(SystemIcons::LibraryPath, SystemIcons::CursorPointer);
+desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::Computer);
+```
 
 ---
 

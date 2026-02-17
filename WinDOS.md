@@ -1636,14 +1636,26 @@ namespace System::Drawing {
         // Throws: FileNotFoundException, InvalidDataException, ArgumentException
         static Image FromIcon(const char* path, const Size& size);
 
-        // Load icon from PE executable (.dll, .exe, .icl)
+        // Load icon from PE executable (.dll, .exe, .icl) by index
         // Throws: FileNotFoundException, InvalidDataException, ArgumentException
         static Image FromIconLibrary(const char* path, Int32 iconIndex,
+                                     const Size& size);
+
+        // Load icon from PE executable by name (case-insensitive)
+        // Throws: FileNotFoundException, InvalidDataException, ArgumentException
+        static Image FromIconLibrary(const char* path, const char* iconName,
                                      const Size& size);
 
         // Get number of icons in a PE icon library
         // Throws: FileNotFoundException, InvalidDataException
         static Int32 GetIconLibraryCount(const char* path);
+
+        // Get names of all icons in a PE icon library
+        // Returns empty strings for unnamed (ID-based) icons
+        static Array<String> GetIconLibraryNames(const char* path);
+
+        // Get index of a named icon (returns -1 if not found)
+        static Int32 GetIconLibraryIndex(const char* path, const char* iconName);
     };
 
     // Standard icon sizes (use with FromIcon/FromIconLibrary)
@@ -1651,6 +1663,33 @@ namespace System::Drawing {
     // Size::IconCursor  - 24x24
     // Size::IconMedium  - 32x32
     // Size::IconLarge   - 48x48
+
+    // SystemIcons - Named constants for sysicons.icl
+    // Contains 98 named icons for Windows 95-style UI
+    class SystemIcons {
+    public:
+        static constexpr const char* LibraryPath = "sysicons.icl";
+
+        // Icon name constants (use with FromIconLibrary or Load)
+        static constexpr const char* Computer       = "computer";
+        static constexpr const char* ComputerNet    = "computer-net";
+        static constexpr const char* FolderOpen     = "folder-open";
+        static constexpr const char* FolderClosed   = "folder-closed";
+        static constexpr const char* File           = "file";
+        static constexpr const char* FileTxt        = "file-txt";
+        static constexpr const char* BinEmpty       = "bin-empty";
+        static constexpr const char* BinFull        = "bin-full";
+        static constexpr const char* DriveHdd       = "drive-hdd";
+        static constexpr const char* DriveCdrom     = "drive-cdrom";
+        static constexpr const char* CursorPointer  = "cursor-pointer";
+        static constexpr const char* DialogInfo1    = "dialog-info-1";
+        static constexpr const char* DialogWarning1 = "dialog-warning-1";
+        static constexpr const char* DialogError1   = "dialog-error-1";
+        // ... and 84 more (see Drawing.hpp for full list)
+
+        // Helper to load icon by name
+        static Image Load(const char* iconName, const Size& size);
+    };
 
     // Backwards compatibility alias
     typedef Image Image32;
@@ -1689,12 +1728,27 @@ canvas.CopyFromWithAlpha(overlay, 100, 100);
 // Load standalone .ico file
 Image icon = Image::FromIcon("myicon.ico", Size::IconMedium);  // 32x32
 
-// Load icons from Windows DLL
-Int32 iconCount = Image::GetIconLibraryCount("shell32.dll");
+// Load icons from PE library by index
+Int32 iconCount = Image::GetIconLibraryCount("sysicons.icl");
 Console::WriteLine("Found " + iconCount.ToString() + " icons");
+Image icon1 = Image::FromIconLibrary("sysicons.icl", 0, Size::IconMedium);
 
-Image folderIcon = Image::FromIconLibrary("shell32.dll", 3, Size::IconMedium);
-Image computerIcon = Image::FromIconLibrary("shell32.dll", 15, Size::IconLarge);
+// Load icons by name (preferred method)
+Image computer = Image::FromIconLibrary("sysicons.icl", "computer", Size::IconMedium);
+Image folder = Image::FromIconLibrary("sysicons.icl", "folder-open", Size::IconLarge);
+
+// Use SystemIcons helper for cleaner code
+Image myComputer = SystemIcons::Load(SystemIcons::Computer, Size::IconMedium);
+Image recycleBin = SystemIcons::Load(SystemIcons::BinFull, Size::IconLarge);
+
+// List all icon names in a library
+Array<String> names = Image::GetIconLibraryNames("sysicons.icl");
+for (int i = 0; i < names.Length(); i++) {
+    Console::WriteLine(names[i]);  // "app-logo", "computer", "folder-open", etc.
+}
+
+// Find icon index by name
+Int32 idx = Image::GetIconLibraryIndex("sysicons.icl", "computer");  // Returns 8
 
 // Clear
 canvas.Clear(Color::Blue);
