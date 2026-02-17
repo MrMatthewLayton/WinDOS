@@ -1,0 +1,28 @@
+#ifndef BCL_HPP
+#define BCL_HPP
+
+// Master include file for the BCL library
+
+// Platform layer
+#include "Platform/Platform.hpp"
+
+// Core System types
+#include "System/Exception.hpp"
+#include "System/String.hpp"
+#include "System/Array.hpp"
+#include "System/Types.hpp"
+#include "System/Math.hpp"
+#include "System/Memory.hpp"
+#include "System/Console.hpp"
+
+// I/O
+#include "System/IO/IO.hpp"
+
+// Graphics and Devices
+#include "System/Drawing/Drawing.hpp"
+#include "System/Devices/Devices.hpp"
+
+// Windows Forms
+#include "System/Windows/Forms/Forms.hpp"
+
+#endif // BCL_HPP

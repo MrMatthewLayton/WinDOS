@@ -1,0 +1,20 @@
+# Build artifacts
+build/
+*.o
+*.a
+*.exe
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# QEMU disk images
+qemu/*.img
+
+# Editor files
+*.swp
+*.swo
+*~
+
+# Temporary files
+/tmp/
