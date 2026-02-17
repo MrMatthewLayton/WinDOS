@@ -1371,6 +1371,16 @@ Window::Window(Control* parent, const Rectangle& bounds)
 
     // Windows are floating - they don't participate in parent's layout
     _layout.participatesInLayout = false;
+
+    // Register with taskbar - must be done here because virtual dispatch doesn't
+    // work during base class constructor (AsWindow() returns nullptr there)
+    if (parent && parent->GetControlType() == ControlType::Desktop) {
+        Desktop* desktop = static_cast<Desktop*>(parent);
+        TaskBar* taskBar = desktop->GetTaskBar();
+        if (taskBar) {
+            taskBar->AddWindowButton(this);
+        }
+    }
 }
 
 Window::~Window() {
@@ -1572,8 +1582,9 @@ void TaskBar::OnPaint(PaintEventArgs& e) {
 
 Button::Button(Control* parent, const Rectangle& bounds)
     : Control(parent, bounds)
-    , _isPressed(false)
-    , _wasPressed(false)
+    , _isToggled(false)
+    , _isMouseDown(false)
+    , _wasMouseDown(false)
     , _onClick(nullptr)
     , _onClickUserData(nullptr) {
 }
@@ -1590,7 +1601,9 @@ void Button::OnPaint(PaintEventArgs& e) {
     Rectangle screen = ScreenBounds();
 
     // Draw with appropriate border style based on pressed state
-    if (_isPressed) {
+    // Visual state is toggled OR mouse down
+    bool visualPressed = _isToggled || _isMouseDown;
+    if (visualPressed) {
         e.graphics->FillRectangle(screen, BorderStyle::SunkenDouble);
     } else {
         e.graphics->FillRectangle(screen, BorderStyle::RaisedDouble);
@@ -1601,25 +1614,27 @@ void Button::OnPaint(PaintEventArgs& e) {
 }
 
 void Button::OnMouse(MouseEventArgs& e) {
-    bool wasDown = _isPressed;
+    bool wasVisuallyPressed = _isToggled || _isMouseDown;
     int ex = static_cast<int>(e.x);
     int ey = static_cast<int>(e.y);
     bool isOver = static_cast<bool>(HitTest(ex, ey));
     bool leftDown = static_cast<bool>(e.leftButton);
 
-    _isPressed = leftDown && isOver;
+    // Only track mouse-down state, don't affect toggle state
+    _isMouseDown = leftDown && isOver;
 
     // Detect click: was pressed, now released while still over button
-    if (_wasPressed && !leftDown && isOver) {
+    if (_wasMouseDown && !leftDown && isOver) {
         // Fire click event
         if (_onClick) {
             _onClick(this, _onClickUserData);
         }
     }
 
-    _wasPressed = leftDown && isOver;
+    _wasMouseDown = leftDown && isOver;
 
-    if (_isPressed != wasDown) {
+    bool nowVisuallyPressed = _isToggled || _isMouseDown;
+    if (nowVisuallyPressed != wasVisuallyPressed) {
         Invalidate();
     }
 }
@@ -1991,11 +2006,25 @@ void StartMenu::LoadIcons() {
 
 void StartMenu::Show() {
     _isVisible = true;
+    // Update Start button to show pressed state
+    if (_desktop) {
+        TaskBar* taskBar = _desktop->GetTaskBar();
+        if (taskBar && taskBar->StartButton()) {
+            taskBar->StartButton()->SetPressed(true);
+        }
+    }
     Invalidate();
 }
 
 void StartMenu::Hide() {
     _isVisible = false;
+    // Update Start button to show normal state
+    if (_desktop) {
+        TaskBar* taskBar = _desktop->GetTaskBar();
+        if (taskBar && taskBar->StartButton()) {
+            taskBar->StartButton()->SetPressed(false);
+        }
+    }
     Invalidate();
 }
 

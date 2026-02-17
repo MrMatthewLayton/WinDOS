@@ -82,6 +82,7 @@ int main() {
    - [Desktop Class](#desktop-class)
    - [Window Class](#window-class)
    - [TaskBar Class](#taskbar-class)
+   - [TaskBarButton Class](#taskbarbutton-class)
    - [StartMenu Class](#startmenu-class)
    - [MenuItem Class](#menuitem-class)
    - [Button Class](#button-class)
@@ -2651,18 +2652,28 @@ Window* window = new Window(&desktop, Rectangle(100, 100, 300, 200));
 
 ## TaskBar Class
 
-Represents the Windows 95-style taskbar.
+Represents the Windows 95-style taskbar with Start button and window list.
 
 ```cpp
 namespace System::Windows::Forms {
     class TaskBar : public Control {
     public:
         // Constructors
-        TaskBar(Control* parent);
+        TaskBar(Control* parent, StartMenu* startMenu = nullptr);
         virtual ~TaskBar();
 
         // Properties
         Button* StartButton() const;
+
+        // Desktop back-reference (set by Desktop::SetTaskBar)
+        void SetDesktop(Desktop* desktop);
+        Desktop* GetDesktop() const;
+
+        // Window button management
+        void AddWindowButton(Window* window);
+        void RemoveWindowButton(Window* window);
+        void RefreshWindowButtons();  // Update pressed states based on focus
+        TaskBarButton* FindButtonForWindow(Window* window) const;
 
         // Overrides
         virtual void OnPaint(PaintEventArgs& e) override;
@@ -2670,17 +2681,60 @@ namespace System::Windows::Forms {
 }
 ```
 
+**Window List Behavior:**
+- Window buttons are automatically created when windows are added to the Desktop
+- Clicking a window button focuses the corresponding window
+- The focused window's button appears pressed/sunken
+- Window buttons are automatically removed when windows are removed
+
 **Example:**
 ```cpp
 Desktop desktop(Color::Cyan);
-TaskBar* taskbar = new TaskBar(&desktop);
 
-// TaskBar automatically:
-// - Queries current display mode dimensions
-// - Positions itself at bottom of screen (any resolution)
-// - Creates a "Start" button
-// - Has Windows 95 styling
+// Create start menu and taskbar
+StartMenu* startMenu = new StartMenu(&desktop);
+desktop.SetStartMenu(startMenu);
+
+TaskBar* taskbar = new TaskBar(&desktop, startMenu);
+desktop.SetTaskBar(taskbar);
+taskbar->SetDesktop(&desktop);
+
+// Create windows - taskbar buttons are created automatically
+Window* window1 = new Window(&desktop, Rectangle(50, 50, 300, 200));
+Window* window2 = new Window(&desktop, Rectangle(200, 100, 300, 200));
+
+// TaskBar now shows:
+// - Start button (opens/closes start menu)
+// - Window1 button (click to focus window1)
+// - Window2 button (click to focus window2)
+// - Focused window's button appears pressed
 ```
+
+---
+
+## TaskBarButton Class
+
+A specialized button that represents an open window in the taskbar.
+
+```cpp
+namespace System::Windows::Forms {
+    class TaskBarButton : public Button {
+    public:
+        // Constructors
+        TaskBarButton(Control* parent, const Rectangle& bounds, Window* window);
+        virtual ~TaskBarButton();
+
+        // Properties
+        Window* GetWindow() const;  // The window this button represents
+    };
+}
+```
+
+**Behavior:**
+- Automatically created by TaskBar when windows are added to Desktop
+- Shows pressed/sunken when the associated window is focused
+- Clicking the button focuses the associated window
+- Inherits toggle state behavior from Button class
 
 ---
 
@@ -2765,7 +2819,7 @@ namespace System::Windows::Forms {
 
 ## Button Class
 
-Represents a Windows button control.
+Represents a Windows button control. Supports both temporary press (during mouse click) and persistent toggle state (for taskbar buttons, menu buttons).
 
 ```cpp
 namespace System::Windows::Forms {
@@ -2776,7 +2830,14 @@ namespace System::Windows::Forms {
         virtual ~Button();
 
         // Properties
-        bool IsPressed() const;
+        Boolean IsPressed() const;  // True if toggled OR mouse down
+
+        // Set persistent pressed/toggle state
+        // Used by TaskBar buttons to show active window
+        void SetPressed(Boolean pressed);
+
+        // Click event handler
+        void SetOnClick(ClickEventHandler handler, void* userData = nullptr);
 
         // Overrides
         virtual void OnPaint(PaintEventArgs& e) override;
@@ -2785,6 +2846,11 @@ namespace System::Windows::Forms {
 }
 ```
 
+**Button States:**
+- **Toggle state**: Persistent pressed appearance (set via `SetPressed()`)
+- **Mouse state**: Temporary pressed appearance during click
+- **Visual state**: Button appears pressed if either toggle OR mouse state is active
+
 **Example:**
 ```cpp
 Window* window = new Window(&desktop, Rectangle(100, 100, 300, 200));
@@ -2792,10 +2858,19 @@ Window* window = new Window(&desktop, Rectangle(100, 100, 300, 200));
 // Create a button in the window's client area
 Button* okButton = new Button(window, Rectangle(10, 10, 80, 25));
 
+// Set click handler
+okButton->SetOnClick([](Button* btn, void* data) {
+    // Handle click
+}, nullptr);
+
 // Button automatically:
 // - Draws with 3D raised appearance
 // - Shows pressed state on click
 // - Handles mouse input
+
+// For toggle buttons (like Start button when menu is open):
+startButton->SetPressed(true);   // Shows as pressed
+startButton->SetPressed(false);  // Shows as normal
 ```
 
 ---

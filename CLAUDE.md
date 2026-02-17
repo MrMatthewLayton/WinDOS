@@ -588,23 +588,38 @@ window->PerformLayout();
     - Items revert to grey when mouse leaves
     - Fixed by propagating mouse events to all menu items
 
+### COMPLETED - TaskBar Window List
+
+17. **[x] TaskBar window buttons** - ✓ DONE
+    - Window buttons automatically appear in taskbar when windows are created
+    - Clicking a taskbar button focuses the corresponding window
+    - Active window's button shows pressed/sunken state
+    - Button states properly separated: toggle state (persistent) vs mouse state (temporary)
+    - Fixed virtual dispatch issue: Window constructor registers with taskbar after base class construction
+
+18. **[x] Button toggle state** - ✓ DONE
+    - Start button stays pressed while start menu is open
+    - Window buttons stay pressed while their window is focused
+    - Added `_isToggled` and `_isMouseDown` separation in Button class
+    - Visual state = toggled OR mouse down
+
 ### LOW PRIORITY - Layout System Future Work
 
-17. **[ ] Layout for TaskBar window buttons** - Use layout to auto-arrange
-    - Currently uses manual positioning in AddWindowButton/RemoveWindowButton
-    - Could use Row layout with FlexGrow for automatic distribution
-
-18. **[ ] Wrap support** - Add `wrap` property for multi-line layouts
+19. **[ ] Wrap support** - Add `wrap` property for multi-line layouts
     - When children exceed container, wrap to next line
     - Similar to CSS `flex-wrap`
 
-19. **[ ] Layout animations** - Smooth transitions when layout changes
+20. **[ ] Layout animations** - Smooth transitions when layout changes
     - Interpolate between old and new positions
     - Useful for window minimize/maximize effects
 
-20. **[ ] Auto-layout on resize** - Trigger layout when control size changes
+21. **[ ] Auto-layout on resize** - Trigger layout when control size changes
     - Currently requires manual PerformLayout() call
     - Could integrate with SetBounds() automatically
+
+22. **[ ] Layout for TaskBar buttons** - Use flexbox for auto-arrangement
+    - Currently uses manual positioning in AddWindowButton/RemoveWindowButton
+    - Could use Row layout with FlexGrow for automatic distribution
 
 ---
 

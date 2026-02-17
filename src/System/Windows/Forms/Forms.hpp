@@ -639,8 +639,9 @@ public:
 
 class Button : public Control {
 private:
-    bool _isPressed;           // Internal state - stays primitive
-    bool _wasPressed;          // For click detection
+    bool _isToggled;           // Persistent pressed state (e.g., active window, menu open)
+    bool _isMouseDown;         // Temporary state during mouse click
+    bool _wasMouseDown;        // For click detection
     ClickEventHandler _onClick;
     void* _onClickUserData;
 
@@ -648,10 +649,11 @@ public:
     Button(Control* parent, const Rectangle& bounds);
     virtual ~Button();
 
-    Boolean IsPressed() const { return Boolean(_isPressed); }
+    // Visual pressed state is toggled OR mouse down
+    Boolean IsPressed() const { return Boolean(_isToggled || _isMouseDown); }
 
-    // Set pressed state (for TaskBarButton to show active window)
-    void SetPressed(Boolean pressed) { _isPressed = static_cast<bool>(pressed); }
+    // Set persistent pressed state (for TaskBarButton to show active window)
+    void SetPressed(Boolean pressed) { _isToggled = static_cast<bool>(pressed); Invalidate(); }
 
     // Click event handler
     void SetOnClick(ClickEventHandler handler, void* userData = nullptr);
