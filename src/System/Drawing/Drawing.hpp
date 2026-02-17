@@ -611,6 +611,105 @@ enum class BorderStyle {
 };
 
 /******************************************************************************/
+/*    System::Drawing::FontStyle                                              */
+/*                                                                            */
+/*    Flags that specify style information applied to text. Can be combined.  */
+/******************************************************************************/
+
+enum class FontStyle : unsigned char {
+    Regular   = 0x00,
+    Bold      = 0x01,
+    Italic    = 0x02,
+    Underline = 0x04,
+    Strikeout = 0x08
+};
+
+// Bitwise operators for FontStyle
+inline FontStyle operator|(FontStyle a, FontStyle b) {
+    return static_cast<FontStyle>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
+}
+
+inline FontStyle operator&(FontStyle a, FontStyle b) {
+    return static_cast<FontStyle>(static_cast<unsigned char>(a) & static_cast<unsigned char>(b));
+}
+
+inline bool operator!(FontStyle a) {
+    return static_cast<unsigned char>(a) == 0;
+}
+
+/******************************************************************************/
+/*    System::Drawing::StringAlignment                                        */
+/*                                                                            */
+/*    Specifies the alignment of text within a rectangle.                     */
+/******************************************************************************/
+
+enum class StringAlignment : unsigned char {
+    Near,    // Left (horizontal) or Top (vertical)
+    Center,  // Center aligned
+    Far      // Right (horizontal) or Bottom (vertical)
+};
+
+/******************************************************************************/
+/*    System::Drawing::Font                                                   */
+/*                                                                            */
+/*    Represents a font for rendering text. Supports Windows FON bitmap fonts.*/
+/*    Use Font::FromFile() to load fonts, or Font::SystemFont()/FixedFont()   */
+/*    for built-in fonts.                                                     */
+/******************************************************************************/
+
+class Font {
+private:
+    // Forward declaration of internal font data
+    struct FontData;
+    FontData* _data;
+
+    Font(FontData* data);
+
+public:
+    Font();
+    Font(const Font& other);
+    Font(Font&& other) noexcept;
+    ~Font();
+
+    Font& operator=(const Font& other);
+    Font& operator=(Font&& other) noexcept;
+
+    // Load from FON file (NE format)
+    // Finds the best matching size in the font file
+    static Font FromFile(const char* path, Int32 size, FontStyle style = FontStyle::Regular);
+
+    // Load from TrueType file (TTF format)
+    // Rasterizes glyphs at the specified pixel height
+    static Font FromTrueType(const char* path, Int32 pixelHeight, FontStyle style = FontStyle::Regular);
+
+    // System fonts (require font files to be present)
+    static Font SystemFont();      // MS Sans Serif 8pt (MSSANS.fon)
+    static Font SystemFontBold();  // MS Sans Serif 8pt Bold (fake bold)
+    static Font FixedFont();       // Fixedsys 8pt (FIXEDSYS.fon)
+
+    // Properties
+    String Name() const;
+    Int32 Size() const;          // Point size
+    Int32 Height() const;        // Pixel height (line spacing)
+    Int32 Ascent() const;        // Pixels above baseline
+    FontStyle Style() const;
+    Boolean IsValid() const;
+    Boolean IsTrueType() const;  // Returns true if this is a TTF font
+
+    // Internal - for direct TTF rendering
+    void* GetTTFInfo() const;    // Returns stbtt_fontinfo* or nullptr
+    float GetTTFScale() const;   // Returns TTF scale factor
+
+    // Metrics
+    Int32 GetCharWidth(Char c) const;
+    class Size MeasureString(const String& text) const;
+    class Size MeasureString(const char* text) const;
+
+    // Internal - get cached glyph bitmap (white on transparent)
+    const Image& GetGlyph(Char c) const;
+};
+
+/******************************************************************************/
 /*    System::Drawing::BufferWriter (function pointer type)                   */
 /******************************************************************************/
 
@@ -705,6 +804,15 @@ public:
 
     void DrawImage(const Image& image, Int32 x, Int32 y);
     void DrawImage(const Image& image, const Point& location);
+
+    // Text rendering
+    void DrawString(const String& text, const Font& font, const Color& color, Int32 x, Int32 y);
+    void DrawString(const char* text, const Font& font, const Color& color, Int32 x, Int32 y);
+    void DrawString(const String& text, const Font& font, const Color& color,
+                    const Rectangle& rect, StringAlignment hAlign = StringAlignment::Near,
+                    StringAlignment vAlign = StringAlignment::Near);
+    class Size MeasureString(const String& text, const Font& font) const;
+    class Size MeasureString(const char* text, const Font& font) const;
 
     void Invalidate(Boolean flushFrameBuffer = Boolean(false));
 };

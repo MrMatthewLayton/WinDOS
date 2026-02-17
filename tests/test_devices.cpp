@@ -3,7 +3,7 @@
 // Note: Hardware-dependent methods (Initialize, ReadKey, etc.) require actual hardware
 
 #include "test_framework.hpp"
-#include "../bcl/System/Devices.hpp"
+#include "../src/System/Devices/Devices.hpp"
 
 using namespace System;
 using namespace System::Devices;

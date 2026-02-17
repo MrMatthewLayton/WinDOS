@@ -2,6 +2,7 @@
 #include "../Exception.hpp"
 #include "../IO/IO.hpp"
 #include "../../Platform/DOS/Graphics.hpp"
+#include "../../ThirdParty/stb_truetype.h"
 #include <cstdlib>
 #include <cstring>
 #include <go32.h>
@@ -828,6 +829,131 @@ struct GroupIconDirectoryEntry {
     unsigned short Identifier() const { return identifier; }
 };
 
+/******************************************************************************/
+/*    NE (New Executable) Format Structures for FON file parsing              */
+/******************************************************************************/
+
+struct NeHeader {
+    unsigned short signature;           // 'NE' = 0x454E
+    unsigned char  majorLinkerVersion;
+    unsigned char  minorLinkerVersion;
+    unsigned short entryTableOffset;
+    unsigned short entryTableLength;
+    unsigned int   fileCRC;
+    unsigned short flags;
+    unsigned short autoDataSegment;
+    unsigned short initialHeapSize;
+    unsigned short initialStackSize;
+    unsigned short csIp;
+    unsigned short sssSp;
+    unsigned short segmentTableEntries;
+    unsigned short moduleReferenceEntries;
+    unsigned short nonResidentNameTableSize;
+    unsigned short segmentTableOffset;
+    unsigned short resourceTableOffset;
+    unsigned short residentNameTableOffset;
+    unsigned short moduleReferenceTableOffset;
+    unsigned short importedNamesTableOffset;
+    unsigned int   nonResidentNameTableOffset;
+    unsigned short movableEntryPoints;
+    unsigned short alignmentShiftCount;     // Shift count for resource alignment
+    unsigned short resourceSegments;
+    unsigned char  targetOS;
+    unsigned char  otherFlags;
+    unsigned short fastLoadAreaOffset;
+    unsigned short fastLoadAreaLength;
+    unsigned short reserved;
+    unsigned short windowsVersion;
+
+    unsigned short Signature() const { return signature; }
+    unsigned short ResourceTableOffset() const { return resourceTableOffset; }
+    unsigned short AlignmentShiftCount() const { return alignmentShiftCount; }
+};
+
+struct NeResourceTypeInfo {
+    unsigned short typeId;              // Type ID (0x8008 = RT_FONT)
+    unsigned short count;               // Number of resources of this type
+    unsigned int   reserved;
+
+    unsigned short TypeId() const { return typeId; }
+    unsigned short Count() const { return count; }
+};
+
+struct NeResourceNameInfo {
+    unsigned short offset;              // Offset to resource data (shifted)
+    unsigned short length;              // Length of resource data (shifted)
+    unsigned short flags;
+    unsigned short id;                  // Resource ID
+    unsigned int   reserved;
+
+    unsigned short Offset() const { return offset; }
+    unsigned short Length() const { return length; }
+    unsigned short Id() const { return id; }
+};
+
+/******************************************************************************/
+/*    FNT Font Header Structure (Windows 2.0/3.0 bitmap font format)          */
+/******************************************************************************/
+
+struct FntHeader {
+    unsigned short dfVersion;           // 0x0200 or 0x0300
+    unsigned int   dfSize;              // Total file size
+    char           dfCopyright[60];     // Copyright string
+    unsigned short dfType;              // 0 = raster, 1 = vector
+    unsigned short dfPoints;            // Nominal point size
+    unsigned short dfVertRes;           // Vertical resolution (dpi)
+    unsigned short dfHorizRes;          // Horizontal resolution (dpi)
+    unsigned short dfAscent;            // Ascent (baseline to top)
+    unsigned short dfInternalLeading;   // Internal leading
+    unsigned short dfExternalLeading;   // External leading
+    unsigned char  dfItalic;            // 1 if italic
+    unsigned char  dfUnderline;         // 1 if underline
+    unsigned char  dfStrikeOut;         // 1 if strikeout
+    unsigned short dfWeight;            // Weight (400=regular, 700=bold)
+    unsigned char  dfCharSet;           // Character set (0=ANSI, 255=OEM)
+    unsigned short dfPixWidth;          // Pixel width (0 = variable)
+    unsigned short dfPixHeight;         // Pixel height
+    unsigned char  dfPitchAndFamily;    // Pitch and family
+    unsigned short dfAvgWidth;          // Average character width
+    unsigned short dfMaxWidth;          // Maximum character width
+    unsigned char  dfFirstChar;         // First character code
+    unsigned char  dfLastChar;          // Last character code
+    unsigned char  dfDefaultChar;       // Default character (relative to dfFirstChar)
+    unsigned char  dfBreakChar;         // Break character (relative to dfFirstChar)
+    unsigned short dfWidthBytes;        // Bytes per row (stride)
+    unsigned int   dfDevice;            // Offset to device name
+    unsigned int   dfFace;              // Offset to face name
+    unsigned int   dfBitsPointer;       // Absolute pointer to bitmap data
+    unsigned int   dfBitsOffset;        // Offset to bitmap data
+    unsigned char  dfReserved;          // Reserved (V2.0)
+    // V3.0 extensions follow...
+
+    unsigned short Version() const { return dfVersion; }
+    unsigned short Points() const { return dfPoints; }
+    unsigned short PixHeight() const { return dfPixHeight; }
+    unsigned short PixWidth() const { return dfPixWidth; }
+    unsigned short Ascent() const { return dfAscent; }
+    unsigned char  FirstChar() const { return dfFirstChar; }
+    unsigned char  LastChar() const { return dfLastChar; }
+    unsigned short AvgWidth() const { return dfAvgWidth; }
+    unsigned short MaxWidth() const { return dfMaxWidth; }
+    unsigned short Weight() const { return dfWeight; }
+    unsigned char  Italic() const { return dfItalic; }
+};
+
+// Character width table entry
+// V2.0: 4 bytes per entry (width: WORD, offset: WORD)
+// V3.0: 6 bytes per entry (width: WORD, offset: DWORD)
+struct FntCharEntryV2 {
+    unsigned short width;               // Character width in pixels
+    unsigned short offset;              // Offset to glyph bitmap (from start of FNT)
+};
+
+struct FntCharEntryV3 {
+    unsigned short width;               // Character width in pixels
+    unsigned int offset;                // Offset to glyph bitmap (from start of FNT)
+};
+
 #pragma pack(pop)
 
 /******************************************************************************/
@@ -1510,6 +1636,686 @@ Image Image::FromIconLibrary(const char* path, const char* iconName, const Size&
 }
 
 /******************************************************************************/
+/*    Font::FontData - Internal font data storage                              */
+/******************************************************************************/
+
+struct Font::FontData {
+    String name;                    // Font face name
+    int pointSize;                  // Nominal point size
+    int pixelHeight;                // Actual pixel height
+    int ascent;                     // Pixels above baseline
+    FontStyle style;                // Font style flags
+    int firstChar;                  // First character code
+    int lastChar;                   // Last character code
+    bool isTrueType;                // True if TTF, false if FON
+
+    // Character widths (256 entries, 0 for non-existent chars)
+    unsigned short charWidths[256];
+
+    // FON: Glyph offsets into bitmap data
+    unsigned int charOffsets[256];
+
+    // Raw font file data (FON bitmap or TTF file)
+    unsigned char* bitmapData;
+    unsigned int bitmapSize;
+
+    // TTF: stbtt font info
+    stbtt_fontinfo ttfInfo;
+    float ttfScale;                 // Scale factor for pixel height
+
+    // Glyph cache (lazily populated)
+    mutable Image glyphCache[256];
+    mutable bool glyphCached[256];
+
+    FontData()
+        : pointSize(0), pixelHeight(0), ascent(0), style(FontStyle::Regular)
+        , firstChar(0), lastChar(0), isTrueType(false)
+        , bitmapData(nullptr), bitmapSize(0), ttfScale(0.0f) {
+        std::memset(charWidths, 0, sizeof(charWidths));
+        std::memset(charOffsets, 0, sizeof(charOffsets));
+        std::memset(glyphCached, 0, sizeof(glyphCached));
+        std::memset(&ttfInfo, 0, sizeof(ttfInfo));
+    }
+
+    ~FontData() {
+        if (bitmapData) {
+            std::free(bitmapData);
+            bitmapData = nullptr;
+        }
+    }
+
+    // Render a glyph to the cache
+    void RenderGlyph(int ch) const {
+        if (ch < 0 || ch > 255 || glyphCached[ch]) return;
+
+        if (isTrueType) {
+            RenderTrueTypeGlyph(ch);
+        } else {
+            RenderFonGlyph(ch);
+        }
+    }
+
+    // Render FON (bitmap) glyph
+    void RenderFonGlyph(int ch) const {
+        if (ch < firstChar || ch > lastChar) {
+            // Character not in font - create empty glyph
+            glyphCache[ch] = Image(1, pixelHeight, Color::Transparent);
+            glyphCached[ch] = true;
+            return;
+        }
+
+        int width = charWidths[ch];
+        int height = pixelHeight;
+        if (width <= 0) {
+            glyphCache[ch] = Image(1, height, Color::Transparent);
+            glyphCached[ch] = true;
+            return;
+        }
+
+        // Create transparent glyph image
+        glyphCache[ch] = Image(width, height, Color::Transparent);
+
+        // FON bitmap format: row-major, MSB first
+        // Each row is ceil(width/8) bytes
+        // Rows are stored top-to-bottom
+        int bytesPerRow = (width + 7) / 8;
+        const unsigned char* src = bitmapData + charOffsets[ch];
+
+        for (int row = 0; row < height; row++) {
+            for (int col = 0; col < width; col++) {
+                int byteIndex = col / 8;
+                int bitIndex = 7 - (col % 8);  // MSB is leftmost pixel
+                unsigned char byte = src[row * bytesPerRow + byteIndex];
+                bool pixel = ((byte >> bitIndex) & 1) != 0;
+                if (pixel) {
+                    glyphCache[ch].SetPixel(col, row, Color::White);
+                }
+            }
+        }
+
+        glyphCached[ch] = true;
+    }
+
+    // Render TrueType glyph using stb_truetype
+    void RenderTrueTypeGlyph(int ch) const {
+        // Get horizontal metrics (advance and left side bearing)
+        int advanceWidth, lsb;
+        stbtt_GetCodepointHMetrics(&ttfInfo, ch, &advanceWidth, &lsb);
+
+        // Get bitmap bounding box
+        int x0, y0, x1, y1;
+        stbtt_GetCodepointBitmapBox(&ttfInfo, ch, ttfScale, ttfScale, &x0, &y0, &x1, &y1);
+
+        int glyphWidth = x1 - x0;
+        int glyphHeight = y1 - y0;
+
+        // Scale lsb to pixels
+        int lsbPixels = static_cast<int>(lsb * ttfScale + 0.5f);
+
+        // Use advance width for image width (for proper character spacing)
+        int imageWidth = charWidths[ch];
+        if (imageWidth <= 0) imageWidth = 1;
+        int imageHeight = pixelHeight;
+
+        // Create glyph image
+        glyphCache[ch] = Image(imageWidth, imageHeight, Color::Transparent);
+
+        if (glyphWidth <= 0 || glyphHeight <= 0) {
+            // Empty glyph (e.g., space) - just return the transparent image
+            glyphCached[ch] = true;
+            return;
+        }
+
+        // Rasterize the glyph (8-bit grayscale)
+        unsigned char* bitmap = static_cast<unsigned char*>(
+            std::malloc(glyphWidth * glyphHeight));
+        if (!bitmap) {
+            glyphCached[ch] = true;
+            return;
+        }
+
+        stbtt_MakeCodepointBitmap(&ttfInfo, bitmap, glyphWidth, glyphHeight,
+                                   glyphWidth, ttfScale, ttfScale, ch);
+
+        // Position glyph in image using the working example's approach:
+        // - Horizontally: use lsb (left side bearing) scaled to pixels
+        // - Vertically: use ascent + y0 for baseline alignment
+
+        // Copy bitmap to image with anti-aliasing (store grayscale as alpha)
+        for (int row = 0; row < glyphHeight; row++) {
+            int destY = ascent + y0 + row;
+            if (destY < 0 || destY >= imageHeight) continue;
+
+            for (int col = 0; col < glyphWidth; col++) {
+                int destX = lsbPixels + col;
+                if (destX < 0 || destX >= imageWidth) continue;
+
+                unsigned char gray = bitmap[row * glyphWidth + col];
+                if (gray > 0) {
+                    // Store grayscale as alpha for anti-aliasing
+                    // White color with variable alpha
+                    glyphCache[ch].SetPixel(destX, destY, Color(255, 255, 255, gray));
+                }
+            }
+        }
+
+        std::free(bitmap);
+        glyphCached[ch] = true;
+    }
+};
+
+/******************************************************************************/
+/*    Font implementation                                                      */
+/******************************************************************************/
+
+Font::Font() : _data(nullptr) {}
+
+Font::Font(FontData* data) : _data(data) {}
+
+Font::Font(const Font& other) : _data(nullptr) {
+    if (other._data) {
+        _data = new FontData();
+        _data->name = other._data->name;
+        _data->pointSize = other._data->pointSize;
+        _data->pixelHeight = other._data->pixelHeight;
+        _data->ascent = other._data->ascent;
+        _data->style = other._data->style;
+        _data->firstChar = other._data->firstChar;
+        _data->lastChar = other._data->lastChar;
+        _data->isTrueType = other._data->isTrueType;
+        _data->ttfScale = other._data->ttfScale;
+        std::memcpy(_data->charWidths, other._data->charWidths, sizeof(_data->charWidths));
+        std::memcpy(_data->charOffsets, other._data->charOffsets, sizeof(_data->charOffsets));
+
+        if (other._data->bitmapData && other._data->bitmapSize > 0) {
+            _data->bitmapData = static_cast<unsigned char*>(std::malloc(other._data->bitmapSize));
+            if (_data->bitmapData) {
+                std::memcpy(_data->bitmapData, other._data->bitmapData, other._data->bitmapSize);
+                _data->bitmapSize = other._data->bitmapSize;
+
+                // For TTF fonts, re-initialize ttfInfo to point to the new bitmapData
+                if (_data->isTrueType) {
+                    int fontOffset = stbtt_GetFontOffsetForIndex(_data->bitmapData, 0);
+                    stbtt_InitFont(&_data->ttfInfo, _data->bitmapData, fontOffset);
+                }
+            }
+        }
+
+        // Copy cached glyphs
+        for (int i = 0; i < 256; i++) {
+            if (other._data->glyphCached[i]) {
+                _data->glyphCache[i] = other._data->glyphCache[i];
+                _data->glyphCached[i] = true;
+            }
+        }
+    }
+}
+
+Font::Font(Font&& other) noexcept : _data(other._data) {
+    other._data = nullptr;
+}
+
+Font::~Font() {
+    if (_data) {
+        delete _data;
+        _data = nullptr;
+    }
+}
+
+Font& Font::operator=(const Font& other) {
+    if (this != &other) {
+        if (_data) {
+            delete _data;
+            _data = nullptr;
+        }
+        if (other._data) {
+            Font temp(other);
+            _data = temp._data;
+            temp._data = nullptr;
+        }
+    }
+    return *this;
+}
+
+Font& Font::operator=(Font&& other) noexcept {
+    if (this != &other) {
+        if (_data) {
+            delete _data;
+        }
+        _data = other._data;
+        other._data = nullptr;
+    }
+    return *this;
+}
+
+Font Font::FromFile(const char* path, Int32 size, FontStyle style) {
+    const unsigned short MZ_SIGNATURE = 0x5A4D;
+    const unsigned short NE_SIGNATURE = 0x454E;
+    const unsigned short RT_FONT = 0x8008;  // NE resource type for fonts
+
+    if (!path || path[0] == '\0') {
+        throw ArgumentNullException("path");
+    }
+
+    int targetSize = static_cast<int>(size);
+
+    // Read file
+    Array<UInt8> fileBytes = IO::File::ReadAllBytes(path);
+    int fileSize = fileBytes.Length();
+
+    if (fileSize < 64) {
+        throw InvalidDataException("File is too small to be a valid FON file.");
+    }
+
+    // Copy to raw buffer
+    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(fileSize));
+    if (!fileData) {
+        throw InvalidOperationException("Failed to allocate memory.");
+    }
+
+    for (int i = 0; i < fileSize; i++) {
+        fileData[i] = static_cast<unsigned char>(fileBytes[i]);
+    }
+
+    // Parse MZ header to find NE header
+    const MsDosExecutableHeader* dosHeader = reinterpret_cast<const MsDosExecutableHeader*>(fileData);
+    if (dosHeader->Signature() != MZ_SIGNATURE) {
+        std::free(fileData);
+        throw InvalidDataException("Invalid DOS executable header.");
+    }
+
+    unsigned int neOffset = dosHeader->NewHeaderOffset();
+    if (neOffset >= static_cast<unsigned int>(fileSize) - sizeof(NeHeader)) {
+        std::free(fileData);
+        throw InvalidDataException("Invalid NE header offset.");
+    }
+
+    const NeHeader* neHeader = reinterpret_cast<const NeHeader*>(fileData + neOffset);
+    if (neHeader->Signature() != NE_SIGNATURE) {
+        std::free(fileData);
+        throw InvalidDataException("Invalid NE signature (not a FON file).");
+    }
+
+    // Parse resource table
+    unsigned int rsrcTableOffset = neOffset + neHeader->ResourceTableOffset();
+    if (rsrcTableOffset >= static_cast<unsigned int>(fileSize)) {
+        std::free(fileData);
+        throw InvalidDataException("Invalid resource table offset.");
+    }
+
+    // Resource table starts with alignment shift count
+    const unsigned char* rsrcTable = fileData + rsrcTableOffset;
+    unsigned short alignShift = *reinterpret_cast<const unsigned short*>(rsrcTable);
+    rsrcTable += 2;
+
+    // Find RT_FONT resources
+    const FntHeader* bestFont = nullptr;
+    int bestMatch = 0x7FFFFFFF;
+    bool isBold = (static_cast<unsigned char>(style) & static_cast<unsigned char>(FontStyle::Bold)) != 0;
+    bool isItalic = (static_cast<unsigned char>(style) & static_cast<unsigned char>(FontStyle::Italic)) != 0;
+
+    while (true) {
+        const NeResourceTypeInfo* typeInfo = reinterpret_cast<const NeResourceTypeInfo*>(rsrcTable);
+        if (typeInfo->TypeId() == 0) break;  // End of resource table
+
+        rsrcTable += sizeof(NeResourceTypeInfo);
+
+        if (typeInfo->TypeId() == RT_FONT) {
+            // Found font resources
+            for (int i = 0; i < typeInfo->Count(); i++) {
+                const NeResourceNameInfo* nameInfo = reinterpret_cast<const NeResourceNameInfo*>(rsrcTable);
+                rsrcTable += sizeof(NeResourceNameInfo);
+
+                // Calculate actual offset
+                unsigned int fontOffset = static_cast<unsigned int>(nameInfo->Offset()) << alignShift;
+                if (fontOffset >= static_cast<unsigned int>(fileSize)) continue;
+
+                const FntHeader* fntHeader = reinterpret_cast<const FntHeader*>(fileData + fontOffset);
+
+                // Check if this font matches our criteria
+                int fontPoints = fntHeader->Points();
+                bool fontBold = fntHeader->Weight() >= 700;
+                bool fontItalic = fntHeader->Italic() != 0;
+
+                // Calculate match score (lower is better)
+                int sizeDiff = fontPoints > targetSize ? fontPoints - targetSize : targetSize - fontPoints;
+                int styleMatch = 0;
+                if (fontBold != isBold) styleMatch += 100;
+                if (fontItalic != isItalic) styleMatch += 100;
+
+                int matchScore = sizeDiff + styleMatch;
+                if (matchScore < bestMatch) {
+                    bestMatch = matchScore;
+                    bestFont = fntHeader;
+                }
+            }
+        } else {
+            // Skip resources of other types
+            rsrcTable += typeInfo->Count() * sizeof(NeResourceNameInfo);
+        }
+    }
+
+    if (!bestFont) {
+        std::free(fileData);
+        throw InvalidDataException("No font resources found in file.");
+    }
+
+    // Parse the selected font
+    FontData* data = new FontData();
+    data->pointSize = bestFont->Points();
+    data->pixelHeight = bestFont->PixHeight();
+    data->ascent = bestFont->Ascent();
+    data->firstChar = bestFont->FirstChar();
+    data->lastChar = bestFont->LastChar();
+
+    // Use requested style (allows fake bold/italic even if font doesn't have it)
+    // Combine with any inherent style from the font file
+    data->style = style;
+    if (bestFont->Weight() >= 700) {
+        data->style = data->style | FontStyle::Bold;
+    }
+    if (bestFont->Italic()) {
+        data->style = data->style | FontStyle::Italic;
+    }
+
+    // Get face name
+    unsigned int faceOffset = bestFont->dfFace;
+    const unsigned char* fontBase = reinterpret_cast<const unsigned char*>(bestFont);
+    if (faceOffset > 0 && faceOffset < 0x10000) {
+        const char* faceName = reinterpret_cast<const char*>(fontBase + faceOffset);
+        data->name = String(faceName);
+    } else {
+        data->name = String("Unknown");
+    }
+
+    // Calculate character widths and offsets
+    bool isV3 = bestFont->Version() >= 0x0300;
+    int numChars = data->lastChar - data->firstChar + 1;
+
+    // Character table follows FntHeader (118 bytes for V2/V3)
+    const unsigned char* charTable = fontBase + 118;
+
+    if (isV3) {
+        // V3.0 format: 6-byte entries (2-byte width + 4-byte offset)
+        const FntCharEntryV3* entries = reinterpret_cast<const FntCharEntryV3*>(charTable);
+
+        for (int i = 0; i <= numChars; i++) {  // +1 for sentinel
+            int charCode = data->firstChar + i;
+            if (charCode >= 0 && charCode < 256 && i < numChars) {
+                data->charWidths[charCode] = entries[i].width;
+                data->charOffsets[charCode] = entries[i].offset;
+            }
+        }
+    } else {
+        // V2.0 format: 4-byte entries (2-byte width + 2-byte offset)
+        const FntCharEntryV2* entries = reinterpret_cast<const FntCharEntryV2*>(charTable);
+
+        for (int i = 0; i < numChars; i++) {
+            int charCode = data->firstChar + i;
+            if (charCode >= 0 && charCode < 256) {
+                data->charWidths[charCode] = entries[i].width;
+                data->charOffsets[charCode] = entries[i].offset;
+            }
+        }
+    }
+
+    // Copy bitmap data
+    // Each glyph bitmap size is: ceil(width/8) * height (row-major format)
+    unsigned int bitmapStart = 0;
+    unsigned int bitmapEnd = 0;
+    int height = data->pixelHeight;
+
+    if (isV3) {
+        // In V3, offsets are from start of FNT resource
+        bitmapStart = 0xFFFFFFFF;
+        for (int i = data->firstChar; i <= data->lastChar; i++) {
+            if (data->charOffsets[i] > 0 && data->charOffsets[i] < bitmapStart) {
+                bitmapStart = data->charOffsets[i];
+            }
+            int bytesPerRow = (data->charWidths[i] + 7) / 8;
+            unsigned int charEnd = data->charOffsets[i] + bytesPerRow * height;
+            if (charEnd > bitmapEnd) {
+                bitmapEnd = charEnd;
+            }
+        }
+    } else {
+        // In V2, offsets are from start of FNT resource
+        bitmapStart = 0xFFFFFFFF;
+        for (int i = data->firstChar; i <= data->lastChar; i++) {
+            if (data->charOffsets[i] > 0 && data->charOffsets[i] < bitmapStart) {
+                bitmapStart = data->charOffsets[i];
+            }
+            int bytesPerRow = (data->charWidths[i] + 7) / 8;
+            unsigned int charEnd = data->charOffsets[i] + bytesPerRow * height;
+            if (charEnd > bitmapEnd) {
+                bitmapEnd = charEnd;
+            }
+        }
+    }
+
+    if (bitmapEnd > bitmapStart) {
+        data->bitmapSize = bitmapEnd;  // Store entire font data to simplify offsets
+        data->bitmapData = static_cast<unsigned char*>(std::malloc(data->bitmapSize));
+        if (data->bitmapData) {
+            std::memcpy(data->bitmapData, fontBase, data->bitmapSize);
+        }
+    }
+
+    std::free(fileData);
+    return Font(data);
+}
+
+Font Font::SystemFont() {
+    try {
+        return FromFile("MSSANS.fon", 8);
+    } catch (...) {
+        // Return invalid font if file not found
+        return Font();
+    }
+}
+
+Font Font::SystemFontBold() {
+    try {
+        return FromFile("MSSANS.fon", 8, FontStyle::Bold);
+    } catch (...) {
+        // Return invalid font if file not found
+        return Font();
+    }
+}
+
+Font Font::FixedFont() {
+    try {
+        return FromFile("FIXEDSYS.fon", 8);
+    } catch (...) {
+        // Return invalid font if file not found
+        return Font();
+    }
+}
+
+Font Font::FromTrueType(const char* path, Int32 pixelHeight, FontStyle style) {
+    if (!path || path[0] == '\0') {
+        throw ArgumentNullException("path");
+    }
+
+    int targetHeight = static_cast<int>(pixelHeight);
+    if (targetHeight <= 0) {
+        throw ArgumentException("pixelHeight must be positive.");
+    }
+
+    // Read file
+    Array<UInt8> fileBytes = IO::File::ReadAllBytes(path);
+    int fileSize = fileBytes.Length();
+
+    if (fileSize < 12) {
+        throw InvalidDataException("File is too small to be a valid TTF file.");
+    }
+
+    // Allocate and copy file data (stb_truetype requires persistent data)
+    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(fileSize));
+    if (!fileData) {
+        throw InvalidOperationException("Failed to allocate memory.");
+    }
+
+    for (int i = 0; i < fileSize; i++) {
+        fileData[i] = static_cast<unsigned char>(fileBytes[i]);
+    }
+
+    // Initialize stb_truetype
+    FontData* data = new FontData();
+    data->bitmapData = fileData;
+    data->bitmapSize = fileSize;
+    data->isTrueType = true;
+    data->style = style;
+
+    // Get font offset (handles font collections and validates TTF header)
+    int fontOffset = stbtt_GetFontOffsetForIndex(fileData, 0);
+    if (fontOffset < 0) {
+        delete data;
+        throw InvalidDataException("Invalid TTF file or font index.");
+    }
+
+    if (!stbtt_InitFont(&data->ttfInfo, fileData, fontOffset)) {
+        delete data;
+        throw InvalidDataException("Failed to parse TTF file.");
+    }
+
+    // Calculate scale for desired pixel height
+    data->ttfScale = stbtt_ScaleForPixelHeight(&data->ttfInfo, static_cast<float>(targetHeight));
+
+    // Get font metrics
+    int ascent, descent, lineGap;
+    stbtt_GetFontVMetrics(&data->ttfInfo, &ascent, &descent, &lineGap);
+
+    data->pixelHeight = targetHeight;
+    data->ascent = static_cast<int>(ascent * data->ttfScale);
+    data->pointSize = targetHeight;  // Approximate
+    data->firstChar = 32;   // Space
+    data->lastChar = 126;   // Tilde
+
+    // Pre-calculate character widths (round instead of truncate)
+    for (int ch = 0; ch < 256; ch++) {
+        int advanceWidth, leftSideBearing;
+        stbtt_GetCodepointHMetrics(&data->ttfInfo, ch, &advanceWidth, &leftSideBearing);
+        // Add 0.5f for proper rounding to avoid accumulated spacing errors
+        data->charWidths[ch] = static_cast<unsigned short>(advanceWidth * data->ttfScale + 0.5f);
+    }
+
+    // Get font name from TTF name table (simplified - just use filename)
+    const char* nameStart = path;
+    const char* p = path;
+    while (*p) {
+        if (*p == '/' || *p == '\\') nameStart = p + 1;
+        p++;
+    }
+    // Remove extension
+    char nameBuf[64];
+    int nameLen = 0;
+    for (const char* q = nameStart; *q && *q != '.' && nameLen < 63; q++) {
+        nameBuf[nameLen++] = *q;
+    }
+    nameBuf[nameLen] = '\0';
+    data->name = String(nameBuf);
+
+    return Font(data);
+}
+
+String Font::Name() const {
+    return _data ? _data->name : String();
+}
+
+Int32 Font::Size() const {
+    return _data ? Int32(_data->pointSize) : Int32(0);
+}
+
+Int32 Font::Height() const {
+    return _data ? Int32(_data->pixelHeight) : Int32(0);
+}
+
+Int32 Font::Ascent() const {
+    return _data ? Int32(_data->ascent) : Int32(0);
+}
+
+FontStyle Font::Style() const {
+    return _data ? _data->style : FontStyle::Regular;
+}
+
+Boolean Font::IsValid() const {
+    return Boolean(_data != nullptr && _data->pixelHeight > 0);
+}
+
+Boolean Font::IsTrueType() const {
+    return Boolean(_data != nullptr && _data->isTrueType);
+}
+
+void* Font::GetTTFInfo() const {
+    if (!_data || !_data->isTrueType) return nullptr;
+    return const_cast<stbtt_fontinfo*>(&_data->ttfInfo);
+}
+
+float Font::GetTTFScale() const {
+    if (!_data || !_data->isTrueType) return 0.0f;
+    return _data->ttfScale;
+}
+
+Int32 Font::GetCharWidth(Char c) const {
+    if (!_data) return Int32(0);
+    int ch = static_cast<int>(static_cast<unsigned char>(c));
+    return Int32(_data->charWidths[ch]);
+}
+
+Drawing::Size Font::MeasureString(const String& text) const {
+    return MeasureString(text.CStr());
+}
+
+Drawing::Size Font::MeasureString(const char* text) const {
+    if (!_data || !text) return Drawing::Size(Int32(0), Int32(0));
+
+    // Check if font style includes bold (adds 1 pixel per character)
+    bool isBold = (static_cast<unsigned char>(_data->style) &
+                   static_cast<unsigned char>(FontStyle::Bold)) != 0;
+
+    int maxWidth = 0;
+    int currentWidth = 0;
+    int lines = 1;
+    int charsOnLine = 0;
+
+    for (const char* p = text; *p; p++) {
+        if (*p == '\n') {
+            // Add extra pixels for bold characters
+            if (isBold && charsOnLine > 0) {
+                currentWidth += charsOnLine;
+            }
+            if (currentWidth > maxWidth) maxWidth = currentWidth;
+            currentWidth = 0;
+            charsOnLine = 0;
+            lines++;
+        } else {
+            int ch = static_cast<int>(static_cast<unsigned char>(*p));
+            currentWidth += _data->charWidths[ch];
+            charsOnLine++;
+        }
+    }
+
+    // Add extra pixels for bold characters on last line
+    if (isBold && charsOnLine > 0) {
+        currentWidth += charsOnLine;
+    }
+    if (currentWidth > maxWidth) maxWidth = currentWidth;
+    return Drawing::Size(Int32(maxWidth), Int32(lines * _data->pixelHeight));
+}
+
+const Image& Font::GetGlyph(Char c) const {
+    static Image emptyGlyph(1, 1, Color::Transparent);
+    if (!_data) return emptyGlyph;
+
+    int ch = static_cast<int>(static_cast<unsigned char>(c));
+    if (!_data->glyphCached[ch]) {
+        _data->RenderGlyph(ch);
+    }
+    return _data->glyphCache[ch];
+}
+
+/******************************************************************************/
 /*    Fast fill for rectangles (32-bit pixels)                                */
 /******************************************************************************/
 
@@ -2182,6 +2988,237 @@ void Graphics::Invalidate(Boolean flushFrameBuffer) {
     if (static_cast<bool>(flushFrameBuffer)) {
         GraphicsBuffer::FlushFrameBuffer();
     }
+}
+
+/******************************************************************************/
+/*    Graphics text rendering                                                  */
+/******************************************************************************/
+
+void Graphics::DrawString(const String& text, const Font& font, const Color& color, Int32 x, Int32 y) {
+    DrawString(text.CStr(), font, color, x, y);
+}
+
+void Graphics::DrawString(const char* text, const Font& font, const Color& color, Int32 x, Int32 y) {
+    if (!text || !_buffer || !font.IsValid()) return;
+    if (color == Color::Transparent) return;
+
+    int curX = static_cast<int>(x);
+    int curY = static_cast<int>(y);
+    int startX = curX;
+    int fontHeight = static_cast<int>(font.Height());
+    int fontAscent = static_cast<int>(font.Ascent());
+
+    // Check if font style includes bold (for fake bold rendering)
+    bool isBold = (static_cast<unsigned char>(font.Style()) &
+                   static_cast<unsigned char>(FontStyle::Bold)) != 0;
+
+    Image& targetImg = _buffer->GetImage();
+    int offsetX = 0;
+    int offsetY = 0;
+
+    if (_buffer == GraphicsBuffer::GetFrameBuffer()) {
+        offsetX = static_cast<int>(_bounds.x);
+        offsetY = static_cast<int>(_bounds.y);
+    }
+
+    int boundW = static_cast<int>(_bounds.width);
+    int boundH = static_cast<int>(_bounds.height);
+    int imgWidth = static_cast<int>(targetImg.Width());
+    int imgHeight = static_cast<int>(targetImg.Height());
+
+    // Check if TTF font - use direct rendering like the working example
+    bool isTTF = static_cast<bool>(font.IsTrueType());
+    stbtt_fontinfo* ttfInfo = nullptr;
+    float ttfScale = 0.0f;
+    if (isTTF) {
+        ttfInfo = static_cast<stbtt_fontinfo*>(font.GetTTFInfo());
+        ttfScale = font.GetTTFScale();
+    }
+
+    for (const char* p = text; *p; p++) {
+        char ch = *p;
+
+        if (ch == '\n') {
+            curX = startX;
+            curY += fontHeight;
+            continue;
+        }
+
+        if (isTTF && ttfInfo) {
+            // Direct TTF rendering (like the working example)
+            int advanceWidth, lsb;
+            stbtt_GetCodepointHMetrics(ttfInfo, ch, &advanceWidth, &lsb);
+
+            int c_x1, c_y1, c_x2, c_y2;
+            stbtt_GetCodepointBitmapBox(ttfInfo, ch, ttfScale, ttfScale,
+                                        &c_x1, &c_y1, &c_x2, &c_y2);
+
+            int glyphW = c_x2 - c_x1;
+            int glyphH = c_y2 - c_y1;
+
+            if (glyphW > 0 && glyphH > 0) {
+                // Allocate temporary bitmap
+                unsigned char* bitmap = static_cast<unsigned char*>(
+                    std::malloc(glyphW * glyphH));
+                if (bitmap) {
+                    stbtt_MakeCodepointBitmap(ttfInfo, bitmap, glyphW, glyphH,
+                                               glyphW, ttfScale, ttfScale, ch);
+
+                    // Position: x + lsb*scale, y + ascent + c_y1
+                    int glyphX = curX + static_cast<int>(lsb * ttfScale + 0.5f);
+                    int glyphY = curY + fontAscent + c_y1;
+
+                    // Render bitmap
+                    for (int row = 0; row < glyphH; row++) {
+                        int destY = glyphY + row;
+                        if (destY < 0 || destY >= boundH) continue;
+
+                        for (int col = 0; col < glyphW; col++) {
+                            int destX = glyphX + col;
+                            if (destX < 0 || destX >= boundW) continue;
+
+                            unsigned char gray = bitmap[row * glyphW + col];
+                            // Sharp threshold rendering - no anti-aliasing blur
+                            // Use 128 threshold for crisp edges
+                            if (gray > 128) {
+                                int finalX = offsetX + destX;
+                                int finalY = offsetY + destY;
+                                if (finalX >= 0 && finalX < imgWidth && finalY >= 0 && finalY < imgHeight) {
+                                    targetImg.SetPixel(finalX, finalY, color);
+                                }
+                            }
+                        }
+                    }
+                    std::free(bitmap);
+                }
+            }
+
+            // Advance cursor
+            curX += static_cast<int>(advanceWidth * ttfScale + 0.5f);
+        } else {
+            // FON font - use glyph cache
+            const Image& glyph = font.GetGlyph(Char(ch));
+            int glyphW = static_cast<int>(glyph.Width());
+            int glyphH = static_cast<int>(glyph.Height());
+
+            // Clip to bounds (account for extra pixel if bold)
+            int effectiveW = isBold ? glyphW + 1 : glyphW;
+            if (curX + effectiveW > 0 && curX < boundW && curY + glyphH > 0 && curY < boundH) {
+                // Blit glyph: white pixels become text color
+                for (int gy = 0; gy < glyphH; gy++) {
+                    int destY = curY + gy;
+                    if (destY < 0 || destY >= boundH) continue;
+
+                    for (int gx = 0; gx < glyphW; gx++) {
+                        Color pixel = glyph.GetPixel(gx, gy);
+                        unsigned char glyphAlpha = static_cast<unsigned char>(pixel.A());
+                        if (glyphAlpha > 0) {
+                            // Draw at normal position
+                            int destX = curX + gx;
+                            if (destX >= 0 && destX < boundW) {
+                                int finalX = offsetX + destX;
+                                int finalY = offsetY + destY;
+                                if (finalX >= 0 && finalX < imgWidth && finalY >= 0 && finalY < imgHeight) {
+                                    if (glyphAlpha >= 255) {
+                                        targetImg.SetPixel(finalX, finalY, color);
+                                    } else {
+                                        Color bg = targetImg.GetPixel(finalX, finalY);
+                                        unsigned char invAlpha = 255 - glyphAlpha;
+                                        unsigned char r = static_cast<unsigned char>((static_cast<unsigned char>(color.R()) * glyphAlpha + static_cast<unsigned char>(bg.R()) * invAlpha) / 255);
+                                        unsigned char g = static_cast<unsigned char>((static_cast<unsigned char>(color.G()) * glyphAlpha + static_cast<unsigned char>(bg.G()) * invAlpha) / 255);
+                                        unsigned char b = static_cast<unsigned char>((static_cast<unsigned char>(color.B()) * glyphAlpha + static_cast<unsigned char>(bg.B()) * invAlpha) / 255);
+                                        targetImg.SetPixel(finalX, finalY, Color(r, g, b));
+                                    }
+                                }
+                            }
+                            // For fake bold, draw again at x+1
+                            if (isBold) {
+                                destX = curX + gx + 1;
+                                if (destX >= 0 && destX < boundW) {
+                                    int finalX = offsetX + destX;
+                                    int finalY = offsetY + destY;
+                                    if (finalX >= 0 && finalX < imgWidth && finalY >= 0 && finalY < imgHeight) {
+                                        if (glyphAlpha >= 255) {
+                                            targetImg.SetPixel(finalX, finalY, color);
+                                        } else {
+                                            Color bg = targetImg.GetPixel(finalX, finalY);
+                                            unsigned char invAlpha = 255 - glyphAlpha;
+                                            unsigned char r = static_cast<unsigned char>((static_cast<unsigned char>(color.R()) * glyphAlpha + static_cast<unsigned char>(bg.R()) * invAlpha) / 255);
+                                            unsigned char g = static_cast<unsigned char>((static_cast<unsigned char>(color.G()) * glyphAlpha + static_cast<unsigned char>(bg.G()) * invAlpha) / 255);
+                                            unsigned char b = static_cast<unsigned char>((static_cast<unsigned char>(color.B()) * glyphAlpha + static_cast<unsigned char>(bg.B()) * invAlpha) / 255);
+                                            targetImg.SetPixel(finalX, finalY, Color(r, g, b));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Advance cursor (extra pixel for bold)
+            curX += static_cast<int>(font.GetCharWidth(Char(ch)));
+            if (isBold) curX += 1;
+        }
+    }
+
+    // Mark dirty region
+    if (_buffer == GraphicsBuffer::GetFrameBuffer()) {
+        Drawing::Size textSize = font.MeasureString(text);
+        MarkDirty(offsetX + static_cast<int>(x), offsetY + static_cast<int>(y),
+                  static_cast<int>(textSize.width), static_cast<int>(textSize.height));
+    }
+}
+
+void Graphics::DrawString(const String& text, const Font& font, const Color& color,
+                          const Rectangle& rect, StringAlignment hAlign, StringAlignment vAlign) {
+    if (!font.IsValid()) return;
+
+    Drawing::Size textSize = font.MeasureString(text);
+    int textW = static_cast<int>(textSize.width);
+    int textH = static_cast<int>(textSize.height);
+    int rectX = static_cast<int>(rect.x);
+    int rectY = static_cast<int>(rect.y);
+    int rectW = static_cast<int>(rect.width);
+    int rectH = static_cast<int>(rect.height);
+
+    // Calculate X position based on horizontal alignment
+    int x = rectX;
+    switch (hAlign) {
+        case StringAlignment::Near:
+            x = rectX;
+            break;
+        case StringAlignment::Center:
+            x = rectX + (rectW - textW) / 2;
+            break;
+        case StringAlignment::Far:
+            x = rectX + rectW - textW;
+            break;
+    }
+
+    // Calculate Y position based on vertical alignment
+    int y = rectY;
+    switch (vAlign) {
+        case StringAlignment::Near:
+            y = rectY;
+            break;
+        case StringAlignment::Center:
+            y = rectY + (rectH - textH) / 2;
+            break;
+        case StringAlignment::Far:
+            y = rectY + rectH - textH;
+            break;
+    }
+
+    DrawString(text, font, color, Int32(x), Int32(y));
+}
+
+Drawing::Size Graphics::MeasureString(const String& text, const Font& font) const {
+    return font.MeasureString(text);
+}
+
+Drawing::Size Graphics::MeasureString(const char* text, const Font& font) const {
+    return font.MeasureString(text);
 }
 
 }} // namespace System::Drawing

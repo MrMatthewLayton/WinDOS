@@ -293,9 +293,9 @@ void TestConsoleBasic() {
 void TestColor() {
     Test::PrintHeader("Color");
     Color c1;
-    ASSERT_EQ(0, static_cast<int>(c1.Value()), "Default is black");
-    ASSERT_EQ(0x0F, static_cast<int>(Color::White.Value()), "White is 0x0F");
-    ASSERT_EQ(0xFF, static_cast<int>(Color::Transparent.Value()), "Transparent is 0xFF");
+    ASSERT_EQ(0xFF000000u, static_cast<unsigned int>(c1.ToArgb()), "Default is opaque black");
+    ASSERT_EQ(0xFFFFFFFFu, static_cast<unsigned int>(Color::White.ToArgb()), "White is 0xFFFFFFFF");
+    ASSERT_EQ(0x00000000u, static_cast<unsigned int>(Color::Transparent.ToArgb()), "Transparent is 0x00000000");
     ASSERT(Color::Red == Color::Red, "Equality");
     ASSERT(Color::Red != Color::Blue, "Inequality");
     Test::PrintSummary();
@@ -354,11 +354,11 @@ void TestImage() {
     Image img2(10, 20, Color::Blue);
     ASSERT_EQ(10, img2.Width(), "Constructor width");
     ASSERT_EQ(200, img2.Length(), "Length");
-    ASSERT_EQ(static_cast<int>(Color::Blue.Value()), static_cast<int>(img2.GetPixel(0, 0)), "Fill color");
+    ASSERT(Color::Blue == img2.GetPixel(0, 0), "Fill color");
     img2.SetPixel(5, 5, Color::Red);
-    ASSERT_EQ(static_cast<int>(Color::Red.Value()), static_cast<int>(img2.GetPixel(5, 5)), "SetPixel");
+    ASSERT(Color::Red == img2.GetPixel(5, 5), "SetPixel");
     img2.Clear(Color::Green);
-    ASSERT_EQ(static_cast<int>(Color::Green.Value()), static_cast<int>(img2.GetPixel(5, 5)), "Clear");
+    ASSERT(Color::Green == img2.GetPixel(5, 5), "Clear");
     Image region = img2.GetRegion(2, 2, 5, 5);
     ASSERT_EQ(5, region.Width(), "Region width");
     Test::PrintSummary();

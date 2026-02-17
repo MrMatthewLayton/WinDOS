@@ -4,6 +4,7 @@
 #include "../../Drawing/Drawing.hpp"
 #include "../../Devices/Devices.hpp"
 #include "../../Array.hpp"
+#include "../../String.hpp"
 
 namespace System { namespace Windows { namespace Forms {
 
@@ -571,6 +572,8 @@ private:
     static const int TITLE_BAR_HEIGHT = 20;  // Internal constant - stays primitive
     static const int FRAME_WIDTH = 3;
     bool _isFocused;
+    String _title;             // Window title
+    Font _font;                // Font for title rendering
 
 protected:
     virtual void UpdateClientBounds() override;
@@ -578,6 +581,15 @@ protected:
 public:
     Window(Control* parent, const Rectangle& bounds);
     virtual ~Window();
+
+    // Title property
+    const String& Title() const { return _title; }
+    void SetTitle(const String& title) { _title = title; Invalidate(); }
+    void SetTitle(const char* title) { _title = String(title); Invalidate(); }
+
+    // Font property
+    const Font& GetFont() const { return _font; }
+    void SetFont(const Font& font) { _font = font; Invalidate(); }
 
     Boolean IsFocused() const { return Boolean(_isFocused); }
     void SetFocused(Boolean focused) { _isFocused = static_cast<bool>(focused); }
@@ -646,10 +658,21 @@ private:
     bool _wasMouseDown;        // For click detection
     ClickEventHandler _onClick;
     void* _onClickUserData;
+    String _text;              // Button text
+    Font _font;                // Font for text rendering
 
 public:
     Button(Control* parent, const Rectangle& bounds);
     virtual ~Button();
+
+    // Text property
+    const String& Text() const { return _text; }
+    void SetText(const String& text) { _text = text; Invalidate(); }
+    void SetText(const char* text) { _text = String(text); Invalidate(); }
+
+    // Font property
+    const Font& GetFont() const { return _font; }
+    void SetFont(const Font& font) { _font = font; Invalidate(); }
 
     // Visual pressed state is toggled OR mouse down
     Boolean IsPressed() const { return Boolean(_isToggled || _isMouseDown); }

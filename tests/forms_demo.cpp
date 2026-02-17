@@ -61,20 +61,26 @@ int main() {
     // Create desktop with cyan background
     Desktop desktop(Color::Cyan);
 
+    // Determine icon library path (try C: drive first for combo boot, then current dir)
+    const char* iconLibPath = "C:\\SYSICONS.ICL";
+    if (!IO::File::Exists(iconLibPath)) {
+        iconLibPath = SystemIcons::LibraryPath;  // Fall back to current directory
+    }
+
     // Load cursor from icon library
     try {
-        desktop.LoadCursorFromLibrary(SystemIcons::LibraryPath, SystemIcons::CursorPointer);
+        desktop.LoadCursorFromLibrary(iconLibPath, SystemIcons::CursorPointer);
     } catch (...) {
         // If cursor loading fails, desktop will use fallback cursor
     }
 
     // Add desktop icons (32x32 icons from sysicons.icl)
     try {
-        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::Computer);      // My Computer
-        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::BinEmpty);      // Recycle Bin
-        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::FolderLibrary); // Library
-        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::DriveHdd);      // Hard Drive
-        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::StoreCdrom);    // CD-ROM
+        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::Computer);      // My Computer
+        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::BinEmpty);      // Recycle Bin
+        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::FolderLibrary); // Library
+        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::DriveHdd);      // Hard Drive
+        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::StoreCdrom);    // CD-ROM
     } catch (...) {
         // If icon loading fails, continue without icons
     }
@@ -89,10 +95,45 @@ int main() {
     desktop.SetTaskBar(taskBar);
     taskBar->SetDesktop(&desktop);
 
+    // Load TTF font for window titles
+    Font titleFont = Font::SystemFontBold();  // Default fallback
+    const char* fontStatus = "FON";
+
+    // Try Tahoma Bold first (check C: drive first for combo boot, then current dir)
+    const char* fontPath = nullptr;
+    if (IO::File::Exists("C:\\TAHOMABD.TTF")) {
+        fontPath = "C:\\TAHOMABD.TTF";
+    } else if (IO::File::Exists("TAHOMABD.TTF")) {
+        fontPath = "TAHOMABD.TTF";
+    } else if (IO::File::Exists("C:\\TAHOMA.TTF")) {
+        fontPath = "C:\\TAHOMA.TTF";
+    } else if (IO::File::Exists("TAHOMA.TTF")) {
+        fontPath = "TAHOMA.TTF";
+    }
+
+    if (fontPath) {
+        try {
+            titleFont = Font::FromTrueType(fontPath, 12);  // 12pt like Windows
+            fontStatus = "TTF";
+        } catch (...) {
+            fontStatus = "ERR";
+        }
+    } else {
+        fontStatus = "FON";
+    }
+
     // Create windows - these are floating (participatesInLayout = false)
     // so they can be freely positioned and dragged
     Window* window1 = new Window(&desktop, Rectangle(80, 60, 320, 240));
+    // Title shows: TTF (success), FON (fallback), ERR (parse error), 404 (not found)
+    String title1 = String(fontStatus) + String(": Spectrum");
+    window1->SetTitle(title1);
+    window1->SetFont(titleFont);
+
     Window* window2 = new Window(&desktop, Rectangle(450, 120, 280, 200));
+    String title2 = String(fontStatus) + String(": Window 2");
+    window2->SetTitle(title2);
+    window2->SetFont(titleFont);
 
     // Window 1: Use column layout for spectrum controls
     window1->Layout().SetDirection(FlexDirection::Row)
@@ -120,17 +161,19 @@ int main() {
     // Perform layout on window1 to arrange spectrum controls
     window1->PerformLayout();
 
-    // Window 2: Display a test bitmap
-    // Load test bitmap and add Picture to window2's client area
-    Image testBitmap = Image::FromBitmap("test.bmp");
-
-    // Picture fills the window's client area using layout
-    window2->Layout().SetDirection(FlexDirection::Column)
+    // Window 2: More spectrum controls (cyan and magenta)
+    window2->Layout().SetDirection(FlexDirection::Row)
+                     .SetJustifyContent(JustifyContent::SpaceAround)
                      .SetAlignItems(AlignItems::Stretch)
-                     .SetPadding(5);
+                     .SetPadding(10);
 
-    Picture* picture = new Picture(window2, Rectangle(0, 0, 100, 100), testBitmap);
-    picture->Layout().SetFlexGrow(1);  // Fill available space
+    SpectrumControl* spectrum5 = new SpectrumControl(window2,
+        Rectangle(0, 0, 60, 100), Color32::Cyan);
+    spectrum5->Layout().SetFlexGrow(1).SetMargin(5);
+
+    SpectrumControl* spectrum6 = new SpectrumControl(window2,
+        Rectangle(0, 0, 60, 100), Color32::Magenta);
+    spectrum6->Layout().SetFlexGrow(1).SetMargin(5);
 
     // Perform layout on window2
     window2->PerformLayout();
@@ -140,7 +183,8 @@ int main() {
     (void)spectrum2;
     (void)spectrum3;
     (void)spectrum4;
-    (void)picture;
+    (void)spectrum5;
+    (void)spectrum6;
 
     // Run the event loop (ESC to exit)
     // - Click Start button to open/close start menu

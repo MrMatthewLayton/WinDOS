@@ -32,7 +32,8 @@ SYSTEM_SRCS = \
     $(SRC_DIR)/System/IO/IO.cpp \
     $(SRC_DIR)/System/Drawing/Drawing.cpp \
     $(SRC_DIR)/System/Devices/Devices.cpp \
-    $(SRC_DIR)/System/Windows/Forms/Forms.cpp
+    $(SRC_DIR)/System/Windows/Forms/Forms.cpp \
+    $(SRC_DIR)/ThirdParty/stb_truetype_impl.cpp
 
 BCL_SRCS = $(PLATFORM_SRCS) $(SYSTEM_SRCS)
 
@@ -78,6 +79,7 @@ directories:
 	@mkdir -p $(OBJ_DIR)/System/Drawing
 	@mkdir -p $(OBJ_DIR)/System/Devices
 	@mkdir -p $(OBJ_DIR)/System/Windows/Forms
+	@mkdir -p $(OBJ_DIR)/ThirdParty
 	@mkdir -p $(LIB_DIR)
 	@mkdir -p $(BIN_DIR)
 
@@ -113,6 +115,11 @@ $(OBJ_DIR)/System/Devices/%.o: $(SRC_DIR)/System/Devices/%.cpp
 
 # Compile System/Windows/Forms source files
 $(OBJ_DIR)/System/Windows/Forms/%.o: $(SRC_DIR)/System/Windows/Forms/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Compile ThirdParty source files
+$(OBJ_DIR)/ThirdParty/%.o: $(SRC_DIR)/ThirdParty/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 

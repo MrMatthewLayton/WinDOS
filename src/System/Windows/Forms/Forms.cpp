@@ -1,4 +1,5 @@
 #include "Forms.hpp"
+#include "../../Drawing/Drawing.hpp"
 
 namespace System { namespace Windows { namespace Forms {
 
@@ -1371,9 +1372,23 @@ void Desktop::Stop() {
 /*    Window Implementation                                                   */
 /******************************************************************************/
 
+// Helper function to load window title font
+// Tries TTF first, falls back to FON (MS Sans Serif Bold)
+static Font LoadWindowFont() {
+    try {
+        // Try ProggyClean TTF at 13 pixels
+        return Font::FromTrueType("PROGGY.TTF", 13, FontStyle::Bold);
+    } catch (...) {
+        // Fall back to MS Sans Serif Bold
+        return Font::SystemFontBold();
+    }
+}
+
 Window::Window(Control* parent, const Rectangle& bounds)
     : Control(parent, bounds)
-    , _isFocused(false) {
+    , _isFocused(false)
+    , _title()
+    , _font(LoadWindowFont()) {
     // Must call UpdateClientBounds again because virtual dispatch doesn't work
     // from base class constructor (Control called Control::UpdateClientBounds)
     UpdateClientBounds();
@@ -1422,6 +1437,13 @@ void Window::OnPaint(PaintEventArgs& e) {
     Rectangle titleBar(sx + 2, sy + 2, sw - 4, TITLE_BAR_HEIGHT);
     Color titleColor = _isFocused ? Color::DarkBlue : Color::DarkGray;
     e.graphics->FillRectangle(titleBar, titleColor);
+
+    // Draw title text (white, centered vertically, left-aligned with padding)
+    if (_title.Length() > 0 && _font.IsValid()) {
+        int textX = sx + 6;  // Left padding
+        int textY = sy + 2 + (TITLE_BAR_HEIGHT - static_cast<int>(_font.Height())) / 2;
+        e.graphics->DrawString(_title, _font, Color::White, Int32(textX), Int32(textY));
+    }
 
     // Draw client area with sunken border effect
     Rectangle clientFrame(sx + 2, sy + TITLE_BAR_HEIGHT + 2, sw - 4, sh - TITLE_BAR_HEIGHT - 4);
@@ -1477,6 +1499,7 @@ TaskBar::TaskBar(Control* parent, StartMenu* startMenu)
 
     // Create Start button (positioned relative to taskbar, not screen)
     _startButton = new Button(this, Rectangle(4, 4, 54, 20));
+    _startButton->SetText("Start");
     _startButton->SetOnClick(OnStartButtonClick, this);
 
     // Start button has fixed size
@@ -1595,7 +1618,9 @@ Button::Button(Control* parent, const Rectangle& bounds)
     , _isMouseDown(false)
     , _wasMouseDown(false)
     , _onClick(nullptr)
-    , _onClickUserData(nullptr) {
+    , _onClickUserData(nullptr)
+    , _text()
+    , _font(Font::SystemFont()) {
 }
 
 Button::~Button() {
@@ -1608,6 +1633,10 @@ void Button::SetOnClick(ClickEventHandler handler, void* userData) {
 
 void Button::OnPaint(PaintEventArgs& e) {
     Rectangle screen = ScreenBounds();
+    int sx = static_cast<int>(screen.x);
+    int sy = static_cast<int>(screen.y);
+    int sw = static_cast<int>(screen.width);
+    int sh = static_cast<int>(screen.height);
 
     // Draw with appropriate border style based on pressed state
     // Visual state is toggled OR mouse down
@@ -1616,6 +1645,21 @@ void Button::OnPaint(PaintEventArgs& e) {
         e.graphics->FillRectangle(screen, BorderStyle::SunkenDouble);
     } else {
         e.graphics->FillRectangle(screen, BorderStyle::RaisedDouble);
+    }
+
+    // Draw button text (centered)
+    if (_text.Length() > 0 && _font.IsValid()) {
+        Drawing::Size textSize = _font.MeasureString(_text);
+        int textW = static_cast<int>(textSize.width);
+        int textH = static_cast<int>(textSize.height);
+        int textX = sx + (sw - textW) / 2;
+        int textY = sy + (sh - textH) / 2;
+        // Offset by 1 pixel when pressed for 3D effect
+        if (visualPressed) {
+            textX++;
+            textY++;
+        }
+        e.graphics->DrawString(_text, _font, Color::Black, Int32(textX), Int32(textY));
     }
 
     // Paint children
@@ -1891,6 +1935,22 @@ void TaskBarButton::OnPaint(PaintEventArgs& e) {
     } else {
         // Normal state: use standard raised button style
         e.graphics->FillRectangle(screen, BorderStyle::RaisedDouble);
+    }
+
+    // Draw window title text (left-aligned with padding, vertically centered)
+    if (_window) {
+        const String& title = _window->Title();
+        const Font& font = _window->GetFont();
+        if (title.Length() > 0 && font.IsValid()) {
+            int textX = x + 4;  // Left padding
+            int textY = y + (h - static_cast<int>(font.Height())) / 2;
+            // Offset by 1 pixel when pressed for 3D effect
+            if (visualPressed) {
+                textX++;
+                textY++;
+            }
+            e.graphics->DrawString(title, font, Color::Black, Int32(textX), Int32(textY));
+        }
     }
 
     // Paint children

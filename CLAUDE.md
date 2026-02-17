@@ -739,6 +739,69 @@ desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::Computer);
 
 ---
 
+## TrueType Font Support (Complete)
+
+### Overview
+
+TrueType font (TTF) rendering using the stb_truetype single-header library. Supports loading TTF files and rendering text with configurable anti-aliasing.
+
+### What Was Implemented
+
+#### Font Class Extensions (`src/System/Drawing/Drawing.hpp/.cpp`)
+- `Font::FromTrueType(path, pixelHeight, style)` - Load TTF font at specified size
+- `Font::IsTrueType()` - Check if font is TTF or bitmap FON
+- `Font::GetTTFInfo()` / `Font::GetTTFScale()` - Internal TTF rendering data
+
+#### Direct TTF Rendering in DrawString
+- Renders TTF glyphs directly without caching for correct positioning
+- Uses `stbtt_GetCodepointHMetrics` for advance width and left side bearing
+- Uses `stbtt_MakeCodepointBitmap` for glyph rasterization
+- Sharp threshold rendering (gray > 128) for crisp text without blur
+
+#### Third-Party Library
+- `src/ThirdParty/stb_truetype.h` - Sean Barrett's public domain TTF rasterizer
+- `src/ThirdParty/stb_truetype_impl.cpp` - Implementation file
+
+### Key Technical Decisions
+
+1. **Direct rendering vs glyph caching**: TTF glyphs are rendered directly in DrawString rather than pre-cached, because TTF positioning (left side bearing, baseline) requires rendering at the correct position.
+
+2. **Sharp threshold vs anti-aliasing**: Using `gray > 128` threshold instead of alpha blending. Full anti-aliasing causes characters to blur together at small sizes. Sharp threshold gives crisp, bitmap-like edges.
+
+3. **Font copy constructor**: Must re-initialize `stbtt_fontinfo` after copying bitmap data, as it contains internal pointers.
+
+### Font Files
+
+| File | Type | Notes |
+|------|------|-------|
+| TAHOMA.TTF | Sans Serif | Windows UI font, good screen legibility |
+| TAHOMABD.TTF | Sans Serif Bold | Recommended for window titles |
+| ROBOTO.TTF | Sans Serif | Google font, modern look |
+
+### Usage Example
+
+```cpp
+// Load TrueType font
+Font titleFont = Font::FromTrueType("C:\\TAHOMABD.TTF", 12);
+
+// Use for window titles
+window->SetFont(titleFont);
+
+// Or draw directly
+Graphics g(buffer);
+g.DrawString("Hello World", titleFont, Color::White, 10, 10);
+```
+
+### QEMU Boot Configuration
+
+For demos requiring large TTF files, use floppy boot with HDD data:
+- **Floppy (A:)**: FreeDOS kernel, CWSDPMI, CTMOUSE
+- **HDD (C:)**: Demo executable, TTF fonts, assets
+
+See `qemu/scripts/run-gui-combo.sh` for the setup.
+
+---
+
 ## See Also
 
 - `WinDOS.md` - Full API documentation (MSDN-style)

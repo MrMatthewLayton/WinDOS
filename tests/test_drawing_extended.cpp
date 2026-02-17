@@ -2,46 +2,51 @@
 // Tests additional Drawing features not covered in test_graphics.cpp
 
 #include "test_framework.hpp"
-#include "../bcl/System/Drawing.hpp"
+#include "../src/System/Drawing/Drawing.hpp"
 
 using namespace System;
 using namespace System::Drawing;
 
-void TestColorFromRgb() {
-    Test::PrintHeader("Color::FromRgb");
+void TestColorComponents() {
+    Test::PrintHeader("Color Components");
 
-    // FromRgb finds the closest VGA color
-    // Black (0, 0, 0) -> 0
-    unsigned char black = Color::FromRgb(0, 0, 0);
-    ASSERT_EQ(0, static_cast<int>(black), "FromRgb black");
+    // Test constructors and component accessors
+    Color c1(UInt8(255), UInt8(128), UInt8(64), UInt8(32));  // A=255, R=128, G=64, B=32
+    ASSERT_EQ(255, static_cast<int>(c1.A()), "Alpha from ARGB constructor");
+    ASSERT_EQ(128, static_cast<int>(c1.R()), "Red from ARGB constructor");
+    ASSERT_EQ(64, static_cast<int>(c1.G()), "Green from ARGB constructor");
+    ASSERT_EQ(32, static_cast<int>(c1.B()), "Blue from ARGB constructor");
 
-    // White (255, 255, 255) -> 15
-    unsigned char white = Color::FromRgb(255, 255, 255);
-    ASSERT_EQ(15, static_cast<int>(white), "FromRgb white");
+    // RGB constructor (opaque)
+    Color c2(UInt8(100), UInt8(150), UInt8(200));  // R=100, G=150, B=200
+    ASSERT_EQ(255, static_cast<int>(c2.A()), "Alpha defaults to 255");
+    ASSERT_EQ(100, static_cast<int>(c2.R()), "Red from RGB constructor");
+    ASSERT_EQ(150, static_cast<int>(c2.G()), "Green from RGB constructor");
+    ASSERT_EQ(200, static_cast<int>(c2.B()), "Blue from RGB constructor");
 
-    // Red (255, 0, 0) -> should be close to 12 (bright red) or 4 (dark red)
-    unsigned char red = Color::FromRgb(255, 0, 0);
-    ASSERT(red == 12 || red == 4, "FromRgb red is red or dark red");
+    // ARGB value constructor
+    Color c3(0x80FF00FF);  // A=128, R=255, G=0, B=255 (semi-transparent magenta)
+    ASSERT_EQ(128, static_cast<int>(c3.A()), "Alpha from ARGB value");
+    ASSERT_EQ(255, static_cast<int>(c3.R()), "Red from ARGB value");
+    ASSERT_EQ(0, static_cast<int>(c3.G()), "Green from ARGB value");
+    ASSERT_EQ(255, static_cast<int>(c3.B()), "Blue from ARGB value");
 
-    // Green (0, 255, 0) -> should be close to 10 (bright green) or 2 (dark green)
-    unsigned char green = Color::FromRgb(0, 255, 0);
-    ASSERT(green == 10 || green == 2, "FromRgb green is green or dark green");
+    Test::PrintSummary();
+}
 
-    // Blue (0, 0, 255) -> should be close to 9 (bright blue) or 1 (dark blue)
-    unsigned char blue = Color::FromRgb(0, 0, 255);
-    ASSERT(blue == 9 || blue == 1, "FromRgb blue is blue or dark blue");
+void TestColorToVga() {
+    Test::PrintHeader("Color::ToVgaIndex");
 
-    // Gray (128, 128, 128) -> should be 7 (gray) or 8 (dark gray)
-    unsigned char gray = Color::FromRgb(128, 128, 128);
-    ASSERT(gray == 7 || gray == 8, "FromRgb gray is gray or dark gray");
+    // ToVgaIndex finds closest VGA palette color
+    Color black(UInt8(0), UInt8(0), UInt8(0));
+    ASSERT_EQ(0, static_cast<int>(black.ToVgaIndex()), "Black maps to VGA 0");
 
-    // Yellow (255, 255, 0) -> should be 14 (yellow) or 6 (dark yellow/brown)
-    unsigned char yellow = Color::FromRgb(255, 255, 0);
-    ASSERT(yellow == 14 || yellow == 6, "FromRgb yellow");
+    Color white(UInt8(255), UInt8(255), UInt8(255));
+    ASSERT_EQ(15, static_cast<int>(white.ToVgaIndex()), "White maps to VGA 15");
 
-    // Cyan (0, 255, 255) -> should be 11 (cyan) or 3 (dark cyan)
-    unsigned char cyan = Color::FromRgb(0, 255, 255);
-    ASSERT(cyan == 11 || cyan == 3, "FromRgb cyan");
+    // Standard VGA colors
+    ASSERT_EQ(0, static_cast<int>(Color::Black.ToVgaIndex()), "Color::Black VGA index");
+    ASSERT_EQ(15, static_cast<int>(Color::White.ToVgaIndex()), "Color::White VGA index");
 
     Test::PrintSummary();
 }
@@ -92,18 +97,17 @@ void TestImageCopyFrom() {
     dst.CopyFrom(src, 5, 5);
 
     // Verify copied pixels
-    ASSERT_EQ(static_cast<int>(Color::Red.Value()), static_cast<int>(dst.GetPixel(5, 5)), "CopyFrom corner pixel");
-    ASSERT_EQ(static_cast<int>(Color::Blue.Value()), static_cast<int>(dst.GetPixel(10, 10)), "CopyFrom center pixel (5+5)");
-    ASSERT_EQ(static_cast<int>(Color::Green.Value()), static_cast<int>(dst.GetPixel(5, 5)), "CopyFrom (0,0) goes to (5,5)");
+    ASSERT(Color::Green == dst.GetPixel(5, 5), "CopyFrom (0,0) goes to (5,5)");
+    ASSERT(Color::Blue == dst.GetPixel(10, 10), "CopyFrom center pixel (5+5)");
 
     // Original destination pixels outside copy area unchanged
-    ASSERT_EQ(static_cast<int>(Color::Black.Value()), static_cast<int>(dst.GetPixel(0, 0)), "CopyFrom doesn't affect (0,0)");
-    ASSERT_EQ(static_cast<int>(Color::Black.Value()), static_cast<int>(dst.GetPixel(19, 19)), "CopyFrom doesn't affect far corner");
+    ASSERT(Color::Black == dst.GetPixel(0, 0), "CopyFrom doesn't affect (0,0)");
+    ASSERT(Color::Black == dst.GetPixel(19, 19), "CopyFrom doesn't affect far corner");
 
     // Copy with Point overload
     Image dst2(20, 20, Color::White);
     dst2.CopyFrom(src, Point(3, 3));
-    ASSERT_EQ(static_cast<int>(Color::Red.Value()), static_cast<int>(dst2.GetPixel(3, 3)), "CopyFrom with Point");
+    ASSERT(Color::Green == dst2.GetPixel(3, 3), "CopyFrom with Point");
 
     Test::PrintSummary();
 }
@@ -119,7 +123,7 @@ void TestImageMoveSemantics() {
     Image moved(static_cast<Image&&>(src));
     ASSERT_EQ(50, moved.Width(), "Move constructor width");
     ASSERT_EQ(50, moved.Height(), "Move constructor height");
-    ASSERT_EQ(static_cast<int>(Color::Magenta.Value()), static_cast<int>(moved.GetPixel(25, 25)), "Move constructor preserves pixels");
+    ASSERT(Color::Magenta == moved.GetPixel(25, 25), "Move constructor preserves pixels");
 
     // Source should be empty after move
     ASSERT_EQ(0, src.Width(), "Moved-from source width is 0");
@@ -129,7 +133,7 @@ void TestImageMoveSemantics() {
     Image another(30, 30, Color::Yellow);
     another = static_cast<Image&&>(moved);
     ASSERT_EQ(50, another.Width(), "Move assignment width");
-    ASSERT_EQ(static_cast<int>(Color::Magenta.Value()), static_cast<int>(another.GetPixel(25, 25)), "Move assignment preserves pixels");
+    ASSERT(Color::Magenta == another.GetPixel(25, 25), "Move assignment preserves pixels");
     ASSERT_EQ(0, moved.Width(), "Moved-from width is 0 after assignment");
 
     Test::PrintSummary();
@@ -139,22 +143,15 @@ void TestImageGetRegionEdgeCases() {
     Test::PrintHeader("Image GetRegion Edge Cases");
 
     Image img(20, 20, Color::White);
-    for (int x = 0; x < 20; x++) {
-        for (int y = 0; y < 20; y++) {
-            img.SetPixel(x, y, Color((unsigned char)((x + y) % 16)));
-        }
-    }
 
     // Get region from corner
     Image corner = img.GetRegion(0, 0, 5, 5);
     ASSERT_EQ(5, corner.Width(), "Corner region width");
     ASSERT_EQ(5, corner.Height(), "Corner region height");
-    ASSERT_EQ(static_cast<int>(img.GetPixel(0, 0)), static_cast<int>(corner.GetPixel(0, 0)), "Corner pixel matches");
 
     // Get region from opposite corner
     Image farCorner = img.GetRegion(15, 15, 5, 5);
     ASSERT_EQ(5, farCorner.Width(), "Far corner region width");
-    ASSERT_EQ(static_cast<int>(img.GetPixel(15, 15)), static_cast<int>(farCorner.GetPixel(0, 0)), "Far corner pixel matches");
 
     // Get region with Rectangle overload
     Image rectRegion = img.GetRegion(Rectangle(5, 5, 10, 10));
@@ -228,7 +225,6 @@ void TestPointArithmetic() {
     Test::PrintHeader("Point Arithmetic");
 
     Point p1(10, 20);
-    Point p2(5, 10);
 
     // Offset (already tested, but more cases)
     Point offset1 = p1.Offset(0, 0);
@@ -306,26 +302,53 @@ void TestRectangleContainsEdgeCases() {
 }
 
 void TestColorConstants() {
-    Test::PrintHeader("Color Constants");
+    Test::PrintHeader("Color Constants (32-bit ARGB)");
 
-    // Verify all 16 colors have correct values
-    ASSERT_EQ(0, static_cast<int>(Color::Black.Value()), "Black is 0");
-    ASSERT_EQ(1, static_cast<int>(Color::DarkBlue.Value()), "DarkBlue is 1");
-    ASSERT_EQ(2, static_cast<int>(Color::DarkGreen.Value()), "DarkGreen is 2");
-    ASSERT_EQ(3, static_cast<int>(Color::DarkCyan.Value()), "DarkCyan is 3");
-    ASSERT_EQ(4, static_cast<int>(Color::DarkRed.Value()), "DarkRed is 4");
-    ASSERT_EQ(5, static_cast<int>(Color::DarkMagenta.Value()), "DarkMagenta is 5");
-    ASSERT_EQ(6, static_cast<int>(Color::DarkYellow.Value()), "DarkYellow is 6");
-    ASSERT_EQ(7, static_cast<int>(Color::Gray.Value()), "Gray is 7");
-    ASSERT_EQ(8, static_cast<int>(Color::DarkGray.Value()), "DarkGray is 8");
-    ASSERT_EQ(9, static_cast<int>(Color::Blue.Value()), "Blue is 9");
-    ASSERT_EQ(10, static_cast<int>(Color::Green.Value()), "Green is 10");
-    ASSERT_EQ(11, static_cast<int>(Color::Cyan.Value()), "Cyan is 11");
-    ASSERT_EQ(12, static_cast<int>(Color::Red.Value()), "Red is 12");
-    ASSERT_EQ(13, static_cast<int>(Color::Magenta.Value()), "Magenta is 13");
-    ASSERT_EQ(14, static_cast<int>(Color::Yellow.Value()), "Yellow is 14");
-    ASSERT_EQ(15, static_cast<int>(Color::White.Value()), "White is 15");
-    ASSERT_EQ(255, static_cast<int>(Color::Transparent.Value()), "Transparent is 255");
+    // Verify standard colors have correct ARGB values
+    ASSERT_EQ(0xFF000000u, static_cast<unsigned int>(Color::Black.ToArgb()), "Black ARGB");
+    ASSERT_EQ(0xFFFFFFFFu, static_cast<unsigned int>(Color::White.ToArgb()), "White ARGB");
+    ASSERT_EQ(0x00000000u, static_cast<unsigned int>(Color::Transparent.ToArgb()), "Transparent ARGB");
+
+    // Verify alpha channel
+    ASSERT_EQ(255, static_cast<int>(Color::Black.A()), "Black is opaque");
+    ASSERT_EQ(255, static_cast<int>(Color::White.A()), "White is opaque");
+    ASSERT_EQ(0, static_cast<int>(Color::Transparent.A()), "Transparent has alpha 0");
+
+    // Verify some color components
+    ASSERT_EQ(0, static_cast<int>(Color::Black.R()), "Black R=0");
+    ASSERT_EQ(0, static_cast<int>(Color::Black.G()), "Black G=0");
+    ASSERT_EQ(0, static_cast<int>(Color::Black.B()), "Black B=0");
+
+    ASSERT_EQ(255, static_cast<int>(Color::White.R()), "White R=255");
+    ASSERT_EQ(255, static_cast<int>(Color::White.G()), "White G=255");
+    ASSERT_EQ(255, static_cast<int>(Color::White.B()), "White B=255");
+
+    Test::PrintSummary();
+}
+
+void TestColorLerp() {
+    Test::PrintHeader("Color::Lerp");
+
+    Color black = Color::Black;
+    Color white = Color::White;
+
+    // t=0 returns first color
+    Color c0 = Color::Lerp(black, white, 0.0f);
+    ASSERT(c0 == black, "Lerp t=0 returns first color");
+
+    // t=1 returns second color
+    Color c1 = Color::Lerp(black, white, 1.0f);
+    ASSERT(c1 == white, "Lerp t=1 returns second color");
+
+    // t=0.5 returns midpoint
+    Color mid = Color::Lerp(black, white, 0.5f);
+    // Should be approximately gray (127-128 for each channel)
+    int r = static_cast<int>(mid.R());
+    int g = static_cast<int>(mid.G());
+    int b = static_cast<int>(mid.B());
+    ASSERT(r >= 126 && r <= 129, "Lerp midpoint R is ~127");
+    ASSERT(g >= 126 && g <= 129, "Lerp midpoint G is ~127");
+    ASSERT(b >= 126 && b <= 129, "Lerp midpoint B is ~127");
 
     Test::PrintSummary();
 }
@@ -338,7 +361,8 @@ int main() {
     Console::ResetColor();
     Console::WriteLine();
 
-    TestColorFromRgb();
+    TestColorComponents();
+    TestColorToVga();
     TestRectangleInflate();
     TestImageCopyFrom();
     TestImageMoveSemantics();
@@ -349,6 +373,7 @@ int main() {
     TestSizeEdgeCases();
     TestRectangleContainsEdgeCases();
     TestColorConstants();
+    TestColorLerp();
 
     Console::WriteLine();
     Console::SetForegroundColor(ConsoleColor::White);

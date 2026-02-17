@@ -13,13 +13,13 @@ void TestColor() {
     Test::PrintHeader("Color");
 
     Color c1;
-    ASSERT_EQ(0, static_cast<int>(c1.Value()), "Default color is black (0)");
+    ASSERT_EQ(0xFF000000u, static_cast<unsigned int>(c1.ToArgb()), "Default color is opaque black");
 
-    Color c2(5);
-    ASSERT_EQ(5, static_cast<int>(c2.Value()), "Color from value");
+    Color c2(0xFF00FF00);  // Opaque green
+    ASSERT_EQ(0xFF00FF00u, static_cast<unsigned int>(c2.ToArgb()), "Color from ARGB value");
 
     Color c3 = Color::Cyan;
-    ASSERT_EQ(0x0B, static_cast<int>(c3.Value()), "Color::Cyan is 0x0B");
+    ASSERT_EQ(0xFF55FFFFu, static_cast<unsigned int>(c3.ToArgb()), "Color::Cyan ARGB value");
 
     Color c4 = c3;
     ASSERT(c4 == c3, "Color copy constructor");
@@ -27,8 +27,15 @@ void TestColor() {
     ASSERT(Color::Black != Color::White, "Black != White");
     ASSERT(Color::Red == Color::Red, "Red == Red");
 
-    ASSERT_EQ(0x0F, static_cast<int>(Color::White.Value()), "Color::White is 0x0F");
-    ASSERT_EQ(0xFF, static_cast<int>(Color::Transparent.Value()), "Color::Transparent is 0xFF");
+    ASSERT_EQ(0xFFFFFFFFu, static_cast<unsigned int>(Color::White.ToArgb()), "Color::White is 0xFFFFFFFF");
+    ASSERT_EQ(0x00000000u, static_cast<unsigned int>(Color::Transparent.ToArgb()), "Color::Transparent is 0x00000000");
+
+    // Test component accessors
+    Color c5(UInt8(128), UInt8(64), UInt8(32), UInt8(16));  // A=128, R=64, G=32, B=16
+    ASSERT_EQ(128, static_cast<int>(c5.A()), "Alpha component");
+    ASSERT_EQ(64, static_cast<int>(c5.R()), "Red component");
+    ASSERT_EQ(32, static_cast<int>(c5.G()), "Green component");
+    ASSERT_EQ(16, static_cast<int>(c5.B()), "Blue component");
 
     Test::PrintSummary();
 }
@@ -126,23 +133,23 @@ void TestImage() {
     ASSERT_EQ(10, img2.Width(), "Image width from constructor");
     ASSERT_EQ(20, img2.Height(), "Image height from constructor");
     ASSERT_EQ(200, img2.Length(), "Image length is width * height");
-    ASSERT_EQ(static_cast<int>(Color::Blue.Value()), static_cast<int>(img2.GetPixel(0, 0)), "Filled with blue");
-    ASSERT_EQ(static_cast<int>(Color::Blue.Value()), static_cast<int>(img2.GetPixel(9, 19)), "Last pixel is blue");
+    ASSERT(Color::Blue == img2.GetPixel(0, 0), "Filled with blue");
+    ASSERT(Color::Blue == img2.GetPixel(9, 19), "Last pixel is blue");
 
     img2.SetPixel(5, 5, Color::Red);
-    ASSERT_EQ(static_cast<int>(Color::Red.Value()), static_cast<int>(img2.GetPixel(5, 5)), "SetPixel works");
+    ASSERT(Color::Red == img2.GetPixel(5, 5), "SetPixel works");
 
     // Out of bounds returns transparent
-    ASSERT_EQ(static_cast<int>(Color::Transparent.Value()), static_cast<int>(img2.GetPixel(-1, 0)), "Out of bounds returns transparent");
-    ASSERT_EQ(static_cast<int>(Color::Transparent.Value()), static_cast<int>(img2.GetPixel(100, 0)), "Out of bounds returns transparent (right)");
+    ASSERT(Color::Transparent == img2.GetPixel(-1, 0), "Out of bounds returns transparent");
+    ASSERT(Color::Transparent == img2.GetPixel(100, 0), "Out of bounds returns transparent (right)");
 
     Image img3 = img2;
     ASSERT_EQ(10, img3.Width(), "Copy constructor width");
-    ASSERT_EQ(static_cast<int>(Color::Red.Value()), static_cast<int>(img3.GetPixel(5, 5)), "Copy constructor copies pixels");
+    ASSERT(Color::Red == img3.GetPixel(5, 5), "Copy constructor copies pixels");
 
     img3.Clear(Color::Green);
-    ASSERT_EQ(static_cast<int>(Color::Green.Value()), static_cast<int>(img3.GetPixel(0, 0)), "Clear sets all pixels");
-    ASSERT_EQ(static_cast<int>(Color::Green.Value()), static_cast<int>(img3.GetPixel(5, 5)), "Clear sets all pixels");
+    ASSERT(Color::Green == img3.GetPixel(0, 0), "Clear sets all pixels");
+    ASSERT(Color::Green == img3.GetPixel(5, 5), "Clear sets all pixels");
 
     // Test GetRegion
     Image img4(20, 20, Color::Yellow);
@@ -151,7 +158,7 @@ void TestImage() {
     Image region = img4.GetRegion(4, 4, 5, 5);
     ASSERT_EQ(5, region.Width(), "Region width");
     ASSERT_EQ(5, region.Height(), "Region height");
-    ASSERT_EQ(static_cast<int>(Color::Red.Value()), static_cast<int>(region.GetPixel(1, 1)), "Region contains copied pixels");
+    ASSERT(Color::Red == region.GetPixel(1, 1), "Region contains copied pixels");
 
     Test::PrintSummary();
 }
@@ -225,9 +232,9 @@ void TestGraphics() {
     GraphicsBuffer* fb = GraphicsBuffer::GetFrameBuffer();
     if (fb) {
         Image& img = fb->GetImage();
-        ASSERT_EQ(static_cast<int>(Color::White.Value()), static_cast<int>(img.GetPixel(50, 50)), "DrawPixel works");
-        ASSERT_EQ(static_cast<int>(Color::Red.Value()), static_cast<int>(img.GetPixel(0, 0)), "DrawLine starts at origin");
-        ASSERT_EQ(static_cast<int>(Color::Blue.Value()), static_cast<int>(img.GetPixel(35, 35)), "FillRectangle fills interior");
+        ASSERT(Color::White == img.GetPixel(50, 50), "DrawPixel works");
+        ASSERT(Color::Red == img.GetPixel(0, 0), "DrawLine starts at origin");
+        ASSERT(Color::Blue == img.GetPixel(35, 35), "FillRectangle fills interior");
     }
 
     GraphicsBuffer::DestroyFrameBuffer();
