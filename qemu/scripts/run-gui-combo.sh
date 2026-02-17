@@ -92,6 +92,13 @@ if [ -f "$PROJECT_DIR/assets/fonts/ttf/tahomabd.ttf" ]; then
     mcopy -i "$HDD" "$PROJECT_DIR/assets/fonts/ttf/tahomabd.ttf" ::TAHOMABD.TTF
 fi
 
+# Copy boot splash image (PNG or JPG)
+if [ -f "$PROJECT_DIR/assets/images/boot.png" ]; then
+    mcopy -i "$HDD" "$PROJECT_DIR/assets/images/boot.png" ::BOOT.PNG
+elif [ -f "$PROJECT_DIR/assets/images/boot.jpg" ]; then
+    mcopy -i "$HDD" "$PROJECT_DIR/assets/images/boot.jpg" ::BOOT.JPG
+fi
+
 echo "Data HDD created:"
 mdir -i "$HDD" ::
 

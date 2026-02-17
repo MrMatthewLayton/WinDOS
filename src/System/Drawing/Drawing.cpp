@@ -3,6 +3,7 @@
 #include "../IO/IO.hpp"
 #include "../../Platform/DOS/Graphics.hpp"
 #include "../../ThirdParty/stb_truetype.h"
+#include "../../ThirdParty/stb_image.h"
 #include <cstdlib>
 #include <cstring>
 #include <go32.h>
@@ -1633,6 +1634,88 @@ Image Image::FromIconLibrary(const char* path, const char* iconName, const Size&
     }
 
     return FromIconLibrary(path, index, size);
+}
+
+/******************************************************************************/
+/*    Image::FromFile - Load image from file (auto-detect format)              */
+/******************************************************************************/
+
+Image Image::FromFile(const char* path) {
+    if (!path || path[0] == '\0') {
+        throw ArgumentNullException("path");
+    }
+
+    if (!IO::File::Exists(path)) {
+        throw System::FileNotFoundException(path);
+    }
+
+    // Check file extension to decide loader
+    const char* ext = path;
+    const char* p = path;
+    while (*p) {
+        if (*p == '.') ext = p;
+        p++;
+    }
+
+    // Use native BMP loader for .bmp files
+    if ((ext[1] == 'b' || ext[1] == 'B') &&
+        (ext[2] == 'm' || ext[2] == 'M') &&
+        (ext[3] == 'p' || ext[3] == 'P') &&
+        ext[4] == '\0') {
+        return FromBitmap(path);
+    }
+
+    // Use stb_image for PNG, JPEG, GIF, TGA, PSD, etc.
+    Array<UInt8> fileData = IO::File::ReadAllBytes(path);
+    int width, height, channels;
+
+    unsigned char* pixels = stbi_load_from_memory(
+        reinterpret_cast<const unsigned char*>(&fileData[0]),
+        fileData.Length(),
+        &width, &height, &channels,
+        4  // Request RGBA output
+    );
+
+    if (!pixels) {
+        throw InvalidDataException("Failed to decode image file.");
+    }
+
+    // Create image and copy pixels
+    Image img = Image(width, height);
+
+    // stb_image returns RGBA, we need ARGB
+    unsigned int* dest = img.Data();
+    for (int i = 0; i < width * height; i++) {
+        unsigned char r = pixels[i * 4 + 0];
+        unsigned char g = pixels[i * 4 + 1];
+        unsigned char b = pixels[i * 4 + 2];
+        unsigned char a = pixels[i * 4 + 3];
+        dest[i] = (static_cast<unsigned int>(a) << 24) |
+                  (static_cast<unsigned int>(r) << 16) |
+                  (static_cast<unsigned int>(g) << 8) |
+                  static_cast<unsigned int>(b);
+    }
+
+    stbi_image_free(pixels);
+    return img;
+}
+
+/******************************************************************************/
+/*    Image::FromPng - Load PNG image from file                                */
+/******************************************************************************/
+
+Image Image::FromPng(const char* path) {
+    // FromFile handles PNG via stb_image
+    return FromFile(path);
+}
+
+/******************************************************************************/
+/*    Image::FromJpeg - Load JPEG image from file                              */
+/******************************************************************************/
+
+Image Image::FromJpeg(const char* path) {
+    // FromFile handles JPEG via stb_image
+    return FromFile(path);
 }
 
 /******************************************************************************/

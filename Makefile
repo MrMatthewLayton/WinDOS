@@ -33,7 +33,8 @@ SYSTEM_SRCS = \
     $(SRC_DIR)/System/Drawing/Drawing.cpp \
     $(SRC_DIR)/System/Devices/Devices.cpp \
     $(SRC_DIR)/System/Windows/Forms/Forms.cpp \
-    $(SRC_DIR)/ThirdParty/stb_truetype_impl.cpp
+    $(SRC_DIR)/ThirdParty/stb_truetype_impl.cpp \
+    $(SRC_DIR)/ThirdParty/stb_image_impl.cpp
 
 BCL_SRCS = $(PLATFORM_SRCS) $(SYSTEM_SRCS)
 

@@ -353,6 +353,16 @@ public:
     // Get the index of a named icon in a PE-based icon library
     // Returns -1 if not found
     static Int32 GetIconLibraryIndex(const char* path, const char* iconName);
+
+    // Load an image from file (auto-detects format: PNG, JPEG, BMP, GIF, TGA, PSD)
+    // Uses stb_image for PNG/JPEG/GIF/TGA/PSD, native loader for BMP
+    static Image FromFile(const char* path);
+
+    // Load PNG image from file
+    static Image FromPng(const char* path);
+
+    // Load JPEG image from file
+    static Image FromJpeg(const char* path);
 };
 
 // Backwards compatibility alias (deprecated - will be removed)

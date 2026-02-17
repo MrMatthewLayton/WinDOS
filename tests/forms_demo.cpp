@@ -58,6 +58,57 @@ int main() {
     // Set mouse bounds to screen
     Mouse::SetBounds(0, 0, screenWidth - 1, screenHeight - 1);
 
+    // Show boot splash screen for 5 seconds
+    const char* bootImagePath = nullptr;
+    if (IO::File::Exists("C:\\BOOT.PNG")) {
+        bootImagePath = "C:\\BOOT.PNG";
+    } else if (IO::File::Exists("BOOT.PNG")) {
+        bootImagePath = "BOOT.PNG";
+    } else if (IO::File::Exists("C:\\BOOT.JPG")) {
+        bootImagePath = "C:\\BOOT.JPG";
+    } else if (IO::File::Exists("BOOT.JPG")) {
+        bootImagePath = "BOOT.JPG";
+    }
+
+    if (bootImagePath) {
+        try {
+            Image bootImage = Image::FromFile(bootImagePath);
+            GraphicsBuffer* fb = GraphicsBuffer::GetFrameBuffer();
+            if (fb) {
+                Image& screen = fb->GetImage();
+
+                // Calculate centering position
+                int imgW = static_cast<int>(bootImage.Width());
+                int imgH = static_cast<int>(bootImage.Height());
+                int destX = (screenWidth - imgW) / 2;
+                int destY = (screenHeight - imgH) / 2;
+
+                // Clear screen to black
+                screen.Clear(Color::Black);
+
+                // Draw boot image centered (or scaled to fit)
+                if (imgW <= screenWidth && imgH <= screenHeight) {
+                    // Image fits - center it
+                    screen.CopyFrom(bootImage, destX, destY);
+                } else {
+                    // Image too large - just draw at 0,0 (could add scaling later)
+                    screen.CopyFrom(bootImage, 0, 0);
+                }
+
+                // Flush to display
+                GraphicsBuffer::FlushFrameBuffer();
+
+                // Wait 5 seconds (5000ms)
+                // Use simple delay loop since we don't have a proper timer
+                for (volatile int delay = 0; delay < 50000000; delay++) {
+                    // Busy wait
+                }
+            }
+        } catch (...) {
+            // If boot image fails to load, just continue to desktop
+        }
+    }
+
     // Create desktop with cyan background
     Desktop desktop(Color::Cyan);
 
