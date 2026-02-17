@@ -38,6 +38,17 @@ private:
     static void StashPalette();
     static void SetPaletteScale(float scale);
 
+    // VBE 3.0 gamma ramp support
+    static const int GAMMA_TABLE_SIZE = 256 * 3;  // 256 entries per R/G/B channel
+    static unsigned char _originalGamma[GAMMA_TABLE_SIZE];
+    static bool _gammaStashed;
+    static bool _gammaSupported;
+    static bool _gammaChecked;
+
+    static bool CheckGammaSupport();
+    static void StashGamma();
+    static void SetGammaScale(float scale);
+
 public:
     Display(const Display& other);
     Display& operator=(const Display& other);
@@ -57,12 +68,13 @@ public:
     static void WaitForVSync();
 
     // Palette fade effects (for smooth transitions)
-    // Works with VGA palette modes; for 32-bit modes, uses framebuffer fade
+    // Priority: VBE 3.0 gamma ramp (hardware) > VGA palette (hardware) > pixel fade (software)
     static void FadeIn(Int32 milliseconds);
     static void FadeOut(Int32 milliseconds);
 
     // VBE support
     static Boolean IsVbeAvailable();
+    static Boolean IsGammaSupported();  // VBE 3.0+ gamma ramp available
     static Display DetectVbeMode(UInt16 width, UInt16 height, UInt8 bpp);
     static void* GetMappedLfb() { return _mappedLfb; }
 

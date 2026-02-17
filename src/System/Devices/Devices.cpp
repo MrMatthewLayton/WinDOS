@@ -23,6 +23,12 @@ void* Display::_mappedLfb = nullptr;
 unsigned char Display::_originalPalette[PALETTE_SIZE][3] = {{0}};
 bool Display::_paletteStashed = false;
 
+// VBE 3.0 gamma ramp support
+unsigned char Display::_originalGamma[GAMMA_TABLE_SIZE] = {0};
+bool Display::_gammaStashed = false;
+bool Display::_gammaSupported = false;
+bool Display::_gammaChecked = false;
+
 // Static VbeSurface for tracking current VBE mode state
 static Platform::DOS::VbeSurface g_vbeSurface = {0, 0, 0, 0, 0, 0, 0, false};
 
@@ -121,14 +127,81 @@ void Display::SetPaletteScale(float scale) {
     }
 }
 
+/******************************************************************************/
+/*    VBE 3.0 Gamma Ramp Functions                                             */
+/******************************************************************************/
+
+bool Display::CheckGammaSupport() {
+    if (_gammaChecked) {
+        return _gammaSupported;
+    }
+    _gammaChecked = true;
+    _gammaSupported = Platform::DOS::Graphics::IsGammaSupported();
+    return _gammaSupported;
+}
+
+Boolean Display::IsGammaSupported() {
+    return Boolean(CheckGammaSupport());
+}
+
+void Display::StashGamma() {
+    if (_gammaStashed) return;
+
+    // Try to get current gamma table
+    if (Platform::DOS::Graphics::GetGammaTable(_originalGamma)) {
+        _gammaStashed = true;
+    } else {
+        // Initialize with identity gamma (no correction)
+        for (int i = 0; i < 256; i++) {
+            _originalGamma[i] = static_cast<unsigned char>(i);         // R
+            _originalGamma[256 + i] = static_cast<unsigned char>(i);   // G
+            _originalGamma[512 + i] = static_cast<unsigned char>(i);   // B
+        }
+        _gammaStashed = true;
+    }
+}
+
+void Display::SetGammaScale(float scale) {
+    unsigned char scaledGamma[GAMMA_TABLE_SIZE];
+
+    // Scale each channel's gamma entries
+    for (int i = 0; i < 256; i++) {
+        scaledGamma[i] = static_cast<unsigned char>(_originalGamma[i] * scale);         // R
+        scaledGamma[256 + i] = static_cast<unsigned char>(_originalGamma[256 + i] * scale);   // G
+        scaledGamma[512 + i] = static_cast<unsigned char>(_originalGamma[512 + i] * scale);   // B
+    }
+
+    Platform::DOS::Graphics::SetGammaTable(scaledGamma);
+}
+
+/******************************************************************************/
+/*    Fade Effects                                                             */
+/******************************************************************************/
+
 void Display::FadeIn(Int32 milliseconds) {
     int ms = static_cast<int>(milliseconds);
     if (ms < FRAME_MS) ms = FRAME_MS;
 
-    // For VBE 32-bit modes, use framebuffer-based fade with fewer steps
-    // (each step is expensive: per-pixel processing + full buffer flush)
+    int steps = ms / FRAME_MS;
+    if (steps < 1) steps = 1;
+
+    // For VBE modes, try hardware gamma ramp first (VBE 3.0)
     if (_current._vbeMode != 0 && _current._bitsPerPixel >= 24) {
-        // Use 8 steps for VBE - smooth enough visually, completes in ~500ms
+        // Try VBE 3.0 gamma ramp (hardware-accelerated, like VGA palette)
+        if (CheckGammaSupport()) {
+            StashGamma();
+
+            // Fade from black to full brightness using gamma ramp
+            for (int step = 0; step <= steps; step++) {
+                float scale = static_cast<float>(step) / steps;
+                SetGammaScale(scale);
+                WaitForVSync();
+            }
+            return;
+        }
+
+        // Fallback: software pixel-based fade (slower)
+        // Use fewer steps since each step is expensive
         const int VBE_FADE_STEPS = 8;
         Drawing::GraphicsBuffer* fb = Drawing::GraphicsBuffer::GetFrameBuffer();
         if (!fb) return;
@@ -169,10 +242,7 @@ void Display::FadeIn(Int32 milliseconds) {
         return;
     }
 
-    // VGA palette-based fade (fast - only 768 bytes to update)
-    int steps = ms / FRAME_MS;
-    if (steps < 1) steps = 1;
-
+    // VGA palette-based fade (hardware-accelerated)
     StashPalette();
 
     // Fade from black to full palette
@@ -187,10 +257,26 @@ void Display::FadeOut(Int32 milliseconds) {
     int ms = static_cast<int>(milliseconds);
     if (ms < FRAME_MS) ms = FRAME_MS;
 
-    // For VBE 32-bit modes, use framebuffer-based fade with fewer steps
-    // (each step is expensive: per-pixel processing + full buffer flush)
+    int steps = ms / FRAME_MS;
+    if (steps < 1) steps = 1;
+
+    // For VBE modes, try hardware gamma ramp first (VBE 3.0)
     if (_current._vbeMode != 0 && _current._bitsPerPixel >= 24) {
-        // Use 8 steps for VBE - smooth enough visually, completes in ~500ms
+        // Try VBE 3.0 gamma ramp (hardware-accelerated, like VGA palette)
+        if (CheckGammaSupport()) {
+            StashGamma();
+
+            // Fade from full brightness to black using gamma ramp
+            for (int step = steps; step >= 0; step--) {
+                float scale = static_cast<float>(step) / steps;
+                SetGammaScale(scale);
+                WaitForVSync();
+            }
+            return;
+        }
+
+        // Fallback: software pixel-based fade (slower)
+        // Use fewer steps since each step is expensive
         const int VBE_FADE_STEPS = 8;
         Drawing::GraphicsBuffer* fb = Drawing::GraphicsBuffer::GetFrameBuffer();
         if (!fb) return;
@@ -227,10 +313,7 @@ void Display::FadeOut(Int32 milliseconds) {
         return;
     }
 
-    // VGA palette-based fade (fast - only 768 bytes to update)
-    int steps = ms / FRAME_MS;
-    if (steps < 1) steps = 1;
-
+    // VGA palette-based fade (hardware-accelerated)
     StashPalette();
 
     // Fade from full palette to black

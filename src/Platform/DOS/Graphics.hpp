@@ -108,6 +108,13 @@ const unsigned short VBE_MODE_800x600x32   = 0x115;  // May need probing
 const unsigned short VBE_ATTR_SUPPORTED    = 0x0001;
 const unsigned short VBE_ATTR_LFB_AVAIL    = 0x0080;
 
+// VBE 3.0 Gamma/DAC functions (INT 10h AX=4F15h)
+const unsigned char VBE_GAMMA_SET          = 0x01;  // BL=01h: Set gamma table
+const unsigned char VBE_GAMMA_GET          = 0x02;  // BL=02h: Get gamma table
+
+// Gamma table size (256 entries per channel, 3 channels)
+const int VBE_GAMMA_TABLE_SIZE = 256 * 3;
+
 /******************************************************************************/
 /*    Graphics class                                                          */
 /******************************************************************************/
@@ -153,6 +160,19 @@ public:
 
     // LFB access using selector (use _farsetsel/_farnspokeb etc.)
     static int GetLfbSelector();
+
+    // VBE 3.0 Gamma ramp functions
+    // Returns true if VBE 3.0 gamma control is supported
+    static bool IsGammaSupported();
+
+    // Set gamma table (256 entries per R/G/B channel, 768 bytes total)
+    // Each entry maps input intensity to output intensity (0-255)
+    // Identity: gamma[i] = i for all i
+    // Fade to black: gamma[i] = i * scale
+    static bool SetGammaTable(const unsigned char* gammaTable);
+
+    // Get current gamma table
+    static bool GetGammaTable(unsigned char* gammaTable);
 };
 
 }} // namespace Platform::DOS

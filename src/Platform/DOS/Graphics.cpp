@@ -221,4 +221,102 @@ int Graphics::GetLfbSelector() {
     return g_lfbSelector;
 }
 
+/******************************************************************************/
+/*    VBE 3.0 Gamma Ramp Implementation                                        */
+/*    Function 4F15h - Display Power Management & Gamma Control                */
+/******************************************************************************/
+
+// Cache gamma support detection result
+static int g_gammaSupported = -1;  // -1 = not checked, 0 = no, 1 = yes
+
+bool Graphics::IsGammaSupported() {
+    if (g_gammaSupported >= 0) {
+        return g_gammaSupported == 1;
+    }
+
+    // First check VBE version (need 3.0+)
+    VbeInfoBlock vbeInfo;
+    if (!DetectVBE(&vbeInfo)) {
+        g_gammaSupported = 0;
+        return false;
+    }
+
+    // VBE version is BCD: 0x0300 = 3.0
+    if (vbeInfo.version < 0x0300) {
+        g_gammaSupported = 0;
+        return false;
+    }
+
+    // Try to get the current gamma table as a probe
+    // VBE 3.0 function 4F15h, BL=02h (Get Gamma Table)
+    unsigned long tbAddr = __tb;
+    unsigned short tbSeg = static_cast<unsigned short>(tbAddr >> 4);
+    unsigned short tbOff = static_cast<unsigned short>(tbAddr & 0x0F);
+
+    __dpmi_regs regs;
+    std::memset(&regs, 0, sizeof(regs));
+    regs.x.ax = 0x4F15;
+    regs.h.bl = VBE_GAMMA_GET;
+    regs.x.cx = 256;  // Number of entries per channel
+    regs.x.es = tbSeg;
+    regs.x.di = tbOff;
+    __dpmi_int(0x10, &regs);
+
+    // Check if function is supported
+    g_gammaSupported = (regs.x.ax == VBE_SUCCESS) ? 1 : 0;
+    return g_gammaSupported == 1;
+}
+
+bool Graphics::SetGammaTable(const unsigned char* gammaTable) {
+    if (!gammaTable) return false;
+
+    // Use transfer buffer to pass gamma table to BIOS
+    unsigned long tbAddr = __tb;
+    unsigned short tbSeg = static_cast<unsigned short>(tbAddr >> 4);
+    unsigned short tbOff = static_cast<unsigned short>(tbAddr & 0x0F);
+
+    // Copy gamma table to transfer buffer
+    // Format: 256 R values, 256 G values, 256 B values (768 bytes total)
+    dosmemput(gammaTable, VBE_GAMMA_TABLE_SIZE, tbAddr);
+
+    // VBE 3.0 function 4F15h, BL=01h (Set Gamma Table)
+    __dpmi_regs regs;
+    std::memset(&regs, 0, sizeof(regs));
+    regs.x.ax = 0x4F15;
+    regs.h.bl = VBE_GAMMA_SET;
+    regs.x.cx = 256;  // Number of entries per channel
+    regs.x.es = tbSeg;
+    regs.x.di = tbOff;
+    __dpmi_int(0x10, &regs);
+
+    return regs.x.ax == VBE_SUCCESS;
+}
+
+bool Graphics::GetGammaTable(unsigned char* gammaTable) {
+    if (!gammaTable) return false;
+
+    // Use transfer buffer
+    unsigned long tbAddr = __tb;
+    unsigned short tbSeg = static_cast<unsigned short>(tbAddr >> 4);
+    unsigned short tbOff = static_cast<unsigned short>(tbAddr & 0x0F);
+
+    // VBE 3.0 function 4F15h, BL=02h (Get Gamma Table)
+    __dpmi_regs regs;
+    std::memset(&regs, 0, sizeof(regs));
+    regs.x.ax = 0x4F15;
+    regs.h.bl = VBE_GAMMA_GET;
+    regs.x.cx = 256;  // Number of entries per channel
+    regs.x.es = tbSeg;
+    regs.x.di = tbOff;
+    __dpmi_int(0x10, &regs);
+
+    if (regs.x.ax != VBE_SUCCESS) {
+        return false;
+    }
+
+    // Copy gamma table from transfer buffer
+    dosmemget(tbAddr, VBE_GAMMA_TABLE_SIZE, gammaTable);
+    return true;
+}
+
 }} // namespace Platform::DOS
