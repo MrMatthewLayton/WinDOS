@@ -621,6 +621,10 @@ window->PerformLayout();
     - Currently uses manual positioning in AddWindowButton/RemoveWindowButton
     - Could use Row layout with FlexGrow for automatic distribution
 
+23. **[ ] StartMenu/MenuItem relative positioning** - Refactor to use layout system
+    - Currently uses some hardcoded coordinates
+    - Could benefit from Column layout for menu items
+
 ---
 
 ## See Also
