@@ -745,6 +745,7 @@ public:
 /**
  * A specialized button that represents an open window in the taskbar.
  * Shows as pressed/sunken when the associated window is focused.
+ * When pressed, displays a checkerboard hatch pattern (Windows 95 style).
  */
 class TaskBarButton : public Button {
 private:
@@ -757,6 +758,9 @@ public:
     virtual ~TaskBarButton();
 
     Window* GetWindow() const { return _window; }
+
+    // Override paint to use hatch pattern when pressed
+    virtual void OnPaint(PaintEventArgs& e) override;
 
     // Type identification
     virtual ControlType GetControlType() const override { return ControlType::TaskBarButton; }

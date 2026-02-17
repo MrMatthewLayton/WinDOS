@@ -125,11 +125,11 @@ void Display::FadeIn(Int32 milliseconds) {
     int ms = static_cast<int>(milliseconds);
     if (ms < FRAME_MS) ms = FRAME_MS;
 
-    int steps = ms / FRAME_MS;
-    if (steps < 1) steps = 1;
-
-    // For VBE 32-bit modes, use framebuffer-based fade
+    // For VBE 32-bit modes, use framebuffer-based fade with fewer steps
+    // (each step is expensive: per-pixel processing + full buffer flush)
     if (_current._vbeMode != 0 && _current._bitsPerPixel >= 24) {
+        // Use 8 steps for VBE - smooth enough visually, completes in ~500ms
+        const int VBE_FADE_STEPS = 8;
         Drawing::GraphicsBuffer* fb = Drawing::GraphicsBuffer::GetFrameBuffer();
         if (!fb) return;
 
@@ -145,8 +145,8 @@ void Display::FadeIn(Int32 milliseconds) {
         std::memcpy(original, pixels, width * height * sizeof(unsigned int));
 
         // Fade from black to original
-        for (int step = 0; step <= steps; step++) {
-            float scale = static_cast<float>(step) / steps;
+        for (int step = 0; step <= VBE_FADE_STEPS; step++) {
+            float scale = static_cast<float>(step) / VBE_FADE_STEPS;
 
             for (int i = 0; i < width * height; i++) {
                 unsigned int p = original[i];
@@ -169,7 +169,10 @@ void Display::FadeIn(Int32 milliseconds) {
         return;
     }
 
-    // VGA palette-based fade
+    // VGA palette-based fade (fast - only 768 bytes to update)
+    int steps = ms / FRAME_MS;
+    if (steps < 1) steps = 1;
+
     StashPalette();
 
     // Fade from black to full palette
@@ -184,11 +187,11 @@ void Display::FadeOut(Int32 milliseconds) {
     int ms = static_cast<int>(milliseconds);
     if (ms < FRAME_MS) ms = FRAME_MS;
 
-    int steps = ms / FRAME_MS;
-    if (steps < 1) steps = 1;
-
-    // For VBE 32-bit modes, use framebuffer-based fade
+    // For VBE 32-bit modes, use framebuffer-based fade with fewer steps
+    // (each step is expensive: per-pixel processing + full buffer flush)
     if (_current._vbeMode != 0 && _current._bitsPerPixel >= 24) {
+        // Use 8 steps for VBE - smooth enough visually, completes in ~500ms
+        const int VBE_FADE_STEPS = 8;
         Drawing::GraphicsBuffer* fb = Drawing::GraphicsBuffer::GetFrameBuffer();
         if (!fb) return;
 
@@ -204,8 +207,8 @@ void Display::FadeOut(Int32 milliseconds) {
         std::memcpy(original, pixels, width * height * sizeof(unsigned int));
 
         // Fade from original to black
-        for (int step = steps; step >= 0; step--) {
-            float scale = static_cast<float>(step) / steps;
+        for (int step = VBE_FADE_STEPS; step >= 0; step--) {
+            float scale = static_cast<float>(step) / VBE_FADE_STEPS;
 
             for (int i = 0; i < width * height; i++) {
                 unsigned int p = original[i];
@@ -224,7 +227,10 @@ void Display::FadeOut(Int32 milliseconds) {
         return;
     }
 
-    // VGA palette-based fade
+    // VGA palette-based fade (fast - only 768 bytes to update)
+    int steps = ms / FRAME_MS;
+    if (steps < 1) steps = 1;
+
     StashPalette();
 
     // Fade from full palette to black

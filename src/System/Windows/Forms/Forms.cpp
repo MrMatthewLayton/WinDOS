@@ -1852,6 +1852,42 @@ TaskBarButton::TaskBarButton(Control* parent, const Rectangle& bounds, Window* w
 TaskBarButton::~TaskBarButton() {
 }
 
+void TaskBarButton::OnPaint(PaintEventArgs& e) {
+    Rectangle screen = ScreenBounds();
+    int x = static_cast<int>(screen.x);
+    int y = static_cast<int>(screen.y);
+    int w = static_cast<int>(screen.width);
+    int h = static_cast<int>(screen.height);
+
+    // Check if button is visually pressed (toggled OR mouse down)
+    bool visualPressed = static_cast<bool>(IsPressed());
+
+    if (visualPressed) {
+        // Pressed state: use checkerboard hatch pattern (Windows 95 style)
+        // Fill with hatch pattern: 50% checkerboard with Gray and White
+        e.graphics->FillRectangle(x, y, w, h,
+            HatchStyle::Percent50, Color::Gray, Color::White);
+
+        // Draw sunken border on top of hatch pattern
+        // Outer border: Black top/left, White bottom/right
+        e.graphics->DrawLine(x, y, x + w - 1, y, Color::Black);           // Top outer
+        e.graphics->DrawLine(x, y, x, y + h - 1, Color::Black);           // Left outer
+        e.graphics->DrawLine(x + w - 1, y, x + w - 1, y + h - 1, Color::White);   // Right outer
+        e.graphics->DrawLine(x, y + h - 1, x + w - 1, y + h - 1, Color::White);   // Bottom outer
+        // Inner border: DarkGray top/left, Gray bottom/right
+        e.graphics->DrawLine(x + 1, y + 1, x + w - 2, y + 1, Color::DarkGray);    // Top inner
+        e.graphics->DrawLine(x + 1, y + 1, x + 1, y + h - 2, Color::DarkGray);    // Left inner
+        e.graphics->DrawLine(x + w - 2, y + 1, x + w - 2, y + h - 2, Color::Gray);     // Right inner
+        e.graphics->DrawLine(x + 1, y + h - 2, x + w - 2, y + h - 2, Color::Gray);     // Bottom inner
+    } else {
+        // Normal state: use standard raised button style
+        e.graphics->FillRectangle(screen, BorderStyle::RaisedDouble);
+    }
+
+    // Paint children
+    OnPaintClient(e);
+}
+
 /******************************************************************************/
 /*    MenuItem Implementation                                                 */
 /******************************************************************************/
