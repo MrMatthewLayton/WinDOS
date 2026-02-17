@@ -1339,6 +1339,177 @@ Int32 Image::GetIconLibraryCount(const char* path) {
 }
 
 /******************************************************************************/
+/*    Image::GetIconLibraryNames - Get names of icons in PE library            */
+/******************************************************************************/
+
+// Helper: Read PE resource name (UTF-16LE length-prefixed string)
+// Returns empty string for unnamed resources or on error
+static String ReadResourceName(const unsigned char* rsrcBase, unsigned int nameOffset) {
+    // Name format: WORD length (characters), followed by UTF-16LE chars (no null)
+    const unsigned char* namePtr = rsrcBase + nameOffset;
+    unsigned short charCount = *reinterpret_cast<const unsigned short*>(namePtr);
+
+    if (charCount == 0 || charCount > 256) {
+        return String();  // Empty or suspiciously long
+    }
+
+    // Convert UTF-16LE to ASCII (simple conversion, ignore high bytes)
+    char* asciiName = static_cast<char*>(std::malloc(charCount + 1));
+    if (!asciiName) return String();
+
+    const unsigned short* utf16Chars = reinterpret_cast<const unsigned short*>(namePtr + 2);
+    for (unsigned short i = 0; i < charCount; i++) {
+        // Simple conversion - just take low byte (works for ASCII names)
+        asciiName[i] = static_cast<char>(utf16Chars[i] & 0xFF);
+    }
+    asciiName[charCount] = '\0';
+
+    String result(asciiName);
+    std::free(asciiName);
+    return result;
+}
+
+Array<String> Image::GetIconLibraryNames(const char* path) {
+    const unsigned short MZ_SIGNATURE = 0x5A4D;
+    const unsigned int PE_SIGNATURE = 0x00004550;
+    const unsigned int RT_GROUP_ICON = 14;
+
+    if (!path || path[0] == '\0') {
+        return Array<String>(0);
+    }
+
+    // Read file
+    Array<UInt8> fileBytes = IO::File::ReadAllBytes(path);
+    int fileSize = fileBytes.Length();
+
+    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(fileSize));
+    if (!fileData) return Array<String>(0);
+
+    for (int i = 0; i < fileSize; i++) {
+        fileData[i] = static_cast<unsigned char>(fileBytes[i]);
+    }
+
+    // Parse DOS/PE headers
+    const MsDosExecutableHeader* dosHeader = reinterpret_cast<const MsDosExecutableHeader*>(fileData);
+    if (dosHeader->Signature() != MZ_SIGNATURE) {
+        std::free(fileData);
+        return Array<String>(0);
+    }
+
+    const PortableExecutableNTHeaders* peHeaders = reinterpret_cast<const PortableExecutableNTHeaders*>(
+        fileData + dosHeader->NewHeaderOffset());
+    if (peHeaders->Signature() != PE_SIGNATURE) {
+        std::free(fileData);
+        return Array<String>(0);
+    }
+
+    // Find resource directory
+    const PortableExecutableDataDirectory& rsrcDir = peHeaders->GetOptionalHeader().GetDataDirectory(2);
+    if (rsrcDir.VirtualAddress() == 0) {
+        std::free(fileData);
+        return Array<String>(0);
+    }
+
+    // Find .rsrc section
+    const PortableExecutableSectionHeader* sections = reinterpret_cast<const PortableExecutableSectionHeader*>(
+        fileData + dosHeader->NewHeaderOffset() + sizeof(unsigned int) +
+        sizeof(PortableExecutableFileHeader) + peHeaders->GetFileHeader().OptionalHeaderSize());
+
+    const PortableExecutableSectionHeader* rsrcSection = nullptr;
+    for (int i = 0; i < peHeaders->GetFileHeader().SectionCount(); ++i) {
+        if (rsrcDir.VirtualAddress() >= sections[i].VirtualAddress() &&
+            rsrcDir.VirtualAddress() < sections[i].VirtualAddress() + sections[i].VirtualSize()) {
+            rsrcSection = &sections[i];
+            break;
+        }
+    }
+
+    if (!rsrcSection) {
+        std::free(fileData);
+        return Array<String>(0);
+    }
+
+    unsigned int rsrcOffset = rsrcSection->RawDataPointer();
+    const unsigned char* rsrcBase = fileData + rsrcOffset + (rsrcDir.VirtualAddress() - rsrcSection->VirtualAddress());
+
+    // Find RT_GROUP_ICON directory
+    const PortableExecutableResourceDirectory* rootDir =
+        reinterpret_cast<const PortableExecutableResourceDirectory*>(rsrcBase);
+    const PortableExecutableResourceDirectoryEntry* rootEntries =
+        reinterpret_cast<const PortableExecutableResourceDirectoryEntry*>(
+            rsrcBase + sizeof(PortableExecutableResourceDirectory));
+
+    int totalRootEntries = rootDir->TotalEntries();
+    for (int i = 0; i < totalRootEntries; ++i) {
+        if (!rootEntries[i].IsNamed() && rootEntries[i].GetId() == RT_GROUP_ICON) {
+            // Found RT_GROUP_ICON, get icon names
+            const PortableExecutableResourceDirectory* groupIconDir =
+                reinterpret_cast<const PortableExecutableResourceDirectory*>(
+                    rsrcBase + rootEntries[i].GetOffsetToData());
+            const PortableExecutableResourceDirectoryEntry* iconEntries =
+                reinterpret_cast<const PortableExecutableResourceDirectoryEntry*>(
+                    reinterpret_cast<const unsigned char*>(groupIconDir) + sizeof(PortableExecutableResourceDirectory));
+
+            int count = groupIconDir->TotalEntries();
+            Array<String> names(count);
+
+            for (int j = 0; j < count; j++) {
+                if (iconEntries[j].IsNamed()) {
+                    names[j] = ReadResourceName(rsrcBase, iconEntries[j].GetNameOffset());
+                } else {
+                    // ID-based entry - return empty string or the ID as string
+                    names[j] = String();
+                }
+            }
+
+            std::free(fileData);
+            return names;
+        }
+    }
+
+    std::free(fileData);
+    return Array<String>(0);
+}
+
+/******************************************************************************/
+/*    Image::GetIconLibraryIndex - Find icon index by name                     */
+/******************************************************************************/
+
+Int32 Image::GetIconLibraryIndex(const char* path, const char* iconName) {
+    if (!path || !iconName || iconName[0] == '\0') {
+        return Int32(-1);
+    }
+
+    Array<String> names = GetIconLibraryNames(path);
+    String target(iconName);
+
+    for (int i = 0; i < names.Length(); i++) {
+        if (names[i].EqualsIgnoreCase(target)) {
+            return Int32(i);
+        }
+    }
+
+    return Int32(-1);
+}
+
+/******************************************************************************/
+/*    Image::FromIconLibrary (by name) - Load icon by name                     */
+/******************************************************************************/
+
+Image Image::FromIconLibrary(const char* path, const char* iconName, const Size& size) {
+    if (!iconName || iconName[0] == '\0') {
+        throw ArgumentNullException("iconName");
+    }
+
+    Int32 index = GetIconLibraryIndex(path, iconName);
+    if (static_cast<int>(index) < 0) {
+        throw ArgumentException("Icon not found in library.");
+    }
+
+    return FromIconLibrary(path, index, size);
+}
+
+/******************************************************************************/
 /*    Fast fill for rectangles (32-bit pixels)                                */
 /******************************************************************************/
 

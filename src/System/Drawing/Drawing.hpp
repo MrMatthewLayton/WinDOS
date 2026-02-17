@@ -339,12 +339,116 @@ public:
     // iconIndex: 0-based index of the icon group in the library
     static Image FromIconLibrary(const char* path, Int32 iconIndex, const Size& size);
 
+    // Load an icon by name from a PE-based icon library
+    // iconName: Name of the icon resource (case-insensitive)
+    static Image FromIconLibrary(const char* path, const char* iconName, const Size& size);
+
     // Get the number of icon groups in a PE-based icon library
     static Int32 GetIconLibraryCount(const char* path);
+
+    // Get the names of all icons in a PE-based icon library
+    // Returns array of icon names (empty strings for unnamed/ID-based icons)
+    static Array<String> GetIconLibraryNames(const char* path);
+
+    // Get the index of a named icon in a PE-based icon library
+    // Returns -1 if not found
+    static Int32 GetIconLibraryIndex(const char* path, const char* iconName);
 };
 
 // Backwards compatibility alias (deprecated - will be removed)
 typedef Image Image32;
+
+/******************************************************************************/
+/*    System::Drawing::SystemIcons                                            */
+/*                                                                            */
+/*    Named constants for standard icons in sysicons.icl. These map friendly  */
+/*    names to icon indices in the Windows 95-style system icon library.      */
+/******************************************************************************/
+
+class SystemIcons {
+public:
+    // System icon library path
+    static constexpr const char* LibraryPath = "sysicons.icl";
+
+    // Application and document icons
+    static constexpr int Application     = 0;   // Generic application
+    static constexpr int Document        = 1;   // Generic document
+    static constexpr int Folder          = 2;   // Closed folder
+    static constexpr int FolderOpen      = 3;   // Open folder
+    static constexpr int Drive           = 4;   // Hard drive
+    static constexpr int DriveCD         = 5;   // CD-ROM drive
+    static constexpr int DriveFloppy     = 6;   // Floppy drive
+    static constexpr int DriveNetwork    = 7;   // Network drive
+    static constexpr int Computer        = 8;   // My Computer
+    static constexpr int Network         = 9;   // Network Neighborhood
+    static constexpr int Printer         = 10;  // Printer
+    static constexpr int RecycleBin      = 11;  // Recycle Bin (empty)
+    static constexpr int RecycleBinFull  = 12;  // Recycle Bin (full)
+    static constexpr int Cursor          = 13;  // Mouse cursor/pointer
+
+    // Control Panel and Settings
+    static constexpr int ControlPanel    = 14;  // Control Panel
+    static constexpr int Settings        = 15;  // Settings/gear
+    static constexpr int Display         = 16;  // Display settings
+    static constexpr int Keyboard        = 17;  // Keyboard
+    static constexpr int Mouse           = 18;  // Mouse
+    static constexpr int Sound           = 19;  // Sound/speaker
+    static constexpr int DateTime        = 20;  // Date/time
+
+    // Status and message icons
+    static constexpr int Information     = 21;  // Info (i)
+    static constexpr int Warning         = 22;  // Warning (!)
+    static constexpr int Error           = 23;  // Error (X)
+    static constexpr int Question        = 24;  // Question (?)
+    static constexpr int Shield          = 25;  // Security/shield
+
+    // File type icons
+    static constexpr int FileText        = 26;  // Text file
+    static constexpr int FileImage       = 27;  // Image file
+    static constexpr int FileAudio       = 28;  // Audio file
+    static constexpr int FileVideo       = 29;  // Video file
+    static constexpr int FileArchive     = 30;  // Archive/ZIP file
+    static constexpr int FileExecutable  = 31;  // Executable file
+
+    // Action icons
+    static constexpr int Find            = 32;  // Find/search
+    static constexpr int Help            = 33;  // Help
+    static constexpr int Run             = 34;  // Run program
+    static constexpr int ShutDown        = 35;  // Shut down
+    static constexpr int LogOff          = 36;  // Log off
+
+    // Window control icons
+    static constexpr int Minimize        = 37;  // Minimize window
+    static constexpr int Maximize        = 38;  // Maximize window
+    static constexpr int Restore         = 39;  // Restore window
+    static constexpr int Close           = 40;  // Close window
+
+    // Programs
+    static constexpr int Programs        = 41;  // Programs folder
+    static constexpr int Documents       = 42;  // Documents folder
+    static constexpr int Favorites       = 43;  // Favorites
+    static constexpr int Recent          = 44;  // Recent documents
+    static constexpr int StartMenu       = 45;  // Start menu
+
+    // User interface
+    static constexpr int User            = 46;  // User account
+    static constexpr int Users           = 47;  // Multiple users
+    static constexpr int Key             = 48;  // Key/password
+    static constexpr int Lock            = 49;  // Lock/security
+
+    // Miscellaneous
+    static constexpr int Globe           = 50;  // Internet/world
+    static constexpr int Mail            = 51;  // Email
+    static constexpr int Calendar        = 52;  // Calendar
+    static constexpr int Clock           = 53;  // Clock
+    static constexpr int Calculator      = 54;  // Calculator
+    static constexpr int Notepad         = 55;  // Notepad/text editor
+
+    // Helper to load icon by constant
+    static Image Load(int iconIndex, const Size& size) {
+        return Image::FromIconLibrary(LibraryPath, Int32(iconIndex), size);
+    }
+};
 
 /******************************************************************************/
 /*    System::Drawing::BufferMode                                             */

@@ -2025,14 +2025,25 @@ StartMenu::~StartMenu() {
 }
 
 void StartMenu::LoadIcons() {
-    // Icon indices from sysicons.icl to use (various system icons)
+    // Map menu items to system icons by name
     static const int iconIndices[ITEM_COUNT] = {
-        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11
+        Drawing::SystemIcons::Programs,       // Programs
+        Drawing::SystemIcons::Documents,      // Documents
+        Drawing::SystemIcons::Settings,       // Settings
+        Drawing::SystemIcons::Find,           // Find
+        Drawing::SystemIcons::Help,           // Help
+        Drawing::SystemIcons::Run,            // Run
+        Drawing::SystemIcons::Favorites,      // Favorites
+        Drawing::SystemIcons::Recent,         // Recent
+        Drawing::SystemIcons::Computer,       // My Computer
+        Drawing::SystemIcons::Network,        // Network
+        Drawing::SystemIcons::ShutDown,       // Shut Down
+        Drawing::SystemIcons::LogOff          // Log Off
     };
 
     for (int i = 0; i < ITEM_COUNT && i < _items.Length(); i++) {
         try {
-            Image icon = Image::FromIconLibrary("sysicons.icl", iconIndices[i], Size::IconSmall);
+            Image icon = Drawing::SystemIcons::Load(iconIndices[i], Size::IconSmall);
             _items[i]->SetIcon(icon);
         } catch (...) {
             // Icon loading failed - item will show without icon

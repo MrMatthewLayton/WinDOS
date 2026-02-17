@@ -18,3 +18,5 @@ qemu/*.img
 
 # Temporary files
 /tmp/
+qemu/.mtoolsrc
+qemu/test-output.txt

@@ -61,19 +61,19 @@ int main() {
     // Create desktop with cyan background
     Desktop desktop(Color::Cyan);
 
-    // Load cursor from icon library (Index 13 has a 24x24 arrow cursor)
+    // Load cursor from icon library
     try {
-        desktop.LoadCursorFromLibrary("sysicons.icl", 13);
+        desktop.LoadCursorFromLibrary(SystemIcons::LibraryPath, SystemIcons::Cursor);
     } catch (...) {
         // If cursor loading fails, desktop will use fallback cursor
     }
 
     // Add desktop icons (32x32 icons from sysicons.icl)
     try {
-        desktop.AddIconFromLibrary("sysicons.icl", 8);   // Icon 1
-        desktop.AddIconFromLibrary("sysicons.icl", 7);   // Icon 2
-        desktop.AddIconFromLibrary("sysicons.icl", 55);  // Icon 3
-        desktop.AddIconFromLibrary("sysicons.icl", 12);  // Icon 4
+        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::Computer);      // My Computer
+        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::Network);       // Network
+        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::Notepad);       // Notepad
+        desktop.AddIconFromLibrary(SystemIcons::LibraryPath, SystemIcons::RecycleBinFull);// Recycle Bin
     } catch (...) {
         // If icon loading fails, continue without icons
     }
