@@ -802,6 +802,57 @@ See `qemu/scripts/run-gui-combo.sh` for the setup.
 
 ---
 
+## PNG/JPEG Image Loading (Complete)
+
+### Overview
+
+Multi-format image loading using the stb_image single-header library. Supports PNG, JPEG, GIF, TGA, PSD formats with automatic format detection.
+
+### What Was Implemented
+
+#### Image Class Extensions (`src/System/Drawing/Drawing.hpp/.cpp`)
+- `Image::FromFile(path)` - Auto-detect format and load (PNG, JPEG, GIF, TGA, PSD, BMP)
+- `Image::FromPng(path)` - Load PNG image explicitly
+- `Image::FromJpeg(path)` - Load JPEG image explicitly
+- `Image::ScaleTo(width, height)` - Scale image using bilinear interpolation
+- `Image::ScaleTo(Size)` - Scale using Size struct
+
+#### Third-Party Library
+- `src/ThirdParty/stb_image.h` - Sean Barrett's public domain image loader
+- `src/ThirdParty/stb_image_impl.cpp` - Implementation file with STBI_NO_STDIO (uses our File I/O)
+
+### Key Technical Decisions
+
+1. **RGBA to ARGB conversion**: stb_image returns RGBA format, but WinDOS uses ARGB internally. Pixel data is converted during loading.
+
+2. **Memory-based loading**: Uses `stbi_load_from_memory()` with our `File::ReadAllBytes()` since DJGPP stdio may have compatibility issues.
+
+3. **Bilinear interpolation for scaling**: `ScaleTo()` uses fixed-point arithmetic (16.16 format) for accurate sub-pixel sampling with smooth results.
+
+### Usage Example
+
+```cpp
+// Load image (auto-detects format)
+Image splash = Image::FromFile("C:\\BOOT.PNG");
+
+// Scale to screen size
+Image fullscreen = splash.ScaleTo(800, 600);
+
+// Draw to framebuffer
+GraphicsBuffer* fb = GraphicsBuffer::GetFrameBuffer();
+fb->GetImage().CopyFrom(fullscreen, 0, 0);
+GraphicsBuffer::FlushFrameBuffer();
+```
+
+### Boot Splash Screen
+
+The forms demo displays a boot splash screen for 5 seconds before showing the desktop:
+1. Loads `BOOT.PNG` or `BOOT.JPG` from C: drive (or current directory)
+2. Scales image to fill the entire screen
+3. Displays for 5 seconds using a busy-wait loop
+
+---
+
 ## See Also
 
 - `WinDOS.md` - Full API documentation (MSDN-style)

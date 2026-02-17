@@ -1656,6 +1656,25 @@ namespace System::Drawing {
 
         // Get index of a named icon (returns -1 if not found)
         static Int32 GetIconLibraryIndex(const char* path, const char* iconName);
+
+        // Static Methods - Multi-format Image Loading
+        // Auto-detects format: PNG, JPEG, GIF, TGA, PSD, BMP
+        // Uses stb_image for PNG/JPEG/GIF/TGA/PSD, native loader for BMP
+        // Throws: FileNotFoundException, InvalidDataException
+        static Image FromFile(const char* path);
+
+        // Load PNG image from file
+        // Throws: FileNotFoundException, InvalidDataException
+        static Image FromPng(const char* path);
+
+        // Load JPEG image from file
+        // Throws: FileNotFoundException, InvalidDataException
+        static Image FromJpeg(const char* path);
+
+        // Image Scaling
+        // Scale image to new dimensions using bilinear interpolation
+        Image ScaleTo(Int32 newWidth, Int32 newHeight) const;
+        Image ScaleTo(const Size& newSize) const;
     };
 
     // Standard icon sizes (use with FromIcon/FromIconLibrary)
@@ -1749,6 +1768,19 @@ for (int i = 0; i < names.Length(); i++) {
 
 // Find icon index by name
 Int32 idx = Image::GetIconLibraryIndex("sysicons.icl", "computer");  // Returns 8
+
+// Load PNG/JPEG images (auto-detect format)
+Image photo = Image::FromFile("photo.png");      // Auto-detects PNG
+Image splash = Image::FromFile("splash.jpg");    // Auto-detects JPEG
+
+// Or use explicit format loaders
+Image logo = Image::FromPng("logo.png");
+Image background = Image::FromJpeg("background.jpg");
+
+// Scale images (bilinear interpolation)
+Image thumbnail = photo.ScaleTo(64, 64);         // Scale to 64x64
+Image fullscreen = splash.ScaleTo(800, 600);     // Scale to screen size
+Image scaled = logo.ScaleTo(Size(128, 128));     // Scale using Size
 
 // Clear
 canvas.Clear(Color::Blue);
