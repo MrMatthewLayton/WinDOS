@@ -363,6 +363,10 @@ public:
 
     // Load JPEG image from file
     static Image FromJpeg(const char* path);
+
+    // Scale this image to a new size using bilinear interpolation
+    Image ScaleTo(Int32 newWidth, Int32 newHeight) const;
+    Image ScaleTo(const Size& newSize) const;
 };
 
 // Backwards compatibility alias (deprecated - will be removed)

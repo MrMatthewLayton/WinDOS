@@ -77,23 +77,9 @@ int main() {
             if (fb) {
                 Image& screen = fb->GetImage();
 
-                // Calculate centering position
-                int imgW = static_cast<int>(bootImage.Width());
-                int imgH = static_cast<int>(bootImage.Height());
-                int destX = (screenWidth - imgW) / 2;
-                int destY = (screenHeight - imgH) / 2;
-
-                // Clear screen to black
-                screen.Clear(Color::Black);
-
-                // Draw boot image centered (or scaled to fit)
-                if (imgW <= screenWidth && imgH <= screenHeight) {
-                    // Image fits - center it
-                    screen.CopyFrom(bootImage, destX, destY);
-                } else {
-                    // Image too large - just draw at 0,0 (could add scaling later)
-                    screen.CopyFrom(bootImage, 0, 0);
-                }
+                // Scale boot image to fill the entire screen
+                Image scaled = bootImage.ScaleTo(Int32(screenWidth), Int32(screenHeight));
+                screen.CopyFrom(scaled, 0, 0);
 
                 // Flush to display
                 GraphicsBuffer::FlushFrameBuffer();

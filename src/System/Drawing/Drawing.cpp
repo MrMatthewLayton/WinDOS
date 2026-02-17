@@ -1719,6 +1719,106 @@ Image Image::FromJpeg(const char* path) {
 }
 
 /******************************************************************************/
+/*    Image::ScaleTo - Scale image using bilinear interpolation                */
+/******************************************************************************/
+
+Image Image::ScaleTo(Int32 newWidth, Int32 newHeight) const {
+    int nw = static_cast<int>(newWidth);
+    int nh = static_cast<int>(newHeight);
+
+    if (nw <= 0 || nh <= 0) {
+        throw ArgumentException("New dimensions must be positive");
+    }
+
+    if (_width == 0 || _height == 0 || _data == nullptr) {
+        return Image(newWidth, newHeight, Color::Black);
+    }
+
+    Image result = Image(newWidth, newHeight);
+    unsigned int* dest = result.Data();
+    const unsigned int* src = _data;
+
+    // Fixed-point scaling factors (16.16 format)
+    int scaleX = (_width << 16) / nw;
+    int scaleY = (_height << 16) / nh;
+
+    for (int y = 0; y < nh; y++) {
+        int srcY = (y * scaleY) >> 16;
+        int fracY = (y * scaleY) & 0xFFFF;
+
+        // Clamp source Y
+        if (srcY >= _height - 1) {
+            srcY = _height - 2;
+            fracY = 0xFFFF;
+        }
+        if (srcY < 0) srcY = 0;
+
+        for (int x = 0; x < nw; x++) {
+            int srcX = (x * scaleX) >> 16;
+            int fracX = (x * scaleX) & 0xFFFF;
+
+            // Clamp source X
+            if (srcX >= _width - 1) {
+                srcX = _width - 2;
+                fracX = 0xFFFF;
+            }
+            if (srcX < 0) srcX = 0;
+
+            // Get 4 neighboring pixels
+            unsigned int p00 = src[srcY * _width + srcX];
+            unsigned int p10 = src[srcY * _width + srcX + 1];
+            unsigned int p01 = src[(srcY + 1) * _width + srcX];
+            unsigned int p11 = src[(srcY + 1) * _width + srcX + 1];
+
+            // Bilinear interpolation for each channel
+            int fx = fracX >> 8;  // 0-255
+            int fy = fracY >> 8;  // 0-255
+            int fx1 = 256 - fx;
+            int fy1 = 256 - fy;
+
+            // Alpha channel
+            int a00 = (p00 >> 24) & 0xFF;
+            int a10 = (p10 >> 24) & 0xFF;
+            int a01 = (p01 >> 24) & 0xFF;
+            int a11 = (p11 >> 24) & 0xFF;
+            int a = ((a00 * fx1 + a10 * fx) * fy1 + (a01 * fx1 + a11 * fx) * fy) >> 16;
+
+            // Red channel
+            int r00 = (p00 >> 16) & 0xFF;
+            int r10 = (p10 >> 16) & 0xFF;
+            int r01 = (p01 >> 16) & 0xFF;
+            int r11 = (p11 >> 16) & 0xFF;
+            int r = ((r00 * fx1 + r10 * fx) * fy1 + (r01 * fx1 + r11 * fx) * fy) >> 16;
+
+            // Green channel
+            int g00 = (p00 >> 8) & 0xFF;
+            int g10 = (p10 >> 8) & 0xFF;
+            int g01 = (p01 >> 8) & 0xFF;
+            int g11 = (p11 >> 8) & 0xFF;
+            int g = ((g00 * fx1 + g10 * fx) * fy1 + (g01 * fx1 + g11 * fx) * fy) >> 16;
+
+            // Blue channel
+            int b00 = p00 & 0xFF;
+            int b10 = p10 & 0xFF;
+            int b01 = p01 & 0xFF;
+            int b11 = p11 & 0xFF;
+            int b = ((b00 * fx1 + b10 * fx) * fy1 + (b01 * fx1 + b11 * fx) * fy) >> 16;
+
+            dest[y * nw + x] = (static_cast<unsigned int>(a) << 24) |
+                               (static_cast<unsigned int>(r) << 16) |
+                               (static_cast<unsigned int>(g) << 8) |
+                               static_cast<unsigned int>(b);
+        }
+    }
+
+    return result;
+}
+
+Image Image::ScaleTo(const Size& newSize) const {
+    return ScaleTo(newSize.width, newSize.height);
+}
+
+/******************************************************************************/
 /*    Font::FontData - Internal font data storage                              */
 /******************************************************************************/
 
