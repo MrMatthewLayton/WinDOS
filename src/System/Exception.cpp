@@ -3,258 +3,255 @@
 
 namespace System
 {
+    // ============================================================================
+    // Exception
+    // ============================================================================
 
-// ============================================================================
-// Exception
-// ============================================================================
-
-void Exception::_copyMessage(const char* msg)
-{
-    if (msg)
+    void Exception::_copyMessage(const char *msg)
     {
-        _messageLength = std::strlen(msg);
-        _message = new char[_messageLength + 1];
-        std::strcpy(_message, msg);
+        if (msg)
+        {
+            _messageLength = std::strlen(msg);
+            _message = new char[_messageLength + 1];
+            std::strcpy(_message, msg);
+        }
+        else
+        {
+            _message = nullptr;
+            _messageLength = 0;
+        }
     }
-    else
+
+    void Exception::_freeMessage()
     {
+        delete[] _message;
         _message = nullptr;
         _messageLength = 0;
     }
-}
 
-void Exception::_freeMessage()
-{
-    delete[] _message;
-    _message = nullptr;
-    _messageLength = 0;
-}
-
-Exception::Exception()
-    : _message(nullptr), _messageLength(0)
-{
-    _copyMessage("An exception occurred.");
-}
-
-Exception::Exception(const char* message)
-    : _message(nullptr), _messageLength(0)
-{
-    _copyMessage(message);
-}
-
-Exception::Exception(const Exception& other)
-    : _message(nullptr), _messageLength(0)
-{
-    _copyMessage(other._message);
-}
-
-Exception& Exception::operator=(const Exception& other)
-{
-    if (this != &other)
+    Exception::Exception()
+        : _message(nullptr), _messageLength(0)
     {
-        _freeMessage();
+        _copyMessage("An exception occurred.");
+    }
+
+    Exception::Exception(const char *message)
+        : _message(nullptr), _messageLength(0)
+    {
+        _copyMessage(message);
+    }
+
+    Exception::Exception(const Exception &other)
+        : _message(nullptr), _messageLength(0)
+    {
         _copyMessage(other._message);
     }
-    return *this;
-}
 
-Exception::~Exception()
-{
-    _freeMessage();
-}
-
-const char* Exception::Message() const
-{
-    return _message ? _message : "";
-}
-
-const char* Exception::what() const noexcept
-{
-    return _message ? _message : "";
-}
-
-// ============================================================================
-// ArgumentException
-// ============================================================================
-
-void ArgumentException::_copyParamName(const char* name)
-{
-    if (name)
+    Exception &Exception::operator=(const Exception &other)
     {
-        _paramNameLength = std::strlen(name);
-        _paramName = new char[_paramNameLength + 1];
-        std::strcpy(_paramName, name);
+        if (this != &other)
+        {
+            _freeMessage();
+            _copyMessage(other._message);
+        }
+        return *this;
     }
-    else
+
+    Exception::~Exception()
     {
+        _freeMessage();
+    }
+
+    const char *Exception::Message() const
+    {
+        return _message ? _message : "";
+    }
+
+    const char *Exception::what() const noexcept
+    {
+        return _message ? _message : "";
+    }
+
+    // ============================================================================
+    // ArgumentException
+    // ============================================================================
+
+    void ArgumentException::_copyParamName(const char *name)
+    {
+        if (name)
+        {
+            _paramNameLength = std::strlen(name);
+            _paramName = new char[_paramNameLength + 1];
+            std::strcpy(_paramName, name);
+        } else
+        {
+            _paramName = nullptr;
+            _paramNameLength = 0;
+        }
+    }
+
+    void ArgumentException::_freeParamName()
+    {
+        delete[] _paramName;
         _paramName = nullptr;
         _paramNameLength = 0;
     }
-}
 
-void ArgumentException::_freeParamName()
-{
-    delete[] _paramName;
-    _paramName = nullptr;
-    _paramNameLength = 0;
-}
-
-ArgumentException::ArgumentException(const char* message, const char* paramName)
-    : Exception(message), _paramName(nullptr), _paramNameLength(0)
-{
-    _copyParamName(paramName);
-}
-
-ArgumentException::ArgumentException(const ArgumentException& other)
-    : Exception(other), _paramName(nullptr), _paramNameLength(0)
-{
-    _copyParamName(other._paramName);
-}
-
-ArgumentException& ArgumentException::operator=(const ArgumentException& other)
-{
-    if (this != &other)
+    ArgumentException::ArgumentException(const char *message, const char *paramName)
+        : Exception(message), _paramName(nullptr), _paramNameLength(0)
     {
-        Exception::operator=(other);
-        _freeParamName();
+        _copyParamName(paramName);
+    }
+
+    ArgumentException::ArgumentException(const ArgumentException &other)
+        : Exception(other), _paramName(nullptr), _paramNameLength(0)
+    {
         _copyParamName(other._paramName);
     }
-    return *this;
-}
 
-ArgumentException::~ArgumentException()
-{
-    _freeParamName();
-}
+    ArgumentException &ArgumentException::operator=(const ArgumentException &other)
+    {
+        if (this != &other)
+        {
+            Exception::operator=(other);
+            _freeParamName();
+            _copyParamName(other._paramName);
+        }
+        return *this;
+    }
 
-const char* ArgumentException::ParamName() const
-{
-    return _paramName ? _paramName : "";
-}
+    ArgumentException::~ArgumentException()
+    {
+        _freeParamName();
+    }
 
-// ============================================================================
-// ArgumentNullException
-// ============================================================================
+    const char *ArgumentException::ParamName() const
+    {
+        return _paramName ? _paramName : "";
+    }
 
-ArgumentNullException::ArgumentNullException(const char* paramName)
-    : ArgumentException("Value cannot be null.", paramName)
-{
-}
+    // ============================================================================
+    // ArgumentNullException
+    // ============================================================================
 
-// ============================================================================
-// ArgumentOutOfRangeException
-// ============================================================================
+    ArgumentNullException::ArgumentNullException(const char *paramName)
+        : ArgumentException("Value cannot be null.", paramName)
+    {
+    }
 
-ArgumentOutOfRangeException::ArgumentOutOfRangeException(const char* paramName, const char* message)
-    : ArgumentException(message ? message : "Specified argument was out of the range of valid values.", paramName)
-{
-}
+    // ============================================================================
+    // ArgumentOutOfRangeException
+    // ============================================================================
 
-// ============================================================================
-// InvalidOperationException
-// ============================================================================
+    ArgumentOutOfRangeException::ArgumentOutOfRangeException(const char *paramName, const char *message)
+        : ArgumentException(message ? message : "Specified argument was out of the range of valid values.", paramName)
+    {
+    }
 
-InvalidOperationException::InvalidOperationException(const char* message)
-    : Exception(message)
-{
-}
+    // ============================================================================
+    // InvalidOperationException
+    // ============================================================================
 
-// ============================================================================
-// IndexOutOfRangeException
-// ============================================================================
+    InvalidOperationException::InvalidOperationException(const char *message)
+        : Exception(message)
+    {
+    }
 
-IndexOutOfRangeException::IndexOutOfRangeException()
-    : Exception("Index was outside the bounds of the array.")
-{
-}
+    // ============================================================================
+    // IndexOutOfRangeException
+    // ============================================================================
 
-IndexOutOfRangeException::IndexOutOfRangeException(const char* message)
-    : Exception(message)
-{
-}
+    IndexOutOfRangeException::IndexOutOfRangeException()
+        : Exception("Index was outside the bounds of the array.")
+    {
+    }
 
-// ============================================================================
-// NullReferenceException
-// ============================================================================
+    IndexOutOfRangeException::IndexOutOfRangeException(const char *message)
+        : Exception(message)
+    {
+    }
 
-NullReferenceException::NullReferenceException()
-    : Exception("Object reference not set to an instance of an object.")
-{
-}
+    // ============================================================================
+    // NullReferenceException
+    // ============================================================================
 
-NullReferenceException::NullReferenceException(const char* message)
-    : Exception(message)
-{
-}
+    NullReferenceException::NullReferenceException()
+        : Exception("Object reference not set to an instance of an object.")
+    {
+    }
 
-// ============================================================================
-// FormatException
-// ============================================================================
+    NullReferenceException::NullReferenceException(const char *message)
+        : Exception(message)
+    {
+    }
 
-FormatException::FormatException()
-    : Exception("Input string was not in a correct format.")
-{
-}
+    // ============================================================================
+    // FormatException
+    // ============================================================================
 
-FormatException::FormatException(const char* message)
-    : Exception(message)
-{
-}
+    FormatException::FormatException()
+        : Exception("Input string was not in a correct format.")
+    {
+    }
 
-// ============================================================================
-// OverflowException
-// ============================================================================
+    FormatException::FormatException(const char *message)
+        : Exception(message)
+    {
+    }
 
-OverflowException::OverflowException()
-    : Exception("Arithmetic operation resulted in an overflow.")
-{
-}
+    // ============================================================================
+    // OverflowException
+    // ============================================================================
 
-OverflowException::OverflowException(const char* message)
-    : Exception(message)
-{
-}
+    OverflowException::OverflowException()
+        : Exception("Arithmetic operation resulted in an overflow.")
+    {
+    }
 
-// ============================================================================
-// IOException
-// ============================================================================
+    OverflowException::OverflowException(const char *message)
+        : Exception(message)
+    {
+    }
 
-IOException::IOException()
-    : Exception("An I/O error occurred.")
-{
-}
+    // ============================================================================
+    // IOException
+    // ============================================================================
 
-IOException::IOException(const char* message)
-    : Exception(message)
-{
-}
+    IOException::IOException()
+        : Exception("An I/O error occurred.")
+    {
+    }
 
-// ============================================================================
-// FileNotFoundException
-// ============================================================================
+    IOException::IOException(const char *message)
+        : Exception(message)
+    {
+    }
 
-FileNotFoundException::FileNotFoundException()
-    : IOException("The specified file was not found.")
-{
-}
+    // ============================================================================
+    // FileNotFoundException
+    // ============================================================================
 
-FileNotFoundException::FileNotFoundException(const char* path)
-    : IOException(path ? path : "The specified file was not found.")
-{
-}
+    FileNotFoundException::FileNotFoundException()
+        : IOException("The specified file was not found.")
+    {
+    }
 
-// ============================================================================
-// InvalidDataException
-// ============================================================================
+    FileNotFoundException::FileNotFoundException(const char *path)
+        : IOException(path ? path : "The specified file was not found.")
+    {
+    }
 
-InvalidDataException::InvalidDataException()
-    : Exception("The data is invalid.")
-{
-}
+    // ============================================================================
+    // InvalidDataException
+    // ============================================================================
 
-InvalidDataException::InvalidDataException(const char* message)
-    : Exception(message)
-{
-}
+    InvalidDataException::InvalidDataException()
+        : Exception("The data is invalid.")
+    {
+    }
 
+    InvalidDataException::InvalidDataException(const char *message)
+        : Exception(message)
+    {
+    }
 } // namespace System

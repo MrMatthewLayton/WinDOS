@@ -27,9 +27,9 @@ namespace System
 
         virtual ~Exception();
 
-        virtual const char *Message() const;
+        [[nodiscard]] virtual const char *Message() const;
 
-        virtual const char *what() const noexcept;
+        [[nodiscard]] virtual const char *what() const noexcept;
     };
 
     class ArgumentException : public Exception
@@ -43,7 +43,7 @@ namespace System
         void _freeParamName();
 
     public:
-        ArgumentException(const char *message, const char *paramName = nullptr);
+        explicit ArgumentException(const char *message, const char *paramName = nullptr);
 
         ArgumentException(const ArgumentException &other);
 
@@ -51,7 +51,7 @@ namespace System
 
         ~ArgumentException() override;
 
-        const char *ParamName() const;
+        [[nodiscard]] const char *ParamName() const;
     };
 
     class ArgumentNullException : public ArgumentException
@@ -63,7 +63,7 @@ namespace System
     class ArgumentOutOfRangeException : public ArgumentException
     {
     public:
-        ArgumentOutOfRangeException(const char *paramName, const char *message = nullptr);
+        explicit ArgumentOutOfRangeException(const char *paramName, const char *message = nullptr);
     };
 
     class InvalidOperationException : public Exception
