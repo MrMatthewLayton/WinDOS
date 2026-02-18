@@ -1,161 +1,136 @@
 #include "Mouse.hpp"
-#include <dos.h>
 #include <dpmi.h>
 
 namespace System::IO::Devices
 {
+    Boolean Mouse::isInitialized = false;
+    Boolean Mouse::isAvailable = false;
 
-/******************************************************************************/
-/*    Mouse static members                                                   */
-/******************************************************************************/
-
-Boolean Mouse::_initialized = Boolean(false);
-Boolean Mouse::_available = Boolean(false);
-
-/******************************************************************************/
-/*    Mouse private BIOS methods - kept for SetBounds() use                   */
-/******************************************************************************/
-
-void Mouse::BiosSetHorizontalBounds(int min, int max)
-{
-    __dpmi_regs regs;
-    regs.x.ax = 0x0007;  // Set horizontal bounds
-    regs.x.cx = min;
-    regs.x.dx = max;
-    __dpmi_int(0x33, &regs);
-}
-
-void Mouse::BiosSetVerticalBounds(int min, int max)
-{
-    __dpmi_regs regs;
-    regs.x.ax = 0x0008;  // Set vertical bounds
-    regs.x.cx = min;
-    regs.x.dx = max;
-    __dpmi_int(0x33, &regs);
-}
-
-/******************************************************************************/
-/*    Mouse public methods                                                    */
-/******************************************************************************/
-
-Boolean Mouse::Initialize()
-{
-    // INT 33h, AX=0000h - Initialize mouse
-    __dpmi_regs regs;
-    regs.x.ax = 0x0000;  // Initialize mouse
-    __dpmi_int(0x33, &regs);
-    bool result = (regs.x.ax != 0);
-
-    _available = Boolean(result);
-    _initialized = _available;
-    return _initialized;
-}
-
-Boolean Mouse::IsAvailable()
-{
-    return _initialized;
-}
-
-void Mouse::ShowCursor()
-{
-    if (static_cast<bool>(_initialized))
+    Boolean Mouse::Initialize()
     {
+        // INT 33h, AX=0000h - Initialize mouse
+        __dpmi_regs regs;
+        regs.x.ax = 0x0000;
+        __dpmi_int(0x33, &regs);
+        const bool result = regs.x.ax != 0;
+
+        return isInitialized = isAvailable = result;
+    }
+
+    Boolean Mouse::IsAvailable()
+    {
+        return isInitialized;
+    }
+
+    void Mouse::ShowCursor()
+    {
+        if (!isInitialized)
+            return;
+
         // INT 33h, AX=0001h - Show cursor
         __dpmi_regs regs;
-        regs.x.ax = 0x0001;  // Show cursor
+        regs.x.ax = 0x0001;
         __dpmi_int(0x33, &regs);
     }
-}
 
-void Mouse::HideCursor()
-{
-    if (static_cast<bool>(_initialized))
+    void Mouse::HideCursor()
     {
+        if (!isInitialized)
+            return;
+
         // INT 33h, AX=0002h - Hide cursor
         __dpmi_regs regs;
-        regs.x.ax = 0x0002;  // Hide cursor
+        regs.x.ax = 0x0002;
         __dpmi_int(0x33, &regs);
     }
-}
 
-MouseStatus Mouse::GetStatus()
-{
-    if (!static_cast<bool>(_initialized))
+    MouseStatus Mouse::GetStatus()
     {
-        return MouseStatus();
+        if (!isInitialized)
+            return {};
+
+        // INT 33h, AX=0003h - Get position and button status
+        __dpmi_regs regs;
+        regs.x.ax = 0x0003;
+        __dpmi_int(0x33, &regs);
+
+        return {
+            regs.x.cx,
+            regs.x.dx,
+            (regs.x.bx & 0x01) != 0,
+            (regs.x.bx & 0x02) != 0,
+            (regs.x.bx & 0x04) != 0
+        };
     }
 
-    // INT 33h, AX=0003h - Get position and button status
-    __dpmi_regs regs;
-    regs.x.ax = 0x0003;  // Get position and button status
-    __dpmi_int(0x33, &regs);
-
-    int x = regs.x.cx;
-    int y = regs.x.dx;
-    int buttons = regs.x.bx;
-
-    return MouseStatus(
-        Int32(x),
-        Int32(y),
-        Boolean((buttons & 0x01) != 0),  // Left button
-        Boolean((buttons & 0x02) != 0),  // Right button
-        Boolean((buttons & 0x04) != 0)   // Middle button
-    );
-}
-
-Int32 Mouse::GetX()
-{
-    return GetStatus().x;
-}
-
-Int32 Mouse::GetY()
-{
-    return GetStatus().y;
-}
-
-void Mouse::SetPosition(Int32 x, Int32 y)
-{
-    if (static_cast<bool>(_initialized))
+    Int32 Mouse::GetX()
     {
+        return GetStatus().x;
+    }
+
+    Int32 Mouse::GetY()
+    {
+        return GetStatus().y;
+    }
+
+    void Mouse::SetPosition(const Int32 x, const Int32 y)
+    {
+        if (!isInitialized)
+            return;
+
         // INT 33h, AX=0004h - Set position
         __dpmi_regs regs;
-        regs.x.ax = 0x0004;  // Set position
-        regs.x.cx = static_cast<int>(x);
-        regs.x.dx = static_cast<int>(y);
+        regs.x.ax = 0x0004;
+        regs.x.cx = x;
+        regs.x.dx = y;
         __dpmi_int(0x33, &regs);
     }
-}
 
-void Mouse::SetBounds(Int32 minX, Int32 minY, Int32 maxX, Int32 maxY)
-{
-    if (static_cast<bool>(_initialized))
+    void Mouse::SetBounds(const Int32 minX, const Int32 minY, const Int32 maxX, const Int32 maxY)
     {
-        BiosSetHorizontalBounds(static_cast<int>(minX), static_cast<int>(maxX));
-        BiosSetVerticalBounds(static_cast<int>(minY), static_cast<int>(maxY));
+        if (!isInitialized)
+            return;
+
+        // INT 33h, AX=0007h - Set horizontal bounds
+        __dpmi_regs h_regs;
+        h_regs.x.ax = 0x0007;
+        h_regs.x.cx = minX;
+        h_regs.x.dx = maxX;
+        __dpmi_int(0x33, &h_regs);
+
+        // INT 33h, AX=0008h - Set vertical bounds
+        __dpmi_regs v_regs;
+        v_regs.x.ax = 0x0008;
+        v_regs.x.cx = minY;
+        v_regs.x.dx = maxY;
+        __dpmi_int(0x33, &v_regs);
     }
-}
 
-void Mouse::SetSensitivity(Int32 horizontalMickeys, Int32 verticalMickeys)
-{
-    if (static_cast<bool>(_initialized))
+    void Mouse::SetSensitivity(const Int32 xMickeys, const Int32 yMickeys)
     {
+        if (!isInitialized)
+            return;
+
         // INT 33h, AX=000Fh - Set mickey/pixel ratio
         __dpmi_regs regs;
-        regs.x.ax = 0x000F;  // Set mickey/pixel ratio
-        regs.x.cx = static_cast<int>(horizontalMickeys);  // Horizontal mickeys per 8 pixels
-        regs.x.dx = static_cast<int>(verticalMickeys);    // Vertical mickeys per 8 pixels
+        regs.x.ax = 0x000F;
+        regs.x.cx = xMickeys; // Horizontal mickeys per 8 pixels
+        regs.x.dx = yMickeys; // Vertical mickeys per 8 pixels
         __dpmi_int(0x33, &regs);
     }
-}
 
-Boolean Mouse::IsLeftButtonPressed()
-{
-    return GetStatus().leftButton;
-}
+    Boolean Mouse::IsLeftButtonPressed()
+    {
+        return GetStatus().leftButton;
+    }
 
-Boolean Mouse::IsRightButtonPressed()
-{
-    return GetStatus().rightButton;
-}
+    Boolean Mouse::IsRightButtonPressed()
+    {
+        return GetStatus().rightButton;
+    }
 
+    Boolean Mouse::IsMiddleButtonPressed()
+    {
+        return GetStatus().middleButton;
+    }
 } // namespace System::IO::Devices
