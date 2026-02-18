@@ -120,25 +120,25 @@ const HatchStyle HatchStyle::Plaid(0xFF, 0x55, 0xFF, 0x55, 0x33, 0x55, 0x33, 0x5
 /*    Color methods                                                           */
 /******************************************************************************/
 
-Color Color::Lerp(const Color& c1, const Color& c2, float t) {
+Color Color::Lerp(const Color& c1, const Color& c2, Float32 t) {
     if (t <= 0.0f) return c1;
     if (t >= 1.0f) return c2;
 
-    float oneMinusT = 1.0f - t;
-    unsigned char a = static_cast<unsigned char>(
-        static_cast<float>(static_cast<unsigned char>(c1.A())) * oneMinusT +
-        static_cast<float>(static_cast<unsigned char>(c2.A())) * t);
-    unsigned char r = static_cast<unsigned char>(
-        static_cast<float>(static_cast<unsigned char>(c1.R())) * oneMinusT +
-        static_cast<float>(static_cast<unsigned char>(c2.R())) * t);
-    unsigned char g = static_cast<unsigned char>(
-        static_cast<float>(static_cast<unsigned char>(c1.G())) * oneMinusT +
-        static_cast<float>(static_cast<unsigned char>(c2.G())) * t);
-    unsigned char b = static_cast<unsigned char>(
-        static_cast<float>(static_cast<unsigned char>(c1.B())) * oneMinusT +
-        static_cast<float>(static_cast<unsigned char>(c2.B())) * t);
+    Float32 oneMinusT = 1.0f - t;
+    UInt8 a = UInt8(static_cast<unsigned char>(
+        static_cast<float>(static_cast<unsigned char>(c1.A())) * static_cast<float>(oneMinusT) +
+        static_cast<float>(static_cast<unsigned char>(c2.A())) * static_cast<float>(t)));
+    UInt8 r = UInt8(static_cast<unsigned char>(
+        static_cast<float>(static_cast<unsigned char>(c1.R())) * static_cast<float>(oneMinusT) +
+        static_cast<float>(static_cast<unsigned char>(c2.R())) * static_cast<float>(t)));
+    UInt8 g = UInt8(static_cast<unsigned char>(
+        static_cast<float>(static_cast<unsigned char>(c1.G())) * static_cast<float>(oneMinusT) +
+        static_cast<float>(static_cast<unsigned char>(c2.G())) * static_cast<float>(t)));
+    UInt8 b = UInt8(static_cast<unsigned char>(
+        static_cast<float>(static_cast<unsigned char>(c1.B())) * static_cast<float>(oneMinusT) +
+        static_cast<float>(static_cast<unsigned char>(c2.B())) * static_cast<float>(t)));
 
-    return Color(UInt8(a), UInt8(r), UInt8(g), UInt8(b));
+    return Color(a, r, g, b);
 }
 
 UInt8 Color::ToVgaIndex() const {
@@ -146,40 +146,42 @@ UInt8 Color::ToVgaIndex() const {
 }
 
 UInt8 Color::RgbToVgaIndex(UInt8 r, UInt8 g, UInt8 b) {
-    unsigned int bestDist = 0xFFFFFFFF;
-    unsigned char bestIndex = 0;
+    UInt32 bestDist = UInt32(0xFFFFFFFF);
+    UInt8 bestIndex = UInt8(0);
 
     unsigned char rv = static_cast<unsigned char>(r);
     unsigned char gv = static_cast<unsigned char>(g);
     unsigned char bv = static_cast<unsigned char>(b);
 
-    for (unsigned char i = 0; i < 16; ++i) {
-        int dr = static_cast<int>(rv) - g_vgaPalette[i].r;
-        int dg = static_cast<int>(gv) - g_vgaPalette[i].g;
-        int db = static_cast<int>(bv) - g_vgaPalette[i].b;
-        unsigned int dist = dr * dr + dg * dg + db * db;
+    for (Int32 i = Int32(0); static_cast<int>(i) < 16; i += 1) {
+        Int32 dr = Int32(static_cast<int>(rv) - g_vgaPalette[static_cast<int>(i)].r);
+        Int32 dg = Int32(static_cast<int>(gv) - g_vgaPalette[static_cast<int>(i)].g);
+        Int32 db = Int32(static_cast<int>(bv) - g_vgaPalette[static_cast<int>(i)].b);
+        UInt32 dist = UInt32(static_cast<int>(dr) * static_cast<int>(dr) +
+                             static_cast<int>(dg) * static_cast<int>(dg) +
+                             static_cast<int>(db) * static_cast<int>(db));
 
-        if (dist < bestDist) {
+        if (static_cast<unsigned int>(dist) < static_cast<unsigned int>(bestDist)) {
             bestDist = dist;
-            bestIndex = i;
+            bestIndex = UInt8(static_cast<unsigned char>(i));
         }
     }
-    return UInt8(bestIndex);
+    return bestIndex;
 }
 
 void Color::BuildVgaRemap(const unsigned char* paletteData, UInt32 paletteCount, unsigned char remap[16]) {
-    unsigned int count = static_cast<unsigned int>(paletteCount);
+    UInt32 count = paletteCount;
     // For each palette entry, find the closest VGA color
-    for (unsigned int i = 0; i < count && i < 16; ++i) {
+    for (UInt32 i = UInt32(0); static_cast<unsigned int>(i) < static_cast<unsigned int>(count) && static_cast<unsigned int>(i) < 16; i += 1) {
         // BMP palette is BGRA format (4 bytes per entry)
-        unsigned char b = paletteData[i * 4 + 0];
-        unsigned char g = paletteData[i * 4 + 1];
-        unsigned char r = paletteData[i * 4 + 2];
-        remap[i] = static_cast<unsigned char>(RgbToVgaIndex(r, g, b));
+        unsigned char b = paletteData[static_cast<unsigned int>(i) * 4 + 0];
+        unsigned char g = paletteData[static_cast<unsigned int>(i) * 4 + 1];
+        unsigned char r = paletteData[static_cast<unsigned int>(i) * 4 + 2];
+        remap[static_cast<unsigned int>(i)] = static_cast<unsigned char>(RgbToVgaIndex(r, g, b));
     }
     // Fill remaining entries with black
-    for (unsigned int i = count; i < 16; ++i) {
-        remap[i] = 0;
+    for (UInt32 i = count; static_cast<unsigned int>(i) < 16; i += 1) {
+        remap[static_cast<unsigned int>(i)] = 0;
     }
 }
 
@@ -218,13 +220,13 @@ static bool g_c2p_initialized = false;
 static void InitC2PTable() {
     if (g_c2p_initialized) return;
 
-    for (int p0 = 0; p0 < 16; p0++) {
-        for (int p1 = 0; p1 < 16; p1++) {
-            int idx = (p0 << 4) | p1;
-            for (int plane = 0; plane < 4; plane++) {
-                g_c2p_table[idx][plane] =
-                    (((p0 >> plane) & 1) << 1) |
-                    ((p1 >> plane) & 1);
+    for (Int32 p0 = Int32(0); static_cast<int>(p0) < 16; p0 += 1) {
+        for (Int32 p1 = Int32(0); static_cast<int>(p1) < 16; p1 += 1) {
+            Int32 idx = Int32((static_cast<int>(p0) << 4) | static_cast<int>(p1));
+            for (Int32 plane = Int32(0); static_cast<int>(plane) < 4; plane += 1) {
+                g_c2p_table[static_cast<int>(idx)][static_cast<int>(plane)] =
+                    (((static_cast<int>(p0) >> static_cast<int>(plane)) & 1) << 1) |
+                    ((static_cast<int>(p1) >> static_cast<int>(plane)) & 1);
             }
         }
     }
@@ -244,40 +246,40 @@ static const int g_bayerMatrix[4][4] = {
 };
 
 // Apply Bayer dithering to find VGA palette index
-static unsigned char DitherToVga(int x, int y, unsigned char r, unsigned char g, unsigned char b) {
+static unsigned char DitherToVga(Int32 x, Int32 y, unsigned char r, unsigned char g, unsigned char b) {
     // Get threshold from Bayer matrix (0-15, scaled to color range)
-    int threshold = (g_bayerMatrix[y & 3][x & 3] - 8) * 8;  // -64 to +56
+    Int32 threshold = Int32((g_bayerMatrix[static_cast<int>(y) & 3][static_cast<int>(x) & 3] - 8) * 8);  // -64 to +56
 
     // Apply threshold to each channel
-    int rq = static_cast<int>(r) + threshold;
-    int gq = static_cast<int>(g) + threshold;
-    int bq = static_cast<int>(b) + threshold;
+    Int32 rq = Int32(static_cast<int>(r) + static_cast<int>(threshold));
+    Int32 gq = Int32(static_cast<int>(g) + static_cast<int>(threshold));
+    Int32 bq = Int32(static_cast<int>(b) + static_cast<int>(threshold));
 
     // Clamp to valid range
-    if (rq < 0) rq = 0;
-    if (rq > 255) rq = 255;
-    if (gq < 0) gq = 0;
-    if (gq > 255) gq = 255;
-    if (bq < 0) bq = 0;
-    if (bq > 255) bq = 255;
+    if (static_cast<int>(rq) < 0) rq = Int32(0);
+    if (static_cast<int>(rq) > 255) rq = Int32(255);
+    if (static_cast<int>(gq) < 0) gq = Int32(0);
+    if (static_cast<int>(gq) > 255) gq = Int32(255);
+    if (static_cast<int>(bq) < 0) bq = Int32(0);
+    if (static_cast<int>(bq) > 255) bq = Int32(255);
 
     // Find closest VGA color
-    return static_cast<unsigned char>(Color::RgbToVgaIndex(rq, gq, bq));
+    return static_cast<unsigned char>(Color::RgbToVgaIndex(static_cast<int>(rq), static_cast<int>(gq), static_cast<int>(bq)));
 }
 
 /******************************************************************************/
 /*    Image implementation (unified 32-bit ARGB)                              */
 /******************************************************************************/
 
-void Image::_allocate(int w, int h, unsigned int fill) {
-    _width = w;
-    _height = h;
-    int size = w * h;
-    if (size > 0) {
-        _data = static_cast<unsigned int*>(std::malloc(size * sizeof(unsigned int)));
+void Image::_allocate(Int32 w, Int32 h, UInt32 fill) {
+    _width = static_cast<int>(w);
+    _height = static_cast<int>(h);
+    Int32 size = Int32(static_cast<int>(w) * static_cast<int>(h));
+    if (static_cast<int>(size) > 0) {
+        _data = static_cast<unsigned int*>(std::malloc(static_cast<int>(size) * sizeof(unsigned int)));
         if (_data) {
-            for (int i = 0; i < size; ++i) {
-                _data[i] = fill;
+            for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(size); i += 1) {
+                _data[static_cast<int>(i)] = static_cast<unsigned int>(fill);
             }
         }
     } else {
@@ -295,7 +297,7 @@ void Image::_free() {
 }
 
 void Image::_copy(const Image& other) {
-    _allocate(other._width, other._height, 0);
+    _allocate(Int32(other._width), Int32(other._height), UInt32(0));
     if (_data && other._data) {
         std::memcpy(_data, other._data, _width * _height * sizeof(unsigned int));
     }
@@ -352,21 +354,21 @@ Image& Image::operator=(Image&& other) noexcept {
 }
 
 Color Image::GetPixel(Int32 x, Int32 y) const {
-    int xi = static_cast<int>(x);
-    int yi = static_cast<int>(y);
-    if (xi < 0 || yi < 0 || xi >= _width || yi >= _height || !_data) {
+    Int32 xi = x;
+    Int32 yi = y;
+    if (static_cast<int>(xi) < 0 || static_cast<int>(yi) < 0 || static_cast<int>(xi) >= _width || static_cast<int>(yi) >= _height || !_data) {
         return Color::Transparent;
     }
-    return Color(_data[yi * _width + xi]);
+    return Color(_data[static_cast<int>(yi) * _width + static_cast<int>(xi)]);
 }
 
 void Image::SetPixel(Int32 x, Int32 y, const Color& color) {
-    int xi = static_cast<int>(x);
-    int yi = static_cast<int>(y);
-    if (xi < 0 || yi < 0 || xi >= _width || yi >= _height || !_data) {
+    Int32 xi = x;
+    Int32 yi = y;
+    if (static_cast<int>(xi) < 0 || static_cast<int>(yi) < 0 || static_cast<int>(xi) >= _width || static_cast<int>(yi) >= _height || !_data) {
         return;
     }
-    _data[yi * _width + xi] = static_cast<unsigned int>(color);
+    _data[static_cast<int>(yi) * _width + static_cast<int>(xi)] = static_cast<unsigned int>(color);
 }
 
 void Image::SetPixel(const Point& pt, const Color& color) {
@@ -375,10 +377,10 @@ void Image::SetPixel(const Point& pt, const Color& color) {
 
 void Image::Clear(const Color& color) {
     if (_data && _width > 0 && _height > 0) {
-        unsigned int val = static_cast<unsigned int>(color);
-        int size = _width * _height;
-        for (int i = 0; i < size; ++i) {
-            _data[i] = val;
+        UInt32 val = UInt32(static_cast<unsigned int>(color));
+        Int32 size = Int32(_width * _height);
+        for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(size); i += 1) {
+            _data[static_cast<int>(i)] = static_cast<unsigned int>(val);
         }
     }
 }
@@ -386,30 +388,30 @@ void Image::Clear(const Color& color) {
 void Image::CopyFrom(const Image& src, Int32 destX, Int32 destY) {
     if (!_data || !src._data) return;
 
-    int dstX = static_cast<int>(destX);
-    int dstY = static_cast<int>(destY);
+    Int32 dstX = destX;
+    Int32 dstY = destY;
 
-    for (int sy = 0; sy < src._height; sy++) {
-        int dy = dstY + sy;
-        if (dy < 0 || dy >= _height) continue;
+    for (Int32 sy = Int32(0); static_cast<int>(sy) < src._height; sy += 1) {
+        Int32 dy = Int32(static_cast<int>(dstY) + static_cast<int>(sy));
+        if (static_cast<int>(dy) < 0 || static_cast<int>(dy) >= _height) continue;
 
-        int srcStartX = 0;
-        int dstStartX = dstX;
-        int copyWidth = src._width;
+        Int32 srcStartX = Int32(0);
+        Int32 dstStartX = dstX;
+        Int32 copyWidth = Int32(src._width);
 
-        if (dstStartX < 0) {
-            srcStartX = -dstStartX;
-            copyWidth += dstStartX;
-            dstStartX = 0;
+        if (static_cast<int>(dstStartX) < 0) {
+            srcStartX = Int32(-static_cast<int>(dstStartX));
+            copyWidth = Int32(static_cast<int>(copyWidth) + static_cast<int>(dstStartX));
+            dstStartX = Int32(0);
         }
-        if (dstStartX + copyWidth > _width) {
-            copyWidth = _width - dstStartX;
+        if (static_cast<int>(dstStartX) + static_cast<int>(copyWidth) > _width) {
+            copyWidth = Int32(_width - static_cast<int>(dstStartX));
         }
-        if (copyWidth <= 0) continue;
+        if (static_cast<int>(copyWidth) <= 0) continue;
 
-        unsigned int* dstRow = _data + dy * _width + dstStartX;
-        const unsigned int* srcRow = src._data + sy * src._width + srcStartX;
-        std::memcpy(dstRow, srcRow, copyWidth * sizeof(unsigned int));
+        unsigned int* dstRow = _data + static_cast<int>(dy) * _width + static_cast<int>(dstStartX);
+        const unsigned int* srcRow = src._data + static_cast<int>(sy) * src._width + static_cast<int>(srcStartX);
+        std::memcpy(dstRow, srcRow, static_cast<int>(copyWidth) * sizeof(unsigned int));
     }
 }
 
@@ -420,56 +422,56 @@ void Image::CopyFrom(const Image& src, const Point& dest) {
 void Image::CopyFromWithAlpha(const Image& src, Int32 destX, Int32 destY) {
     if (!_data || !src._data) return;
 
-    int dstX = static_cast<int>(destX);
-    int dstY = static_cast<int>(destY);
+    Int32 dstX = destX;
+    Int32 dstY = destY;
 
-    for (int sy = 0; sy < src._height; sy++) {
-        int dy = dstY + sy;
-        if (dy < 0 || dy >= _height) continue;
+    for (Int32 sy = Int32(0); static_cast<int>(sy) < src._height; sy += 1) {
+        Int32 dy = Int32(static_cast<int>(dstY) + static_cast<int>(sy));
+        if (static_cast<int>(dy) < 0 || static_cast<int>(dy) >= _height) continue;
 
-        for (int sx = 0; sx < src._width; sx++) {
-            int dx = dstX + sx;
-            if (dx < 0 || dx >= _width) continue;
+        for (Int32 sx = Int32(0); static_cast<int>(sx) < src._width; sx += 1) {
+            Int32 dx = Int32(static_cast<int>(dstX) + static_cast<int>(sx));
+            if (static_cast<int>(dx) < 0 || static_cast<int>(dx) >= _width) continue;
 
-            unsigned int pixel = src._data[sy * src._width + sx];
+            UInt32 pixel = UInt32(src._data[static_cast<int>(sy) * src._width + static_cast<int>(sx)]);
             // Only copy if alpha >= 128 (semi-opaque or opaque)
-            if ((pixel >> 24) >= 128) {
-                _data[dy * _width + dx] = pixel;
+            if ((static_cast<unsigned int>(pixel) >> 24) >= 128) {
+                _data[static_cast<int>(dy) * _width + static_cast<int>(dx)] = static_cast<unsigned int>(pixel);
             }
         }
     }
 }
 
 Image Image::GetRegion(Int32 x, Int32 y, Int32 width, Int32 height) const {
-    int xi = static_cast<int>(x);
-    int yi = static_cast<int>(y);
-    int wi = static_cast<int>(width);
-    int hi = static_cast<int>(height);
+    Int32 xi = x;
+    Int32 yi = y;
+    Int32 wi = width;
+    Int32 hi = height;
 
     Image result(width, height, Color::Transparent);
     if (!_data || !result._data) return result;
 
-    for (int dy = 0; dy < hi; dy++) {
-        int sy = yi + dy;
-        if (sy < 0 || sy >= _height) continue;
+    for (Int32 dy = Int32(0); static_cast<int>(dy) < static_cast<int>(hi); dy += 1) {
+        Int32 sy = Int32(static_cast<int>(yi) + static_cast<int>(dy));
+        if (static_cast<int>(sy) < 0 || static_cast<int>(sy) >= _height) continue;
 
-        int srcStartX = xi;
-        int dstStartX = 0;
-        int copyWidth = wi;
+        Int32 srcStartX = xi;
+        Int32 dstStartX = Int32(0);
+        Int32 copyWidth = wi;
 
-        if (srcStartX < 0) {
-            dstStartX = -srcStartX;
-            copyWidth += srcStartX;
-            srcStartX = 0;
+        if (static_cast<int>(srcStartX) < 0) {
+            dstStartX = Int32(-static_cast<int>(srcStartX));
+            copyWidth = Int32(static_cast<int>(copyWidth) + static_cast<int>(srcStartX));
+            srcStartX = Int32(0);
         }
-        if (srcStartX + copyWidth > _width) {
-            copyWidth = _width - srcStartX;
+        if (static_cast<int>(srcStartX) + static_cast<int>(copyWidth) > _width) {
+            copyWidth = Int32(_width - static_cast<int>(srcStartX));
         }
-        if (copyWidth <= 0) continue;
+        if (static_cast<int>(copyWidth) <= 0) continue;
 
-        unsigned int* dstRow = result._data + dy * wi + dstStartX;
-        const unsigned int* srcRow = _data + sy * _width + srcStartX;
-        std::memcpy(dstRow, srcRow, copyWidth * sizeof(unsigned int));
+        unsigned int* dstRow = result._data + static_cast<int>(dy) * static_cast<int>(wi) + static_cast<int>(dstStartX);
+        const unsigned int* srcRow = _data + static_cast<int>(sy) * _width + static_cast<int>(srcStartX);
+        std::memcpy(dstRow, srcRow, static_cast<int>(copyWidth) * sizeof(unsigned int));
     }
     return result;
 }
@@ -479,9 +481,9 @@ Image Image::GetRegion(const Rectangle& rect) const {
 }
 
 Image Image::FromBitmap(const char* path) {
-    const unsigned short BMP_SIGNATURE = 0x4D42;  // 'BM'
-    const int FILE_HEADER_SIZE = sizeof(BitmapFileHeader);
-    const int INFO_HEADER_SIZE = sizeof(BitmapInfoHeader);
+    const UInt16 BMP_SIGNATURE = UInt16(0x4D42);  // 'BM'
+    const Int32 FILE_HEADER_SIZE = Int32(sizeof(BitmapFileHeader));
+    const Int32 INFO_HEADER_SIZE = Int32(sizeof(BitmapInfoHeader));
 
     // Validate path
     if (!path || path[0] == '\0') {
@@ -490,41 +492,41 @@ Image Image::FromBitmap(const char* path) {
 
     // Read file using File API
     Array<UInt8> fileBytes = IO::File::ReadAllBytes(path);
-    int fileSize = fileBytes.Length();
+    Int32 fileSize = Int32(fileBytes.Length());
 
-    if (fileSize < FILE_HEADER_SIZE + INFO_HEADER_SIZE) {
+    if (static_cast<int>(fileSize) < static_cast<int>(FILE_HEADER_SIZE) + static_cast<int>(INFO_HEADER_SIZE)) {
         throw InvalidDataException("File is too small to be a valid BMP.");
     }
 
     // Copy to raw buffer for processing
-    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(fileSize));
+    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(static_cast<int>(fileSize)));
     if (!fileData) {
         throw InvalidOperationException("Failed to allocate memory for file data.");
     }
 
-    for (int i = 0; i < fileSize; i++) {
-        fileData[i] = static_cast<unsigned char>(fileBytes[i]);
+    for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(fileSize); i += 1) {
+        fileData[static_cast<int>(i)] = static_cast<unsigned char>(fileBytes[static_cast<int>(i)]);
     }
 
     // Parse headers
     const BitmapFileHeader* fileHeader = reinterpret_cast<const BitmapFileHeader*>(fileData);
-    if (static_cast<unsigned short>(fileHeader->Type()) != BMP_SIGNATURE) {
+    if (static_cast<unsigned short>(fileHeader->Type()) != static_cast<unsigned short>(BMP_SIGNATURE)) {
         std::free(fileData);
         throw InvalidDataException("File is not a valid BMP (invalid signature).");
     }
 
-    const BitmapInfoHeader* infoHeader = reinterpret_cast<const BitmapInfoHeader*>(fileData + FILE_HEADER_SIZE);
-    int bitCount = static_cast<int>(infoHeader->BitCount());
+    const BitmapInfoHeader* infoHeader = reinterpret_cast<const BitmapInfoHeader*>(fileData + static_cast<int>(FILE_HEADER_SIZE));
+    Int32 bitCount = Int32(static_cast<int>(infoHeader->BitCount()));
 
     if (static_cast<unsigned int>(infoHeader->Compression()) != 0) {
         std::free(fileData);
         throw InvalidDataException("Compressed BMP files are not supported.");
     }
 
-    int width = static_cast<int>(infoHeader->Width());
-    int height = static_cast<int>(infoHeader->Height());
+    Int32 width = Int32(static_cast<int>(infoHeader->Width()));
+    Int32 height = Int32(static_cast<int>(infoHeader->Height()));
 
-    if (width <= 0 || height <= 0) {
+    if (static_cast<int>(width) <= 0 || static_cast<int>(height) <= 0) {
         std::free(fileData);
         throw InvalidDataException("BMP has invalid dimensions.");
     }
@@ -537,83 +539,83 @@ Image Image::FromBitmap(const char* path) {
     unsigned int* outPixels = result.Data();
 
     // Handle different bit depths
-    if (bitCount == 4) {
+    if (static_cast<int>(bitCount) == 4) {
         // 4bpp - need palette
-        unsigned int paletteCount = static_cast<unsigned int>(infoHeader->UsedColors());
-        if (paletteCount == 0) paletteCount = 16;
-        const unsigned char* paletteData = fileData + FILE_HEADER_SIZE +
+        UInt32 paletteCount = UInt32(static_cast<unsigned int>(infoHeader->UsedColors()));
+        if (static_cast<unsigned int>(paletteCount) == 0) paletteCount = UInt32(16);
+        const unsigned char* paletteData = fileData + static_cast<int>(FILE_HEADER_SIZE) +
                                            static_cast<unsigned int>(infoHeader->HeaderSize());
 
-        int bytesPerLine = (((width + 1) / 2) + 3) & ~3;
+        Int32 bytesPerLine = Int32((((static_cast<int>(width) + 1) / 2) + 3) & ~3);
 
-        for (int y = 0; y < height; ++y) {
-            const unsigned char* row = pixelData + (height - 1 - y) * bytesPerLine;
-            for (int x = 0; x < width; ++x) {
-                unsigned char byteVal = row[x / 2];
-                unsigned char index = ((x & 1) == 0) ? (byteVal >> 4) & 0x0F : byteVal & 0x0F;
-                if (index < paletteCount) {
+        for (Int32 y = Int32(0); static_cast<int>(y) < static_cast<int>(height); y += 1) {
+            const unsigned char* row = pixelData + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(bytesPerLine);
+            for (Int32 x = Int32(0); static_cast<int>(x) < static_cast<int>(width); x += 1) {
+                unsigned char byteVal = row[static_cast<int>(x) / 2];
+                unsigned char index = ((static_cast<int>(x) & 1) == 0) ? (byteVal >> 4) & 0x0F : byteVal & 0x0F;
+                if (index < static_cast<unsigned int>(paletteCount)) {
                     unsigned char b = paletteData[index * 4 + 0];
                     unsigned char g = paletteData[index * 4 + 1];
                     unsigned char r = paletteData[index * 4 + 2];
-                    outPixels[y * width + x] = 0xFF000000 |
+                    outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] = 0xFF000000 |
                         (static_cast<unsigned int>(r) << 16) |
                         (static_cast<unsigned int>(g) << 8) |
                         static_cast<unsigned int>(b);
                 }
             }
         }
-    } else if (bitCount == 8) {
+    } else if (static_cast<int>(bitCount) == 8) {
         // 8bpp - need palette
-        unsigned int paletteCount = static_cast<unsigned int>(infoHeader->UsedColors());
-        if (paletteCount == 0) paletteCount = 256;
-        const unsigned char* paletteData = fileData + FILE_HEADER_SIZE +
+        UInt32 paletteCount = UInt32(static_cast<unsigned int>(infoHeader->UsedColors()));
+        if (static_cast<unsigned int>(paletteCount) == 0) paletteCount = UInt32(256);
+        const unsigned char* paletteData = fileData + static_cast<int>(FILE_HEADER_SIZE) +
                                            static_cast<unsigned int>(infoHeader->HeaderSize());
 
-        int bytesPerLine = (width + 3) & ~3;
+        Int32 bytesPerLine = Int32((static_cast<int>(width) + 3) & ~3);
 
-        for (int y = 0; y < height; ++y) {
-            const unsigned char* row = pixelData + (height - 1 - y) * bytesPerLine;
-            for (int x = 0; x < width; ++x) {
-                unsigned char index = row[x];
-                if (index < paletteCount) {
+        for (Int32 y = Int32(0); static_cast<int>(y) < static_cast<int>(height); y += 1) {
+            const unsigned char* row = pixelData + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(bytesPerLine);
+            for (Int32 x = Int32(0); static_cast<int>(x) < static_cast<int>(width); x += 1) {
+                unsigned char index = row[static_cast<int>(x)];
+                if (index < static_cast<unsigned int>(paletteCount)) {
                     unsigned char b = paletteData[index * 4 + 0];
                     unsigned char g = paletteData[index * 4 + 1];
                     unsigned char r = paletteData[index * 4 + 2];
-                    outPixels[y * width + x] = 0xFF000000 |
+                    outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] = 0xFF000000 |
                         (static_cast<unsigned int>(r) << 16) |
                         (static_cast<unsigned int>(g) << 8) |
                         static_cast<unsigned int>(b);
                 }
             }
         }
-    } else if (bitCount == 24) {
+    } else if (static_cast<int>(bitCount) == 24) {
         // 24bpp - direct RGB
-        int bytesPerLine = ((width * 3) + 3) & ~3;
+        Int32 bytesPerLine = Int32(((static_cast<int>(width) * 3) + 3) & ~3);
 
-        for (int y = 0; y < height; ++y) {
-            const unsigned char* row = pixelData + (height - 1 - y) * bytesPerLine;
-            for (int x = 0; x < width; ++x) {
-                unsigned char b = row[x * 3 + 0];
-                unsigned char g = row[x * 3 + 1];
-                unsigned char r = row[x * 3 + 2];
-                outPixels[y * width + x] = 0xFF000000 |
+        for (Int32 y = Int32(0); static_cast<int>(y) < static_cast<int>(height); y += 1) {
+            const unsigned char* row = pixelData + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(bytesPerLine);
+            for (Int32 x = Int32(0); static_cast<int>(x) < static_cast<int>(width); x += 1) {
+                unsigned char b = row[static_cast<int>(x) * 3 + 0];
+                unsigned char g = row[static_cast<int>(x) * 3 + 1];
+                unsigned char r = row[static_cast<int>(x) * 3 + 2];
+                outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] = 0xFF000000 |
                     (static_cast<unsigned int>(r) << 16) |
                     (static_cast<unsigned int>(g) << 8) |
                     static_cast<unsigned int>(b);
             }
         }
-    } else if (bitCount == 32) {
+    } else if (static_cast<int>(bitCount) == 32) {
         // 32bpp - direct BGRA
-        int bytesPerLine = width * 4;
+        Int32 bytesPerLine = Int32(static_cast<int>(width) * 4);
 
-        for (int y = 0; y < height; ++y) {
-            const unsigned char* row = pixelData + (height - 1 - y) * bytesPerLine;
-            for (int x = 0; x < width; ++x) {
-                unsigned char b = row[x * 4 + 0];
-                unsigned char g = row[x * 4 + 1];
-                unsigned char r = row[x * 4 + 2];
-                unsigned char a = row[x * 4 + 3];
-                outPixels[y * width + x] =
+        for (Int32 y = Int32(0); static_cast<int>(y) < static_cast<int>(height); y += 1) {
+            const unsigned char* row = pixelData + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(bytesPerLine);
+            for (Int32 x = Int32(0); static_cast<int>(x) < static_cast<int>(width); x += 1) {
+                unsigned char b = row[static_cast<int>(x) * 4 + 0];
+                unsigned char g = row[static_cast<int>(x) * 4 + 1];
+                unsigned char r = row[static_cast<int>(x) * 4 + 2];
+                unsigned char a = row[static_cast<int>(x) * 4 + 3];
+                outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] =
                     (static_cast<unsigned int>(a) << 24) |
                     (static_cast<unsigned int>(r) << 16) |
                     (static_cast<unsigned int>(g) << 8) |
@@ -961,128 +963,128 @@ struct FntCharEntryV3 {
 /*    Helper: Decode icon DIB data to 32-bit ARGB image                        */
 /******************************************************************************/
 
-static void DecodeIconDIB(const unsigned char* iconData, int targetSize, Image& result) {
+static void DecodeIconDIB(const unsigned char* iconData, Int32 targetSize, Image& result) {
     const BitmapInfoHeader* bmpHeader = reinterpret_cast<const BitmapInfoHeader*>(iconData);
-    int width = static_cast<int>(bmpHeader->Width());
-    int height = static_cast<int>(bmpHeader->Height()) / 2;  // DIB height includes mask
-    int bitCount = static_cast<int>(bmpHeader->BitCount());
+    Int32 width = Int32(static_cast<int>(bmpHeader->Width()));
+    Int32 height = Int32(static_cast<int>(bmpHeader->Height()) / 2);  // DIB height includes mask
+    Int32 bitCount = Int32(static_cast<int>(bmpHeader->BitCount()));
 
-    if (width != targetSize || height != targetSize) {
+    if (static_cast<int>(width) != static_cast<int>(targetSize) || static_cast<int>(height) != static_cast<int>(targetSize)) {
         throw InvalidDataException("Icon DIB dimensions don't match expected size.");
     }
 
     // Get palette (if any)
-    unsigned int paletteCount = static_cast<unsigned int>(bmpHeader->UsedColors());
-    if (paletteCount == 0 && bitCount <= 8) {
-        paletteCount = 1u << bitCount;
+    UInt32 paletteCount = UInt32(static_cast<unsigned int>(bmpHeader->UsedColors()));
+    if (static_cast<unsigned int>(paletteCount) == 0 && static_cast<int>(bitCount) <= 8) {
+        paletteCount = UInt32(1u << static_cast<int>(bitCount));
     }
 
     const unsigned char* paletteData = iconData + static_cast<unsigned int>(bmpHeader->HeaderSize());
-    const unsigned char* xorMask = paletteData + paletteCount * 4;
+    const unsigned char* xorMask = paletteData + static_cast<unsigned int>(paletteCount) * 4;
 
     // Calculate strides
-    int xorStride = ((bitCount * width + 31) / 32) * 4;
-    int andStride = ((width + 31) / 32) * 4;
-    const unsigned char* andMask = xorMask + xorStride * height;
+    Int32 xorStride = Int32(((static_cast<int>(bitCount) * static_cast<int>(width) + 31) / 32) * 4);
+    Int32 andStride = Int32(((static_cast<int>(width) + 31) / 32) * 4);
+    const unsigned char* andMask = xorMask + static_cast<int>(xorStride) * static_cast<int>(height);
 
     unsigned int* outPixels = result.Data();
 
     // Decode based on bit depth
-    if (bitCount == 32) {
+    if (static_cast<int>(bitCount) == 32) {
         // 32bpp BGRA with alpha
-        for (int y = 0; y < height; ++y) {
-            const unsigned char* row = xorMask + (height - 1 - y) * xorStride;
-            for (int x = 0; x < width; ++x) {
-                unsigned char b = row[x * 4 + 0];
-                unsigned char g = row[x * 4 + 1];
-                unsigned char r = row[x * 4 + 2];
-                unsigned char a = row[x * 4 + 3];
-                outPixels[y * width + x] =
+        for (Int32 y = Int32(0); static_cast<int>(y) < static_cast<int>(height); y += 1) {
+            const unsigned char* row = xorMask + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(xorStride);
+            for (Int32 x = Int32(0); static_cast<int>(x) < static_cast<int>(width); x += 1) {
+                unsigned char b = row[static_cast<int>(x) * 4 + 0];
+                unsigned char g = row[static_cast<int>(x) * 4 + 1];
+                unsigned char r = row[static_cast<int>(x) * 4 + 2];
+                unsigned char a = row[static_cast<int>(x) * 4 + 3];
+                outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] =
                     (static_cast<unsigned int>(a) << 24) |
                     (static_cast<unsigned int>(r) << 16) |
                     (static_cast<unsigned int>(g) << 8) |
                     static_cast<unsigned int>(b);
             }
         }
-    } else if (bitCount == 24) {
+    } else if (static_cast<int>(bitCount) == 24) {
         // 24bpp RGB, use AND mask for transparency
-        for (int y = 0; y < height; ++y) {
-            const unsigned char* row = xorMask + (height - 1 - y) * xorStride;
-            const unsigned char* maskRow = andMask + (height - 1 - y) * andStride;
-            for (int x = 0; x < width; ++x) {
-                bool transparent = ((maskRow[x / 8] >> (7 - (x & 7))) & 1) != 0;
-                if (transparent) {
-                    outPixels[y * width + x] = 0x00000000;
+        for (Int32 y = Int32(0); static_cast<int>(y) < static_cast<int>(height); y += 1) {
+            const unsigned char* row = xorMask + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(xorStride);
+            const unsigned char* maskRow = andMask + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(andStride);
+            for (Int32 x = Int32(0); static_cast<int>(x) < static_cast<int>(width); x += 1) {
+                Boolean transparent = Boolean(((maskRow[static_cast<int>(x) / 8] >> (7 - (static_cast<int>(x) & 7))) & 1) != 0);
+                if (static_cast<bool>(transparent)) {
+                    outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] = 0x00000000;
                 } else {
-                    unsigned char b = row[x * 3 + 0];
-                    unsigned char g = row[x * 3 + 1];
-                    unsigned char r = row[x * 3 + 2];
-                    outPixels[y * width + x] = 0xFF000000 |
+                    unsigned char b = row[static_cast<int>(x) * 3 + 0];
+                    unsigned char g = row[static_cast<int>(x) * 3 + 1];
+                    unsigned char r = row[static_cast<int>(x) * 3 + 2];
+                    outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] = 0xFF000000 |
                         (static_cast<unsigned int>(r) << 16) |
                         (static_cast<unsigned int>(g) << 8) |
                         static_cast<unsigned int>(b);
                 }
             }
         }
-    } else if (bitCount == 8) {
+    } else if (static_cast<int>(bitCount) == 8) {
         // 8bpp indexed
-        for (int y = 0; y < height; ++y) {
-            const unsigned char* row = xorMask + (height - 1 - y) * xorStride;
-            const unsigned char* maskRow = andMask + (height - 1 - y) * andStride;
-            for (int x = 0; x < width; ++x) {
-                bool transparent = ((maskRow[x / 8] >> (7 - (x & 7))) & 1) != 0;
-                if (transparent) {
-                    outPixels[y * width + x] = 0x00000000;
+        for (Int32 y = Int32(0); static_cast<int>(y) < static_cast<int>(height); y += 1) {
+            const unsigned char* row = xorMask + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(xorStride);
+            const unsigned char* maskRow = andMask + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(andStride);
+            for (Int32 x = Int32(0); static_cast<int>(x) < static_cast<int>(width); x += 1) {
+                Boolean transparent = Boolean(((maskRow[static_cast<int>(x) / 8] >> (7 - (static_cast<int>(x) & 7))) & 1) != 0);
+                if (static_cast<bool>(transparent)) {
+                    outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] = 0x00000000;
                 } else {
-                    unsigned char index = row[x];
+                    unsigned char index = row[static_cast<int>(x)];
                     unsigned char b = paletteData[index * 4 + 0];
                     unsigned char g = paletteData[index * 4 + 1];
                     unsigned char r = paletteData[index * 4 + 2];
-                    outPixels[y * width + x] = 0xFF000000 |
+                    outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] = 0xFF000000 |
                         (static_cast<unsigned int>(r) << 16) |
                         (static_cast<unsigned int>(g) << 8) |
                         static_cast<unsigned int>(b);
                 }
             }
         }
-    } else if (bitCount == 4) {
+    } else if (static_cast<int>(bitCount) == 4) {
         // 4bpp indexed
-        for (int y = 0; y < height; ++y) {
-            const unsigned char* row = xorMask + (height - 1 - y) * xorStride;
-            const unsigned char* maskRow = andMask + (height - 1 - y) * andStride;
-            for (int x = 0; x < width; ++x) {
-                bool transparent = ((maskRow[x / 8] >> (7 - (x & 7))) & 1) != 0;
-                if (transparent) {
-                    outPixels[y * width + x] = 0x00000000;
+        for (Int32 y = Int32(0); static_cast<int>(y) < static_cast<int>(height); y += 1) {
+            const unsigned char* row = xorMask + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(xorStride);
+            const unsigned char* maskRow = andMask + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(andStride);
+            for (Int32 x = Int32(0); static_cast<int>(x) < static_cast<int>(width); x += 1) {
+                Boolean transparent = Boolean(((maskRow[static_cast<int>(x) / 8] >> (7 - (static_cast<int>(x) & 7))) & 1) != 0);
+                if (static_cast<bool>(transparent)) {
+                    outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] = 0x00000000;
                 } else {
-                    unsigned char byteVal = row[x / 2];
-                    unsigned char index = ((x & 1) == 0) ? (byteVal >> 4) & 0x0F : byteVal & 0x0F;
+                    unsigned char byteVal = row[static_cast<int>(x) / 2];
+                    unsigned char index = ((static_cast<int>(x) & 1) == 0) ? (byteVal >> 4) & 0x0F : byteVal & 0x0F;
                     unsigned char b = paletteData[index * 4 + 0];
                     unsigned char g = paletteData[index * 4 + 1];
                     unsigned char r = paletteData[index * 4 + 2];
-                    outPixels[y * width + x] = 0xFF000000 |
+                    outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] = 0xFF000000 |
                         (static_cast<unsigned int>(r) << 16) |
                         (static_cast<unsigned int>(g) << 8) |
                         static_cast<unsigned int>(b);
                 }
             }
         }
-    } else if (bitCount == 1) {
+    } else if (static_cast<int>(bitCount) == 1) {
         // 1bpp monochrome
-        for (int y = 0; y < height; ++y) {
-            const unsigned char* row = xorMask + (height - 1 - y) * xorStride;
-            const unsigned char* maskRow = andMask + (height - 1 - y) * andStride;
-            for (int x = 0; x < width; ++x) {
-                bool transparent = ((maskRow[x / 8] >> (7 - (x & 7))) & 1) != 0;
-                if (transparent) {
-                    outPixels[y * width + x] = 0x00000000;
+        for (Int32 y = Int32(0); static_cast<int>(y) < static_cast<int>(height); y += 1) {
+            const unsigned char* row = xorMask + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(xorStride);
+            const unsigned char* maskRow = andMask + (static_cast<int>(height) - 1 - static_cast<int>(y)) * static_cast<int>(andStride);
+            for (Int32 x = Int32(0); static_cast<int>(x) < static_cast<int>(width); x += 1) {
+                Boolean transparent = Boolean(((maskRow[static_cast<int>(x) / 8] >> (7 - (static_cast<int>(x) & 7))) & 1) != 0);
+                if (static_cast<bool>(transparent)) {
+                    outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] = 0x00000000;
                 } else {
-                    bool pixel = ((row[x / 8] >> (7 - (x & 7))) & 1) != 0;
-                    unsigned char index = pixel ? 1 : 0;
+                    Boolean pixel = Boolean(((row[static_cast<int>(x) / 8] >> (7 - (static_cast<int>(x) & 7))) & 1) != 0);
+                    unsigned char index = static_cast<bool>(pixel) ? 1 : 0;
                     unsigned char b = paletteData[index * 4 + 0];
                     unsigned char g = paletteData[index * 4 + 1];
                     unsigned char r = paletteData[index * 4 + 2];
-                    outPixels[y * width + x] = 0xFF000000 |
+                    outPixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] = 0xFF000000 |
                         (static_cast<unsigned int>(r) << 16) |
                         (static_cast<unsigned int>(g) << 8) |
                         static_cast<unsigned int>(b);
@@ -1103,27 +1105,27 @@ Image Image::FromIcon(const char* path, const Size& size) {
         throw ArgumentNullException("path");
     }
 
-    int targetSize = static_cast<int>(size.width);
-    if (targetSize != 16 && targetSize != 24 && targetSize != 32 && targetSize != 48) {
+    Int32 targetSize = Int32(static_cast<int>(size.width));
+    if (static_cast<int>(targetSize) != 16 && static_cast<int>(targetSize) != 24 && static_cast<int>(targetSize) != 32 && static_cast<int>(targetSize) != 48) {
         throw ArgumentException("Icon size must be 16, 24, 32, or 48 pixels.");
     }
 
     // Read file using File API
     Array<UInt8> fileBytes = IO::File::ReadAllBytes(path);
-    int fileSize = fileBytes.Length();
+    Int32 fileSize = Int32(fileBytes.Length());
 
-    if (fileSize < static_cast<int>(sizeof(IconDirectory))) {
+    if (static_cast<int>(fileSize) < static_cast<int>(sizeof(IconDirectory))) {
         throw InvalidDataException("File is too small to be a valid ICO.");
     }
 
     // Copy to raw buffer for processing
-    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(fileSize));
+    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(static_cast<int>(fileSize)));
     if (!fileData) {
         throw InvalidOperationException("Failed to allocate memory.");
     }
 
-    for (int i = 0; i < fileSize; i++) {
-        fileData[i] = static_cast<unsigned char>(fileBytes[i]);
+    for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(fileSize); i += 1) {
+        fileData[static_cast<int>(i)] = static_cast<unsigned char>(fileBytes[static_cast<int>(i)]);
     }
 
     const IconDirectory* dir = reinterpret_cast<const IconDirectory*>(fileData);
@@ -1137,9 +1139,9 @@ Image Image::FromIcon(const char* path, const Size& size) {
 
     // Find matching size
     const IconDirectoryEntry* chosen = nullptr;
-    for (unsigned short i = 0; i < dir->Count(); ++i) {
-        if (entries[i].Width() == targetSize && entries[i].Height() == targetSize) {
-            chosen = &entries[i];
+    for (UInt16 i = UInt16(0); static_cast<unsigned short>(i) < dir->Count(); i += 1) {
+        if (entries[static_cast<unsigned short>(i)].Width() == static_cast<int>(targetSize) && entries[static_cast<unsigned short>(i)].Height() == static_cast<int>(targetSize)) {
+            chosen = &entries[static_cast<unsigned short>(i)];
             break;
         }
     }
@@ -1162,37 +1164,37 @@ Image Image::FromIcon(const char* path, const Size& size) {
 /******************************************************************************/
 
 Image Image::FromIconLibrary(const char* path, Int32 iconIndex, const Size& size) {
-    const unsigned short MZ_SIGNATURE = 0x5A4D;
-    const unsigned int PE_SIGNATURE = 0x00004550;
-    const unsigned int RT_ICON = 3;
-    const unsigned int RT_GROUP_ICON = 14;
+    const UInt16 MZ_SIGNATURE = UInt16(0x5A4D);
+    const UInt32 PE_SIGNATURE = UInt32(0x00004550);
+    const UInt32 RT_ICON = UInt32(3);
+    const UInt32 RT_GROUP_ICON = UInt32(14);
 
     if (!path || path[0] == '\0') {
         throw ArgumentNullException("path");
     }
 
-    int targetSize = static_cast<int>(size.width);
-    if (targetSize != 16 && targetSize != 24 && targetSize != 32 && targetSize != 48) {
+    Int32 targetSize = Int32(static_cast<int>(size.width));
+    if (static_cast<int>(targetSize) != 16 && static_cast<int>(targetSize) != 24 && static_cast<int>(targetSize) != 32 && static_cast<int>(targetSize) != 48) {
         throw ArgumentException("Icon size must be 16, 24, 32, or 48 pixels.");
     }
 
     // Read file using File API
     Array<UInt8> fileBytes = IO::File::ReadAllBytes(path);
-    int fileSize = fileBytes.Length();
+    Int32 fileSize = Int32(fileBytes.Length());
 
     // Copy to raw buffer for processing
-    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(fileSize));
+    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(static_cast<int>(fileSize)));
     if (!fileData) {
         throw InvalidOperationException("Failed to allocate memory.");
     }
 
-    for (int i = 0; i < fileSize; i++) {
-        fileData[i] = static_cast<unsigned char>(fileBytes[i]);
+    for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(fileSize); i += 1) {
+        fileData[static_cast<int>(i)] = static_cast<unsigned char>(fileBytes[static_cast<int>(i)]);
     }
 
     // Parse DOS header
     const MsDosExecutableHeader* dosHeader = reinterpret_cast<const MsDosExecutableHeader*>(fileData);
-    if (dosHeader->Signature() != MZ_SIGNATURE) {
+    if (dosHeader->Signature() != static_cast<unsigned short>(MZ_SIGNATURE)) {
         std::free(fileData);
         throw InvalidDataException("Invalid DOS executable header.");
     }
@@ -1200,7 +1202,7 @@ Image Image::FromIconLibrary(const char* path, Int32 iconIndex, const Size& size
     // Parse PE header
     const PortableExecutableNTHeaders* peHeaders = reinterpret_cast<const PortableExecutableNTHeaders*>(
         fileData + dosHeader->NewHeaderOffset());
-    if (peHeaders->Signature() != PE_SIGNATURE) {
+    if (peHeaders->Signature() != static_cast<unsigned int>(PE_SIGNATURE)) {
         std::free(fileData);
         throw InvalidDataException("Invalid PE signature.");
     }
@@ -1218,10 +1220,10 @@ Image Image::FromIconLibrary(const char* path, Int32 iconIndex, const Size& size
         sizeof(PortableExecutableFileHeader) + peHeaders->GetFileHeader().OptionalHeaderSize());
 
     const PortableExecutableSectionHeader* rsrcSection = nullptr;
-    for (int i = 0; i < peHeaders->GetFileHeader().SectionCount(); ++i) {
-        if (rsrcDir.VirtualAddress() >= sections[i].VirtualAddress() &&
-            rsrcDir.VirtualAddress() < sections[i].VirtualAddress() + sections[i].VirtualSize()) {
-            rsrcSection = &sections[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < peHeaders->GetFileHeader().SectionCount(); i += 1) {
+        if (rsrcDir.VirtualAddress() >= sections[static_cast<int>(i)].VirtualAddress() &&
+            rsrcDir.VirtualAddress() < sections[static_cast<int>(i)].VirtualAddress() + sections[static_cast<int>(i)].VirtualSize()) {
+            rsrcSection = &sections[static_cast<int>(i)];
             break;
         }
     }
@@ -1231,9 +1233,9 @@ Image Image::FromIconLibrary(const char* path, Int32 iconIndex, const Size& size
         throw InvalidDataException("Resource section not found.");
     }
 
-    unsigned int rsrcRva = rsrcSection->VirtualAddress();
-    unsigned int rsrcOffset = rsrcSection->RawDataPointer();
-    const unsigned char* rsrcBase = fileData + rsrcOffset + (rsrcDir.VirtualAddress() - rsrcRva);
+    UInt32 rsrcRva = UInt32(rsrcSection->VirtualAddress());
+    UInt32 rsrcOffset = UInt32(rsrcSection->RawDataPointer());
+    const unsigned char* rsrcBase = fileData + static_cast<unsigned int>(rsrcOffset) + (rsrcDir.VirtualAddress() - static_cast<unsigned int>(rsrcRva));
 
     // Parse resource directory - find RT_GROUP_ICON
     const PortableExecutableResourceDirectory* rootDir =
@@ -1245,13 +1247,13 @@ Image Image::FromIconLibrary(const char* path, Int32 iconIndex, const Size& size
     const PortableExecutableResourceDirectoryEntry* groupIconEntry = nullptr;
     const PortableExecutableResourceDirectoryEntry* iconEntry = nullptr;
 
-    int totalRootEntries = rootDir->TotalEntries();
-    for (int i = 0; i < totalRootEntries; ++i) {
-        if (!rootEntries[i].IsNamed()) {
-            if (rootEntries[i].GetId() == RT_GROUP_ICON) {
-                groupIconEntry = &rootEntries[i];
-            } else if (rootEntries[i].GetId() == RT_ICON) {
-                iconEntry = &rootEntries[i];
+    Int32 totalRootEntries = Int32(rootDir->TotalEntries());
+    for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(totalRootEntries); i += 1) {
+        if (!rootEntries[static_cast<int>(i)].IsNamed()) {
+            if (rootEntries[static_cast<int>(i)].GetId() == static_cast<unsigned int>(RT_GROUP_ICON)) {
+                groupIconEntry = &rootEntries[static_cast<int>(i)];
+            } else if (rootEntries[static_cast<int>(i)].GetId() == static_cast<unsigned int>(RT_ICON)) {
+                iconEntry = &rootEntries[static_cast<int>(i)];
             }
         }
     }
@@ -1269,14 +1271,14 @@ Image Image::FromIconLibrary(const char* path, Int32 iconIndex, const Size& size
         reinterpret_cast<const PortableExecutableResourceDirectoryEntry*>(
             reinterpret_cast<const unsigned char*>(groupIconDir) + sizeof(PortableExecutableResourceDirectory));
 
-    int idx = static_cast<int>(iconIndex);
-    if (idx < 0 || idx >= groupIconDir->TotalEntries()) {
+    Int32 idx = iconIndex;
+    if (static_cast<int>(idx) < 0 || static_cast<int>(idx) >= groupIconDir->TotalEntries()) {
         std::free(fileData);
         throw ArgumentException("Icon index out of range.");
     }
 
     // Get the specific icon group
-    const PortableExecutableResourceDirectoryEntry* chosenGroup = &groupIconEntries[idx];
+    const PortableExecutableResourceDirectoryEntry* chosenGroup = &groupIconEntries[static_cast<int>(idx)];
     if (!chosenGroup->IsDirectory()) {
         std::free(fileData);
         throw InvalidDataException("Invalid icon group entry.");
@@ -1300,7 +1302,7 @@ Image Image::FromIconLibrary(const char* path, Int32 iconIndex, const Size& size
         reinterpret_cast<const PortableExecutableResourceDataEntry*>(
             rsrcBase + langEntry->GetOffsetToData());
 
-    const unsigned char* groupData = fileData + rsrcOffset + (dataEntry->DataRva() - rsrcRva);
+    const unsigned char* groupData = fileData + static_cast<unsigned int>(rsrcOffset) + (dataEntry->DataRva() - static_cast<unsigned int>(rsrcRva));
 
     // Parse the GROUP_ICON directory
     const IconDirectory* iconDir = reinterpret_cast<const IconDirectory*>(groupData);
@@ -1314,9 +1316,9 @@ Image Image::FromIconLibrary(const char* path, Int32 iconIndex, const Size& size
 
     // Find matching size
     const GroupIconDirectoryEntry* chosenIcon = nullptr;
-    for (int i = 0; i < iconDir->Count(); ++i) {
-        if (groupEntries[i].Width() == targetSize && groupEntries[i].Height() == targetSize) {
-            chosenIcon = &groupEntries[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < iconDir->Count(); i += 1) {
+        if (groupEntries[static_cast<int>(i)].Width() == static_cast<int>(targetSize) && groupEntries[static_cast<int>(i)].Height() == static_cast<int>(targetSize)) {
+            chosenIcon = &groupEntries[static_cast<int>(i)];
             break;
         }
     }
@@ -1335,10 +1337,10 @@ Image Image::FromIconLibrary(const char* path, Int32 iconIndex, const Size& size
             reinterpret_cast<const unsigned char*>(iconTypeDir) + sizeof(PortableExecutableResourceDirectory));
 
     const PortableExecutableResourceDirectoryEntry* matchingIcon = nullptr;
-    int totalIconEntries = iconTypeDir->TotalEntries();
-    for (int i = 0; i < totalIconEntries; ++i) {
-        if (!iconTypeEntries[i].IsNamed() && iconTypeEntries[i].GetId() == chosenIcon->Identifier()) {
-            matchingIcon = &iconTypeEntries[i];
+    Int32 totalIconEntries = Int32(iconTypeDir->TotalEntries());
+    for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(totalIconEntries); i += 1) {
+        if (!iconTypeEntries[static_cast<int>(i)].IsNamed() && iconTypeEntries[static_cast<int>(i)].GetId() == chosenIcon->Identifier()) {
+            matchingIcon = &iconTypeEntries[static_cast<int>(i)];
             break;
         }
     }
@@ -1360,7 +1362,7 @@ Image Image::FromIconLibrary(const char* path, Int32 iconIndex, const Size& size
         reinterpret_cast<const PortableExecutableResourceDataEntry*>(
             rsrcBase + iconLangEntry->GetOffsetToData());
 
-    const unsigned char* iconData = fileData + rsrcOffset + (iconDataEntry->DataRva() - rsrcRva);
+    const unsigned char* iconData = fileData + static_cast<unsigned int>(rsrcOffset) + (iconDataEntry->DataRva() - static_cast<unsigned int>(rsrcRva));
 
     Image result(targetSize, targetSize);
     DecodeIconDIB(iconData, targetSize, result);
@@ -1374,9 +1376,9 @@ Image Image::FromIconLibrary(const char* path, Int32 iconIndex, const Size& size
 /******************************************************************************/
 
 Int32 Image::GetIconLibraryCount(const char* path) {
-    const unsigned short MZ_SIGNATURE = 0x5A4D;
-    const unsigned int PE_SIGNATURE = 0x00004550;
-    const unsigned int RT_GROUP_ICON = 14;
+    const UInt16 MZ_SIGNATURE = UInt16(0x5A4D);
+    const UInt32 PE_SIGNATURE = UInt32(0x00004550);
+    const UInt32 RT_GROUP_ICON = UInt32(14);
 
     if (!path || path[0] == '\0') {
         throw ArgumentNullException("path");
@@ -1384,21 +1386,21 @@ Int32 Image::GetIconLibraryCount(const char* path) {
 
     // Read file using File API
     Array<UInt8> fileBytes = IO::File::ReadAllBytes(path);
-    int fileSize = fileBytes.Length();
+    Int32 fileSize = Int32(fileBytes.Length());
 
     // Copy to raw buffer for processing
-    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(fileSize));
+    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(static_cast<int>(fileSize)));
     if (!fileData) {
         throw InvalidOperationException("Failed to allocate memory.");
     }
 
-    for (int i = 0; i < fileSize; i++) {
-        fileData[i] = static_cast<unsigned char>(fileBytes[i]);
+    for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(fileSize); i += 1) {
+        fileData[static_cast<int>(i)] = static_cast<unsigned char>(fileBytes[static_cast<int>(i)]);
     }
 
     // Parse DOS header
     const MsDosExecutableHeader* dosHeader = reinterpret_cast<const MsDosExecutableHeader*>(fileData);
-    if (dosHeader->Signature() != MZ_SIGNATURE) {
+    if (dosHeader->Signature() != static_cast<unsigned short>(MZ_SIGNATURE)) {
         std::free(fileData);
         throw InvalidDataException("Invalid DOS executable header.");
     }
@@ -1406,7 +1408,7 @@ Int32 Image::GetIconLibraryCount(const char* path) {
     // Parse PE header
     const PortableExecutableNTHeaders* peHeaders = reinterpret_cast<const PortableExecutableNTHeaders*>(
         fileData + dosHeader->NewHeaderOffset());
-    if (peHeaders->Signature() != PE_SIGNATURE) {
+    if (peHeaders->Signature() != static_cast<unsigned int>(PE_SIGNATURE)) {
         std::free(fileData);
         throw InvalidDataException("Invalid PE signature.");
     }
@@ -1424,10 +1426,10 @@ Int32 Image::GetIconLibraryCount(const char* path) {
         sizeof(PortableExecutableFileHeader) + peHeaders->GetFileHeader().OptionalHeaderSize());
 
     const PortableExecutableSectionHeader* rsrcSection = nullptr;
-    for (int i = 0; i < peHeaders->GetFileHeader().SectionCount(); ++i) {
-        if (rsrcDir.VirtualAddress() >= sections[i].VirtualAddress() &&
-            rsrcDir.VirtualAddress() < sections[i].VirtualAddress() + sections[i].VirtualSize()) {
-            rsrcSection = &sections[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < peHeaders->GetFileHeader().SectionCount(); i += 1) {
+        if (rsrcDir.VirtualAddress() >= sections[static_cast<int>(i)].VirtualAddress() &&
+            rsrcDir.VirtualAddress() < sections[static_cast<int>(i)].VirtualAddress() + sections[static_cast<int>(i)].VirtualSize()) {
+            rsrcSection = &sections[static_cast<int>(i)];
             break;
         }
     }
@@ -1437,9 +1439,9 @@ Int32 Image::GetIconLibraryCount(const char* path) {
         return Int32(0);
     }
 
-    unsigned int rsrcRva = rsrcSection->VirtualAddress();
-    unsigned int rsrcOffset = rsrcSection->RawDataPointer();
-    const unsigned char* rsrcBase = fileData + rsrcOffset + (rsrcDir.VirtualAddress() - rsrcRva);
+    UInt32 rsrcRva = UInt32(rsrcSection->VirtualAddress());
+    UInt32 rsrcOffset = UInt32(rsrcSection->RawDataPointer());
+    const unsigned char* rsrcBase = fileData + static_cast<unsigned int>(rsrcOffset) + (rsrcDir.VirtualAddress() - static_cast<unsigned int>(rsrcRva));
 
     // Parse resource directory - find RT_GROUP_ICON
     const PortableExecutableResourceDirectory* rootDir =
@@ -1448,16 +1450,16 @@ Int32 Image::GetIconLibraryCount(const char* path) {
         reinterpret_cast<const PortableExecutableResourceDirectoryEntry*>(
             rsrcBase + sizeof(PortableExecutableResourceDirectory));
 
-    int totalRootEntries = rootDir->TotalEntries();
-    for (int i = 0; i < totalRootEntries; ++i) {
-        if (!rootEntries[i].IsNamed() && rootEntries[i].GetId() == RT_GROUP_ICON) {
+    Int32 totalRootEntries = Int32(rootDir->TotalEntries());
+    for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(totalRootEntries); i += 1) {
+        if (!rootEntries[static_cast<int>(i)].IsNamed() && rootEntries[static_cast<int>(i)].GetId() == static_cast<unsigned int>(RT_GROUP_ICON)) {
             // Found RT_GROUP_ICON, count entries
             const PortableExecutableResourceDirectory* groupIconDir =
                 reinterpret_cast<const PortableExecutableResourceDirectory*>(
-                    rsrcBase + rootEntries[i].GetOffsetToData());
-            int count = groupIconDir->TotalEntries();
+                    rsrcBase + rootEntries[static_cast<int>(i)].GetOffsetToData());
+            Int32 count = Int32(groupIconDir->TotalEntries());
             std::free(fileData);
-            return Int32(count);
+            return count;
         }
     }
 
@@ -1471,25 +1473,25 @@ Int32 Image::GetIconLibraryCount(const char* path) {
 
 // Helper: Read PE resource name (UTF-16LE length-prefixed string)
 // Returns empty string for unnamed resources or on error
-static String ReadResourceName(const unsigned char* rsrcBase, unsigned int nameOffset) {
+static String ReadResourceName(const unsigned char* rsrcBase, UInt32 nameOffset) {
     // Name format: WORD length (characters), followed by UTF-16LE chars (no null)
-    const unsigned char* namePtr = rsrcBase + nameOffset;
-    unsigned short charCount = *reinterpret_cast<const unsigned short*>(namePtr);
+    const unsigned char* namePtr = rsrcBase + static_cast<unsigned int>(nameOffset);
+    UInt16 charCount = UInt16(*reinterpret_cast<const unsigned short*>(namePtr));
 
-    if (charCount == 0 || charCount > 256) {
+    if (static_cast<unsigned short>(charCount) == 0 || static_cast<unsigned short>(charCount) > 256) {
         return String();  // Empty or suspiciously long
     }
 
     // Convert UTF-16LE to ASCII (simple conversion, ignore high bytes)
-    char* asciiName = static_cast<char*>(std::malloc(charCount + 1));
+    char* asciiName = static_cast<char*>(std::malloc(static_cast<unsigned short>(charCount) + 1));
     if (!asciiName) return String();
 
     const unsigned short* utf16Chars = reinterpret_cast<const unsigned short*>(namePtr + 2);
-    for (unsigned short i = 0; i < charCount; i++) {
+    for (UInt16 i = UInt16(0); static_cast<unsigned short>(i) < static_cast<unsigned short>(charCount); i += 1) {
         // Simple conversion - just take low byte (works for ASCII names)
-        asciiName[i] = static_cast<char>(utf16Chars[i] & 0xFF);
+        asciiName[static_cast<unsigned short>(i)] = static_cast<char>(utf16Chars[static_cast<unsigned short>(i)] & 0xFF);
     }
-    asciiName[charCount] = '\0';
+    asciiName[static_cast<unsigned short>(charCount)] = '\0';
 
     String result(asciiName);
     std::free(asciiName);
@@ -1497,9 +1499,9 @@ static String ReadResourceName(const unsigned char* rsrcBase, unsigned int nameO
 }
 
 Array<String> Image::GetIconLibraryNames(const char* path) {
-    const unsigned short MZ_SIGNATURE = 0x5A4D;
-    const unsigned int PE_SIGNATURE = 0x00004550;
-    const unsigned int RT_GROUP_ICON = 14;
+    const UInt16 MZ_SIGNATURE = UInt16(0x5A4D);
+    const UInt32 PE_SIGNATURE = UInt32(0x00004550);
+    const UInt32 RT_GROUP_ICON = UInt32(14);
 
     if (!path || path[0] == '\0') {
         return Array<String>(0);
@@ -1507,25 +1509,25 @@ Array<String> Image::GetIconLibraryNames(const char* path) {
 
     // Read file
     Array<UInt8> fileBytes = IO::File::ReadAllBytes(path);
-    int fileSize = fileBytes.Length();
+    Int32 fileSize = Int32(fileBytes.Length());
 
-    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(fileSize));
+    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(static_cast<int>(fileSize)));
     if (!fileData) return Array<String>(0);
 
-    for (int i = 0; i < fileSize; i++) {
-        fileData[i] = static_cast<unsigned char>(fileBytes[i]);
+    for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(fileSize); i += 1) {
+        fileData[static_cast<int>(i)] = static_cast<unsigned char>(fileBytes[static_cast<int>(i)]);
     }
 
     // Parse DOS/PE headers
     const MsDosExecutableHeader* dosHeader = reinterpret_cast<const MsDosExecutableHeader*>(fileData);
-    if (dosHeader->Signature() != MZ_SIGNATURE) {
+    if (dosHeader->Signature() != static_cast<unsigned short>(MZ_SIGNATURE)) {
         std::free(fileData);
         return Array<String>(0);
     }
 
     const PortableExecutableNTHeaders* peHeaders = reinterpret_cast<const PortableExecutableNTHeaders*>(
         fileData + dosHeader->NewHeaderOffset());
-    if (peHeaders->Signature() != PE_SIGNATURE) {
+    if (peHeaders->Signature() != static_cast<unsigned int>(PE_SIGNATURE)) {
         std::free(fileData);
         return Array<String>(0);
     }
@@ -1543,10 +1545,10 @@ Array<String> Image::GetIconLibraryNames(const char* path) {
         sizeof(PortableExecutableFileHeader) + peHeaders->GetFileHeader().OptionalHeaderSize());
 
     const PortableExecutableSectionHeader* rsrcSection = nullptr;
-    for (int i = 0; i < peHeaders->GetFileHeader().SectionCount(); ++i) {
-        if (rsrcDir.VirtualAddress() >= sections[i].VirtualAddress() &&
-            rsrcDir.VirtualAddress() < sections[i].VirtualAddress() + sections[i].VirtualSize()) {
-            rsrcSection = &sections[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < peHeaders->GetFileHeader().SectionCount(); i += 1) {
+        if (rsrcDir.VirtualAddress() >= sections[static_cast<int>(i)].VirtualAddress() &&
+            rsrcDir.VirtualAddress() < sections[static_cast<int>(i)].VirtualAddress() + sections[static_cast<int>(i)].VirtualSize()) {
+            rsrcSection = &sections[static_cast<int>(i)];
             break;
         }
     }
@@ -1556,8 +1558,8 @@ Array<String> Image::GetIconLibraryNames(const char* path) {
         return Array<String>(0);
     }
 
-    unsigned int rsrcOffset = rsrcSection->RawDataPointer();
-    const unsigned char* rsrcBase = fileData + rsrcOffset + (rsrcDir.VirtualAddress() - rsrcSection->VirtualAddress());
+    UInt32 rsrcOffset = UInt32(rsrcSection->RawDataPointer());
+    const unsigned char* rsrcBase = fileData + static_cast<unsigned int>(rsrcOffset) + (rsrcDir.VirtualAddress() - rsrcSection->VirtualAddress());
 
     // Find RT_GROUP_ICON directory
     const PortableExecutableResourceDirectory* rootDir =
@@ -1566,26 +1568,26 @@ Array<String> Image::GetIconLibraryNames(const char* path) {
         reinterpret_cast<const PortableExecutableResourceDirectoryEntry*>(
             rsrcBase + sizeof(PortableExecutableResourceDirectory));
 
-    int totalRootEntries = rootDir->TotalEntries();
-    for (int i = 0; i < totalRootEntries; ++i) {
-        if (!rootEntries[i].IsNamed() && rootEntries[i].GetId() == RT_GROUP_ICON) {
+    Int32 totalRootEntries = Int32(rootDir->TotalEntries());
+    for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(totalRootEntries); i += 1) {
+        if (!rootEntries[static_cast<int>(i)].IsNamed() && rootEntries[static_cast<int>(i)].GetId() == static_cast<unsigned int>(RT_GROUP_ICON)) {
             // Found RT_GROUP_ICON, get icon names
             const PortableExecutableResourceDirectory* groupIconDir =
                 reinterpret_cast<const PortableExecutableResourceDirectory*>(
-                    rsrcBase + rootEntries[i].GetOffsetToData());
+                    rsrcBase + rootEntries[static_cast<int>(i)].GetOffsetToData());
             const PortableExecutableResourceDirectoryEntry* iconEntries =
                 reinterpret_cast<const PortableExecutableResourceDirectoryEntry*>(
                     reinterpret_cast<const unsigned char*>(groupIconDir) + sizeof(PortableExecutableResourceDirectory));
 
-            int count = groupIconDir->TotalEntries();
+            Int32 count = Int32(groupIconDir->TotalEntries());
             Array<String> names(count);
 
-            for (int j = 0; j < count; j++) {
-                if (iconEntries[j].IsNamed()) {
-                    names[j] = ReadResourceName(rsrcBase, iconEntries[j].GetNameOffset());
+            for (Int32 j = Int32(0); static_cast<int>(j) < static_cast<int>(count); j += 1) {
+                if (iconEntries[static_cast<int>(j)].IsNamed()) {
+                    names[static_cast<int>(j)] = ReadResourceName(rsrcBase, UInt32(iconEntries[static_cast<int>(j)].GetNameOffset()));
                 } else {
                     // ID-based entry - return empty string or the ID as string
-                    names[j] = String();
+                    names[static_cast<int>(j)] = String();
                 }
             }
 
@@ -1610,9 +1612,9 @@ Int32 Image::GetIconLibraryIndex(const char* path, const char* iconName) {
     Array<String> names = GetIconLibraryNames(path);
     String target(iconName);
 
-    for (int i = 0; i < names.Length(); i++) {
-        if (names[i].EqualsIgnoreCase(target)) {
-            return Int32(i);
+    for (Int32 i = Int32(0); static_cast<int>(i) < names.Length(); i += 1) {
+        if (names[static_cast<int>(i)].EqualsIgnoreCase(target)) {
+            return i;
         }
     }
 
@@ -1681,16 +1683,16 @@ Image Image::FromFile(const char* path) {
     }
 
     // Create image and copy pixels
-    Image img = Image(width, height);
+    Image img = Image(Int32(width), Int32(height));
 
     // stb_image returns RGBA, we need ARGB
     unsigned int* dest = img.Data();
-    for (int i = 0; i < width * height; i++) {
-        unsigned char r = pixels[i * 4 + 0];
-        unsigned char g = pixels[i * 4 + 1];
-        unsigned char b = pixels[i * 4 + 2];
-        unsigned char a = pixels[i * 4 + 3];
-        dest[i] = (static_cast<unsigned int>(a) << 24) |
+    for (Int32 i = Int32(0); static_cast<int>(i) < width * height; i += 1) {
+        unsigned char r = pixels[static_cast<int>(i) * 4 + 0];
+        unsigned char g = pixels[static_cast<int>(i) * 4 + 1];
+        unsigned char b = pixels[static_cast<int>(i) * 4 + 2];
+        unsigned char a = pixels[static_cast<int>(i) * 4 + 3];
+        dest[static_cast<int>(i)] = (static_cast<unsigned int>(a) << 24) |
                   (static_cast<unsigned int>(r) << 16) |
                   (static_cast<unsigned int>(g) << 8) |
                   static_cast<unsigned int>(b);
@@ -1723,10 +1725,10 @@ Image Image::FromJpeg(const char* path) {
 /******************************************************************************/
 
 Image Image::ScaleTo(Int32 newWidth, Int32 newHeight) const {
-    int nw = static_cast<int>(newWidth);
-    int nh = static_cast<int>(newHeight);
+    Int32 nw = newWidth;
+    Int32 nh = newHeight;
 
-    if (nw <= 0 || nh <= 0) {
+    if (static_cast<int>(nw) <= 0 || static_cast<int>(nh) <= 0) {
         throw ArgumentException("New dimensions must be positive");
     }
 
@@ -1739,72 +1741,72 @@ Image Image::ScaleTo(Int32 newWidth, Int32 newHeight) const {
     const unsigned int* src = _data;
 
     // Fixed-point scaling factors (16.16 format)
-    int scaleX = (_width << 16) / nw;
-    int scaleY = (_height << 16) / nh;
+    Int32 scaleX = Int32((_width << 16) / static_cast<int>(nw));
+    Int32 scaleY = Int32((_height << 16) / static_cast<int>(nh));
 
-    for (int y = 0; y < nh; y++) {
-        int srcY = (y * scaleY) >> 16;
-        int fracY = (y * scaleY) & 0xFFFF;
+    for (Int32 y = Int32(0); static_cast<int>(y) < static_cast<int>(nh); y += 1) {
+        Int32 srcY = Int32((static_cast<int>(y) * static_cast<int>(scaleY)) >> 16);
+        Int32 fracY = Int32((static_cast<int>(y) * static_cast<int>(scaleY)) & 0xFFFF);
 
         // Clamp source Y
-        if (srcY >= _height - 1) {
-            srcY = _height - 2;
-            fracY = 0xFFFF;
+        if (static_cast<int>(srcY) >= _height - 1) {
+            srcY = Int32(_height - 2);
+            fracY = Int32(0xFFFF);
         }
-        if (srcY < 0) srcY = 0;
+        if (static_cast<int>(srcY) < 0) srcY = Int32(0);
 
-        for (int x = 0; x < nw; x++) {
-            int srcX = (x * scaleX) >> 16;
-            int fracX = (x * scaleX) & 0xFFFF;
+        for (Int32 x = Int32(0); static_cast<int>(x) < static_cast<int>(nw); x += 1) {
+            Int32 srcX = Int32((static_cast<int>(x) * static_cast<int>(scaleX)) >> 16);
+            Int32 fracX = Int32((static_cast<int>(x) * static_cast<int>(scaleX)) & 0xFFFF);
 
             // Clamp source X
-            if (srcX >= _width - 1) {
-                srcX = _width - 2;
-                fracX = 0xFFFF;
+            if (static_cast<int>(srcX) >= _width - 1) {
+                srcX = Int32(_width - 2);
+                fracX = Int32(0xFFFF);
             }
-            if (srcX < 0) srcX = 0;
+            if (static_cast<int>(srcX) < 0) srcX = Int32(0);
 
             // Get 4 neighboring pixels
-            unsigned int p00 = src[srcY * _width + srcX];
-            unsigned int p10 = src[srcY * _width + srcX + 1];
-            unsigned int p01 = src[(srcY + 1) * _width + srcX];
-            unsigned int p11 = src[(srcY + 1) * _width + srcX + 1];
+            UInt32 p00 = UInt32(src[static_cast<int>(srcY) * _width + static_cast<int>(srcX)]);
+            UInt32 p10 = UInt32(src[static_cast<int>(srcY) * _width + static_cast<int>(srcX) + 1]);
+            UInt32 p01 = UInt32(src[(static_cast<int>(srcY) + 1) * _width + static_cast<int>(srcX)]);
+            UInt32 p11 = UInt32(src[(static_cast<int>(srcY) + 1) * _width + static_cast<int>(srcX) + 1]);
 
             // Bilinear interpolation for each channel
-            int fx = fracX >> 8;  // 0-255
-            int fy = fracY >> 8;  // 0-255
-            int fx1 = 256 - fx;
-            int fy1 = 256 - fy;
+            Int32 fx = Int32(static_cast<int>(fracX) >> 8);  // 0-255
+            Int32 fy = Int32(static_cast<int>(fracY) >> 8);  // 0-255
+            Int32 fx1 = Int32(256 - static_cast<int>(fx));
+            Int32 fy1 = Int32(256 - static_cast<int>(fy));
 
             // Alpha channel
-            int a00 = (p00 >> 24) & 0xFF;
-            int a10 = (p10 >> 24) & 0xFF;
-            int a01 = (p01 >> 24) & 0xFF;
-            int a11 = (p11 >> 24) & 0xFF;
-            int a = ((a00 * fx1 + a10 * fx) * fy1 + (a01 * fx1 + a11 * fx) * fy) >> 16;
+            Int32 a00 = Int32((static_cast<unsigned int>(p00) >> 24) & 0xFF);
+            Int32 a10 = Int32((static_cast<unsigned int>(p10) >> 24) & 0xFF);
+            Int32 a01 = Int32((static_cast<unsigned int>(p01) >> 24) & 0xFF);
+            Int32 a11 = Int32((static_cast<unsigned int>(p11) >> 24) & 0xFF);
+            Int32 a = Int32(((static_cast<int>(a00) * static_cast<int>(fx1) + static_cast<int>(a10) * static_cast<int>(fx)) * static_cast<int>(fy1) + (static_cast<int>(a01) * static_cast<int>(fx1) + static_cast<int>(a11) * static_cast<int>(fx)) * static_cast<int>(fy)) >> 16);
 
             // Red channel
-            int r00 = (p00 >> 16) & 0xFF;
-            int r10 = (p10 >> 16) & 0xFF;
-            int r01 = (p01 >> 16) & 0xFF;
-            int r11 = (p11 >> 16) & 0xFF;
-            int r = ((r00 * fx1 + r10 * fx) * fy1 + (r01 * fx1 + r11 * fx) * fy) >> 16;
+            Int32 r00 = Int32((static_cast<unsigned int>(p00) >> 16) & 0xFF);
+            Int32 r10 = Int32((static_cast<unsigned int>(p10) >> 16) & 0xFF);
+            Int32 r01 = Int32((static_cast<unsigned int>(p01) >> 16) & 0xFF);
+            Int32 r11 = Int32((static_cast<unsigned int>(p11) >> 16) & 0xFF);
+            Int32 r = Int32(((static_cast<int>(r00) * static_cast<int>(fx1) + static_cast<int>(r10) * static_cast<int>(fx)) * static_cast<int>(fy1) + (static_cast<int>(r01) * static_cast<int>(fx1) + static_cast<int>(r11) * static_cast<int>(fx)) * static_cast<int>(fy)) >> 16);
 
             // Green channel
-            int g00 = (p00 >> 8) & 0xFF;
-            int g10 = (p10 >> 8) & 0xFF;
-            int g01 = (p01 >> 8) & 0xFF;
-            int g11 = (p11 >> 8) & 0xFF;
-            int g = ((g00 * fx1 + g10 * fx) * fy1 + (g01 * fx1 + g11 * fx) * fy) >> 16;
+            Int32 g00 = Int32((static_cast<unsigned int>(p00) >> 8) & 0xFF);
+            Int32 g10 = Int32((static_cast<unsigned int>(p10) >> 8) & 0xFF);
+            Int32 g01 = Int32((static_cast<unsigned int>(p01) >> 8) & 0xFF);
+            Int32 g11 = Int32((static_cast<unsigned int>(p11) >> 8) & 0xFF);
+            Int32 g = Int32(((static_cast<int>(g00) * static_cast<int>(fx1) + static_cast<int>(g10) * static_cast<int>(fx)) * static_cast<int>(fy1) + (static_cast<int>(g01) * static_cast<int>(fx1) + static_cast<int>(g11) * static_cast<int>(fx)) * static_cast<int>(fy)) >> 16);
 
             // Blue channel
-            int b00 = p00 & 0xFF;
-            int b10 = p10 & 0xFF;
-            int b01 = p01 & 0xFF;
-            int b11 = p11 & 0xFF;
-            int b = ((b00 * fx1 + b10 * fx) * fy1 + (b01 * fx1 + b11 * fx) * fy) >> 16;
+            Int32 b00 = Int32(static_cast<unsigned int>(p00) & 0xFF);
+            Int32 b10 = Int32(static_cast<unsigned int>(p10) & 0xFF);
+            Int32 b01 = Int32(static_cast<unsigned int>(p01) & 0xFF);
+            Int32 b11 = Int32(static_cast<unsigned int>(p11) & 0xFF);
+            Int32 b = Int32(((static_cast<int>(b00) * static_cast<int>(fx1) + static_cast<int>(b10) * static_cast<int>(fx)) * static_cast<int>(fy1) + (static_cast<int>(b01) * static_cast<int>(fx1) + static_cast<int>(b11) * static_cast<int>(fx)) * static_cast<int>(fy)) >> 16);
 
-            dest[y * nw + x] = (static_cast<unsigned int>(a) << 24) |
+            dest[static_cast<int>(y) * static_cast<int>(nw) + static_cast<int>(x)] = (static_cast<unsigned int>(a) << 24) |
                                (static_cast<unsigned int>(r) << 16) |
                                (static_cast<unsigned int>(g) << 8) |
                                static_cast<unsigned int>(b);
@@ -1824,13 +1826,13 @@ Image Image::ScaleTo(const Size& newSize) const {
 
 struct Font::FontData {
     String name;                    // Font face name
-    int pointSize;                  // Nominal point size
-    int pixelHeight;                // Actual pixel height
-    int ascent;                     // Pixels above baseline
+    Int32 pointSize;                // Nominal point size
+    Int32 pixelHeight;              // Actual pixel height
+    Int32 ascent;                   // Pixels above baseline
     FontStyle style;                // Font style flags
-    int firstChar;                  // First character code
-    int lastChar;                   // Last character code
-    bool isTrueType;                // True if TTF, false if FON
+    Int32 firstChar;                // First character code
+    Int32 lastChar;                 // Last character code
+    Boolean isTrueType;             // True if TTF, false if FON
 
     // Character widths (256 entries, 0 for non-existent chars)
     unsigned short charWidths[256];
@@ -1844,19 +1846,22 @@ struct Font::FontData {
 
     // TTF: stbtt font info
     stbtt_fontinfo ttfInfo;
-    float ttfScale;                 // Scale factor for pixel height
+    Float32 ttfScale;               // Scale factor for pixel height
 
     // Glyph cache (lazily populated)
     mutable Image glyphCache[256];
-    mutable bool glyphCached[256];
+    mutable Boolean glyphCached[256];
 
     FontData()
-        : pointSize(0), pixelHeight(0), ascent(0), style(FontStyle::Regular)
-        , firstChar(0), lastChar(0), isTrueType(false)
-        , bitmapData(nullptr), bitmapSize(0), ttfScale(0.0f) {
+        : pointSize(Int32(0)), pixelHeight(Int32(0)), ascent(Int32(0)), style(FontStyle::Regular)
+        , firstChar(Int32(0)), lastChar(Int32(0)), isTrueType(Boolean(false))
+        , bitmapData(nullptr), bitmapSize(0), ttfScale(Float32(0.0f)) {
         std::memset(charWidths, 0, sizeof(charWidths));
         std::memset(charOffsets, 0, sizeof(charOffsets));
-        std::memset(glyphCached, 0, sizeof(glyphCached));
+        // Initialize Boolean array element by element (can't use memset on non-trivial types)
+        for (Int32 i = Int32(0); static_cast<int>(i) < 256; i += 1) {
+            glyphCached[static_cast<int>(i)] = Boolean(false);
+        }
         std::memset(&ttfInfo, 0, sizeof(ttfInfo));
     }
 
@@ -1868,10 +1873,10 @@ struct Font::FontData {
     }
 
     // Render a glyph to the cache
-    void RenderGlyph(int ch) const {
-        if (ch < 0 || ch > 255 || glyphCached[ch]) return;
+    void RenderGlyph(Int32 ch) const {
+        if (static_cast<int>(ch) < 0 || static_cast<int>(ch) > 255 || static_cast<bool>(glyphCached[static_cast<int>(ch)])) return;
 
-        if (isTrueType) {
+        if (static_cast<bool>(isTrueType)) {
             RenderTrueTypeGlyph(ch);
         } else {
             RenderFonGlyph(ch);
@@ -1879,111 +1884,111 @@ struct Font::FontData {
     }
 
     // Render FON (bitmap) glyph
-    void RenderFonGlyph(int ch) const {
-        if (ch < firstChar || ch > lastChar) {
+    void RenderFonGlyph(Int32 ch) const {
+        if (static_cast<int>(ch) < static_cast<int>(firstChar) || static_cast<int>(ch) > static_cast<int>(lastChar)) {
             // Character not in font - create empty glyph
-            glyphCache[ch] = Image(1, pixelHeight, Color::Transparent);
-            glyphCached[ch] = true;
+            glyphCache[static_cast<int>(ch)] = Image(Int32(1), pixelHeight, Color::Transparent);
+            glyphCached[static_cast<int>(ch)] = Boolean(true);
             return;
         }
 
-        int width = charWidths[ch];
-        int height = pixelHeight;
-        if (width <= 0) {
-            glyphCache[ch] = Image(1, height, Color::Transparent);
-            glyphCached[ch] = true;
+        Int32 width = Int32(charWidths[static_cast<int>(ch)]);
+        Int32 height = pixelHeight;
+        if (static_cast<int>(width) <= 0) {
+            glyphCache[static_cast<int>(ch)] = Image(Int32(1), height, Color::Transparent);
+            glyphCached[static_cast<int>(ch)] = Boolean(true);
             return;
         }
 
         // Create transparent glyph image
-        glyphCache[ch] = Image(width, height, Color::Transparent);
+        glyphCache[static_cast<int>(ch)] = Image(width, height, Color::Transparent);
 
         // FON bitmap format: row-major, MSB first
         // Each row is ceil(width/8) bytes
         // Rows are stored top-to-bottom
-        int bytesPerRow = (width + 7) / 8;
-        const unsigned char* src = bitmapData + charOffsets[ch];
+        Int32 bytesPerRow = Int32((static_cast<int>(width) + 7) / 8);
+        const unsigned char* src = bitmapData + charOffsets[static_cast<int>(ch)];
 
-        for (int row = 0; row < height; row++) {
-            for (int col = 0; col < width; col++) {
-                int byteIndex = col / 8;
-                int bitIndex = 7 - (col % 8);  // MSB is leftmost pixel
-                unsigned char byte = src[row * bytesPerRow + byteIndex];
-                bool pixel = ((byte >> bitIndex) & 1) != 0;
-                if (pixel) {
-                    glyphCache[ch].SetPixel(col, row, Color::White);
+        for (Int32 row = Int32(0); static_cast<int>(row) < static_cast<int>(height); row += 1) {
+            for (Int32 col = Int32(0); static_cast<int>(col) < static_cast<int>(width); col += 1) {
+                Int32 byteIndex = Int32(static_cast<int>(col) / 8);
+                Int32 bitIndex = Int32(7 - (static_cast<int>(col) % 8));  // MSB is leftmost pixel
+                unsigned char byte = src[static_cast<int>(row) * static_cast<int>(bytesPerRow) + static_cast<int>(byteIndex)];
+                Boolean pixel = Boolean(((byte >> static_cast<int>(bitIndex)) & 1) != 0);
+                if (static_cast<bool>(pixel)) {
+                    glyphCache[static_cast<int>(ch)].SetPixel(col, row, Color::White);
                 }
             }
         }
 
-        glyphCached[ch] = true;
+        glyphCached[static_cast<int>(ch)] = Boolean(true);
     }
 
     // Render TrueType glyph using stb_truetype
-    void RenderTrueTypeGlyph(int ch) const {
+    void RenderTrueTypeGlyph(Int32 ch) const {
         // Get horizontal metrics (advance and left side bearing)
         int advanceWidth, lsb;
-        stbtt_GetCodepointHMetrics(&ttfInfo, ch, &advanceWidth, &lsb);
+        stbtt_GetCodepointHMetrics(&ttfInfo, static_cast<int>(ch), &advanceWidth, &lsb);
 
         // Get bitmap bounding box
         int x0, y0, x1, y1;
-        stbtt_GetCodepointBitmapBox(&ttfInfo, ch, ttfScale, ttfScale, &x0, &y0, &x1, &y1);
+        stbtt_GetCodepointBitmapBox(&ttfInfo, static_cast<int>(ch), static_cast<float>(ttfScale), static_cast<float>(ttfScale), &x0, &y0, &x1, &y1);
 
-        int glyphWidth = x1 - x0;
-        int glyphHeight = y1 - y0;
+        Int32 glyphWidth = Int32(x1 - x0);
+        Int32 glyphHeight = Int32(y1 - y0);
 
         // Scale lsb to pixels
-        int lsbPixels = static_cast<int>(lsb * ttfScale + 0.5f);
+        Int32 lsbPixels = Int32(static_cast<int>(lsb * static_cast<float>(ttfScale) + 0.5f));
 
         // Use advance width for image width (for proper character spacing)
-        int imageWidth = charWidths[ch];
-        if (imageWidth <= 0) imageWidth = 1;
-        int imageHeight = pixelHeight;
+        Int32 imageWidth = Int32(charWidths[static_cast<int>(ch)]);
+        if (static_cast<int>(imageWidth) <= 0) imageWidth = Int32(1);
+        Int32 imageHeight = pixelHeight;
 
         // Create glyph image
-        glyphCache[ch] = Image(imageWidth, imageHeight, Color::Transparent);
+        glyphCache[static_cast<int>(ch)] = Image(imageWidth, imageHeight, Color::Transparent);
 
-        if (glyphWidth <= 0 || glyphHeight <= 0) {
+        if (static_cast<int>(glyphWidth) <= 0 || static_cast<int>(glyphHeight) <= 0) {
             // Empty glyph (e.g., space) - just return the transparent image
-            glyphCached[ch] = true;
+            glyphCached[static_cast<int>(ch)] = Boolean(true);
             return;
         }
 
         // Rasterize the glyph (8-bit grayscale)
         unsigned char* bitmap = static_cast<unsigned char*>(
-            std::malloc(glyphWidth * glyphHeight));
+            std::malloc(static_cast<int>(glyphWidth) * static_cast<int>(glyphHeight)));
         if (!bitmap) {
-            glyphCached[ch] = true;
+            glyphCached[static_cast<int>(ch)] = Boolean(true);
             return;
         }
 
-        stbtt_MakeCodepointBitmap(&ttfInfo, bitmap, glyphWidth, glyphHeight,
-                                   glyphWidth, ttfScale, ttfScale, ch);
+        stbtt_MakeCodepointBitmap(&ttfInfo, bitmap, static_cast<int>(glyphWidth), static_cast<int>(glyphHeight),
+                                   static_cast<int>(glyphWidth), static_cast<float>(ttfScale), static_cast<float>(ttfScale), static_cast<int>(ch));
 
         // Position glyph in image using the working example's approach:
         // - Horizontally: use lsb (left side bearing) scaled to pixels
         // - Vertically: use ascent + y0 for baseline alignment
 
         // Copy bitmap to image with anti-aliasing (store grayscale as alpha)
-        for (int row = 0; row < glyphHeight; row++) {
-            int destY = ascent + y0 + row;
-            if (destY < 0 || destY >= imageHeight) continue;
+        for (Int32 row = Int32(0); static_cast<int>(row) < static_cast<int>(glyphHeight); row += 1) {
+            Int32 destY = Int32(static_cast<int>(ascent) + y0 + static_cast<int>(row));
+            if (static_cast<int>(destY) < 0 || static_cast<int>(destY) >= static_cast<int>(imageHeight)) continue;
 
-            for (int col = 0; col < glyphWidth; col++) {
-                int destX = lsbPixels + col;
-                if (destX < 0 || destX >= imageWidth) continue;
+            for (Int32 col = Int32(0); static_cast<int>(col) < static_cast<int>(glyphWidth); col += 1) {
+                Int32 destX = Int32(static_cast<int>(lsbPixels) + static_cast<int>(col));
+                if (static_cast<int>(destX) < 0 || static_cast<int>(destX) >= static_cast<int>(imageWidth)) continue;
 
-                unsigned char gray = bitmap[row * glyphWidth + col];
+                unsigned char gray = bitmap[static_cast<int>(row) * static_cast<int>(glyphWidth) + static_cast<int>(col)];
                 if (gray > 0) {
                     // Store grayscale as alpha for anti-aliasing
                     // White color with variable alpha
-                    glyphCache[ch].SetPixel(destX, destY, Color(255, 255, 255, gray));
+                    glyphCache[static_cast<int>(ch)].SetPixel(destX, destY, Color(255, 255, 255, gray));
                 }
             }
         }
 
         std::free(bitmap);
-        glyphCached[ch] = true;
+        glyphCached[static_cast<int>(ch)] = Boolean(true);
     }
 };
 
@@ -2017,7 +2022,7 @@ Font::Font(const Font& other) : _data(nullptr) {
                 _data->bitmapSize = other._data->bitmapSize;
 
                 // For TTF fonts, re-initialize ttfInfo to point to the new bitmapData
-                if (_data->isTrueType) {
+                if (static_cast<bool>(_data->isTrueType)) {
                     int fontOffset = stbtt_GetFontOffsetForIndex(_data->bitmapData, 0);
                     stbtt_InitFont(&_data->ttfInfo, _data->bitmapData, fontOffset);
                 }
@@ -2025,10 +2030,10 @@ Font::Font(const Font& other) : _data(nullptr) {
         }
 
         // Copy cached glyphs
-        for (int i = 0; i < 256; i++) {
-            if (other._data->glyphCached[i]) {
-                _data->glyphCache[i] = other._data->glyphCache[i];
-                _data->glyphCached[i] = true;
+        for (Int32 i = Int32(0); static_cast<int>(i) < 256; i += 1) {
+            if (static_cast<bool>(other._data->glyphCached[static_cast<int>(i)])) {
+                _data->glyphCache[static_cast<int>(i)] = other._data->glyphCache[static_cast<int>(i)];
+                _data->glyphCached[static_cast<int>(i)] = Boolean(true);
             }
         }
     }
@@ -2072,70 +2077,70 @@ Font& Font::operator=(Font&& other) noexcept {
 }
 
 Font Font::FromFile(const char* path, Int32 size, FontStyle style) {
-    const unsigned short MZ_SIGNATURE = 0x5A4D;
-    const unsigned short NE_SIGNATURE = 0x454E;
-    const unsigned short RT_FONT = 0x8008;  // NE resource type for fonts
+    const UInt16 MZ_SIGNATURE = UInt16(0x5A4D);
+    const UInt16 NE_SIGNATURE = UInt16(0x454E);
+    const UInt16 RT_FONT = UInt16(0x8008);  // NE resource type for fonts
 
     if (!path || path[0] == '\0') {
         throw ArgumentNullException("path");
     }
 
-    int targetSize = static_cast<int>(size);
+    Int32 targetSize = size;
 
     // Read file
     Array<UInt8> fileBytes = IO::File::ReadAllBytes(path);
-    int fileSize = fileBytes.Length();
+    Int32 fileSize = Int32(fileBytes.Length());
 
-    if (fileSize < 64) {
+    if (static_cast<int>(fileSize) < 64) {
         throw InvalidDataException("File is too small to be a valid FON file.");
     }
 
     // Copy to raw buffer
-    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(fileSize));
+    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(static_cast<int>(fileSize)));
     if (!fileData) {
         throw InvalidOperationException("Failed to allocate memory.");
     }
 
-    for (int i = 0; i < fileSize; i++) {
-        fileData[i] = static_cast<unsigned char>(fileBytes[i]);
+    for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(fileSize); i += 1) {
+        fileData[static_cast<int>(i)] = static_cast<unsigned char>(fileBytes[static_cast<int>(i)]);
     }
 
     // Parse MZ header to find NE header
     const MsDosExecutableHeader* dosHeader = reinterpret_cast<const MsDosExecutableHeader*>(fileData);
-    if (dosHeader->Signature() != MZ_SIGNATURE) {
+    if (dosHeader->Signature() != static_cast<unsigned short>(MZ_SIGNATURE)) {
         std::free(fileData);
         throw InvalidDataException("Invalid DOS executable header.");
     }
 
-    unsigned int neOffset = dosHeader->NewHeaderOffset();
-    if (neOffset >= static_cast<unsigned int>(fileSize) - sizeof(NeHeader)) {
+    UInt32 neOffset = UInt32(dosHeader->NewHeaderOffset());
+    if (static_cast<unsigned int>(neOffset) >= static_cast<unsigned int>(fileSize) - sizeof(NeHeader)) {
         std::free(fileData);
         throw InvalidDataException("Invalid NE header offset.");
     }
 
-    const NeHeader* neHeader = reinterpret_cast<const NeHeader*>(fileData + neOffset);
-    if (neHeader->Signature() != NE_SIGNATURE) {
+    const NeHeader* neHeader = reinterpret_cast<const NeHeader*>(fileData + static_cast<unsigned int>(neOffset));
+    if (neHeader->Signature() != static_cast<unsigned short>(NE_SIGNATURE)) {
         std::free(fileData);
         throw InvalidDataException("Invalid NE signature (not a FON file).");
     }
 
     // Parse resource table
-    unsigned int rsrcTableOffset = neOffset + neHeader->ResourceTableOffset();
-    if (rsrcTableOffset >= static_cast<unsigned int>(fileSize)) {
+    UInt32 rsrcTableOffset = UInt32(static_cast<unsigned int>(neOffset) + neHeader->ResourceTableOffset());
+    if (static_cast<unsigned int>(rsrcTableOffset) >= static_cast<unsigned int>(fileSize)) {
         std::free(fileData);
         throw InvalidDataException("Invalid resource table offset.");
     }
 
     // Resource table starts with alignment shift count
-    const unsigned char* rsrcTable = fileData + rsrcTableOffset;
-    unsigned short alignShift = *reinterpret_cast<const unsigned short*>(rsrcTable);
+    const unsigned char* rsrcTable = fileData + static_cast<unsigned int>(rsrcTableOffset);
+    UInt16 alignShift = UInt16(*reinterpret_cast<const unsigned short*>(rsrcTable));
     rsrcTable += 2;
 
     // Find RT_FONT resources
     const FntHeader* bestFont = nullptr;
-    int bestMatch = 0x7FFFFFFF;
-    bool isBold = (static_cast<unsigned char>(style) & static_cast<unsigned char>(FontStyle::Bold)) != 0;
-    bool isItalic = (static_cast<unsigned char>(style) & static_cast<unsigned char>(FontStyle::Italic)) != 0;
+    Int32 bestMatch = Int32(0x7FFFFFFF);
+    Boolean isBold = Boolean((static_cast<unsigned char>(style) & static_cast<unsigned char>(FontStyle::Bold)) != 0);
+    Boolean isItalic = Boolean((static_cast<unsigned char>(style) & static_cast<unsigned char>(FontStyle::Italic)) != 0);
 
     while (true) {
         const NeResourceTypeInfo* typeInfo = reinterpret_cast<const NeResourceTypeInfo*>(rsrcTable);
@@ -2143,31 +2148,31 @@ Font Font::FromFile(const char* path, Int32 size, FontStyle style) {
 
         rsrcTable += sizeof(NeResourceTypeInfo);
 
-        if (typeInfo->TypeId() == RT_FONT) {
+        if (typeInfo->TypeId() == static_cast<unsigned short>(RT_FONT)) {
             // Found font resources
-            for (int i = 0; i < typeInfo->Count(); i++) {
+            for (Int32 i = Int32(0); static_cast<int>(i) < typeInfo->Count(); i += 1) {
                 const NeResourceNameInfo* nameInfo = reinterpret_cast<const NeResourceNameInfo*>(rsrcTable);
                 rsrcTable += sizeof(NeResourceNameInfo);
 
                 // Calculate actual offset
-                unsigned int fontOffset = static_cast<unsigned int>(nameInfo->Offset()) << alignShift;
-                if (fontOffset >= static_cast<unsigned int>(fileSize)) continue;
+                UInt32 fontOffset = UInt32(static_cast<unsigned int>(nameInfo->Offset()) << static_cast<unsigned short>(alignShift));
+                if (static_cast<unsigned int>(fontOffset) >= static_cast<unsigned int>(fileSize)) continue;
 
-                const FntHeader* fntHeader = reinterpret_cast<const FntHeader*>(fileData + fontOffset);
+                const FntHeader* fntHeader = reinterpret_cast<const FntHeader*>(fileData + static_cast<unsigned int>(fontOffset));
 
                 // Check if this font matches our criteria
-                int fontPoints = fntHeader->Points();
-                bool fontBold = fntHeader->Weight() >= 700;
-                bool fontItalic = fntHeader->Italic() != 0;
+                Int32 fontPoints = Int32(fntHeader->Points());
+                Boolean fontBold = Boolean(fntHeader->Weight() >= 700);
+                Boolean fontItalic = Boolean(fntHeader->Italic() != 0);
 
                 // Calculate match score (lower is better)
-                int sizeDiff = fontPoints > targetSize ? fontPoints - targetSize : targetSize - fontPoints;
-                int styleMatch = 0;
-                if (fontBold != isBold) styleMatch += 100;
-                if (fontItalic != isItalic) styleMatch += 100;
+                Int32 sizeDiff = Int32(static_cast<int>(fontPoints) > static_cast<int>(targetSize) ? static_cast<int>(fontPoints) - static_cast<int>(targetSize) : static_cast<int>(targetSize) - static_cast<int>(fontPoints));
+                Int32 styleMatch = Int32(0);
+                if (static_cast<bool>(fontBold) != static_cast<bool>(isBold)) styleMatch = Int32(static_cast<int>(styleMatch) + 100);
+                if (static_cast<bool>(fontItalic) != static_cast<bool>(isItalic)) styleMatch = Int32(static_cast<int>(styleMatch) + 100);
 
-                int matchScore = sizeDiff + styleMatch;
-                if (matchScore < bestMatch) {
+                Int32 matchScore = Int32(static_cast<int>(sizeDiff) + static_cast<int>(styleMatch));
+                if (static_cast<int>(matchScore) < static_cast<int>(bestMatch)) {
                     bestMatch = matchScore;
                     bestFont = fntHeader;
                 }
@@ -2185,11 +2190,11 @@ Font Font::FromFile(const char* path, Int32 size, FontStyle style) {
 
     // Parse the selected font
     FontData* data = new FontData();
-    data->pointSize = bestFont->Points();
-    data->pixelHeight = bestFont->PixHeight();
-    data->ascent = bestFont->Ascent();
-    data->firstChar = bestFont->FirstChar();
-    data->lastChar = bestFont->LastChar();
+    data->pointSize = Int32(bestFont->Points());
+    data->pixelHeight = Int32(bestFont->PixHeight());
+    data->ascent = Int32(bestFont->Ascent());
+    data->firstChar = Int32(bestFont->FirstChar());
+    data->lastChar = Int32(bestFont->LastChar());
 
     // Use requested style (allows fake bold/italic even if font doesn't have it)
     // Combine with any inherent style from the font file
@@ -2202,82 +2207,82 @@ Font Font::FromFile(const char* path, Int32 size, FontStyle style) {
     }
 
     // Get face name
-    unsigned int faceOffset = bestFont->dfFace;
+    UInt32 faceOffset = UInt32(bestFont->dfFace);
     const unsigned char* fontBase = reinterpret_cast<const unsigned char*>(bestFont);
-    if (faceOffset > 0 && faceOffset < 0x10000) {
-        const char* faceName = reinterpret_cast<const char*>(fontBase + faceOffset);
+    if (static_cast<unsigned int>(faceOffset) > 0 && static_cast<unsigned int>(faceOffset) < 0x10000) {
+        const char* faceName = reinterpret_cast<const char*>(fontBase + static_cast<unsigned int>(faceOffset));
         data->name = String(faceName);
     } else {
         data->name = String("Unknown");
     }
 
     // Calculate character widths and offsets
-    bool isV3 = bestFont->Version() >= 0x0300;
-    int numChars = data->lastChar - data->firstChar + 1;
+    Boolean isV3 = Boolean(bestFont->Version() >= 0x0300);
+    Int32 numChars = Int32(static_cast<int>(data->lastChar) - static_cast<int>(data->firstChar) + 1);
 
     // Character table follows FntHeader (118 bytes for V2/V3)
     const unsigned char* charTable = fontBase + 118;
 
-    if (isV3) {
+    if (static_cast<bool>(isV3)) {
         // V3.0 format: 6-byte entries (2-byte width + 4-byte offset)
         const FntCharEntryV3* entries = reinterpret_cast<const FntCharEntryV3*>(charTable);
 
-        for (int i = 0; i <= numChars; i++) {  // +1 for sentinel
-            int charCode = data->firstChar + i;
-            if (charCode >= 0 && charCode < 256 && i < numChars) {
-                data->charWidths[charCode] = entries[i].width;
-                data->charOffsets[charCode] = entries[i].offset;
+        for (Int32 i = Int32(0); static_cast<int>(i) <= static_cast<int>(numChars); i += 1) {  // +1 for sentinel
+            Int32 charCode = Int32(static_cast<int>(data->firstChar) + static_cast<int>(i));
+            if (static_cast<int>(charCode) >= 0 && static_cast<int>(charCode) < 256 && static_cast<int>(i) < static_cast<int>(numChars)) {
+                data->charWidths[static_cast<int>(charCode)] = entries[static_cast<int>(i)].width;
+                data->charOffsets[static_cast<int>(charCode)] = entries[static_cast<int>(i)].offset;
             }
         }
     } else {
         // V2.0 format: 4-byte entries (2-byte width + 2-byte offset)
         const FntCharEntryV2* entries = reinterpret_cast<const FntCharEntryV2*>(charTable);
 
-        for (int i = 0; i < numChars; i++) {
-            int charCode = data->firstChar + i;
-            if (charCode >= 0 && charCode < 256) {
-                data->charWidths[charCode] = entries[i].width;
-                data->charOffsets[charCode] = entries[i].offset;
+        for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(numChars); i += 1) {
+            Int32 charCode = Int32(static_cast<int>(data->firstChar) + static_cast<int>(i));
+            if (static_cast<int>(charCode) >= 0 && static_cast<int>(charCode) < 256) {
+                data->charWidths[static_cast<int>(charCode)] = entries[static_cast<int>(i)].width;
+                data->charOffsets[static_cast<int>(charCode)] = entries[static_cast<int>(i)].offset;
             }
         }
     }
 
     // Copy bitmap data
     // Each glyph bitmap size is: ceil(width/8) * height (row-major format)
-    unsigned int bitmapStart = 0;
-    unsigned int bitmapEnd = 0;
-    int height = data->pixelHeight;
+    UInt32 bitmapStart = UInt32(0);
+    UInt32 bitmapEnd = UInt32(0);
+    Int32 height = data->pixelHeight;
 
-    if (isV3) {
+    if (static_cast<bool>(isV3)) {
         // In V3, offsets are from start of FNT resource
-        bitmapStart = 0xFFFFFFFF;
-        for (int i = data->firstChar; i <= data->lastChar; i++) {
-            if (data->charOffsets[i] > 0 && data->charOffsets[i] < bitmapStart) {
-                bitmapStart = data->charOffsets[i];
+        bitmapStart = UInt32(0xFFFFFFFF);
+        for (Int32 i = data->firstChar; static_cast<int>(i) <= static_cast<int>(data->lastChar); i += 1) {
+            if (data->charOffsets[static_cast<int>(i)] > 0 && data->charOffsets[static_cast<int>(i)] < static_cast<unsigned int>(bitmapStart)) {
+                bitmapStart = UInt32(data->charOffsets[static_cast<int>(i)]);
             }
-            int bytesPerRow = (data->charWidths[i] + 7) / 8;
-            unsigned int charEnd = data->charOffsets[i] + bytesPerRow * height;
-            if (charEnd > bitmapEnd) {
+            Int32 bytesPerRow = Int32((data->charWidths[static_cast<int>(i)] + 7) / 8);
+            UInt32 charEnd = UInt32(data->charOffsets[static_cast<int>(i)] + static_cast<int>(bytesPerRow) * static_cast<int>(height));
+            if (static_cast<unsigned int>(charEnd) > static_cast<unsigned int>(bitmapEnd)) {
                 bitmapEnd = charEnd;
             }
         }
     } else {
         // In V2, offsets are from start of FNT resource
-        bitmapStart = 0xFFFFFFFF;
-        for (int i = data->firstChar; i <= data->lastChar; i++) {
-            if (data->charOffsets[i] > 0 && data->charOffsets[i] < bitmapStart) {
-                bitmapStart = data->charOffsets[i];
+        bitmapStart = UInt32(0xFFFFFFFF);
+        for (Int32 i = data->firstChar; static_cast<int>(i) <= static_cast<int>(data->lastChar); i += 1) {
+            if (data->charOffsets[static_cast<int>(i)] > 0 && data->charOffsets[static_cast<int>(i)] < static_cast<unsigned int>(bitmapStart)) {
+                bitmapStart = UInt32(data->charOffsets[static_cast<int>(i)]);
             }
-            int bytesPerRow = (data->charWidths[i] + 7) / 8;
-            unsigned int charEnd = data->charOffsets[i] + bytesPerRow * height;
-            if (charEnd > bitmapEnd) {
+            Int32 bytesPerRow = Int32((data->charWidths[static_cast<int>(i)] + 7) / 8);
+            UInt32 charEnd = UInt32(data->charOffsets[static_cast<int>(i)] + static_cast<int>(bytesPerRow) * static_cast<int>(height));
+            if (static_cast<unsigned int>(charEnd) > static_cast<unsigned int>(bitmapEnd)) {
                 bitmapEnd = charEnd;
             }
         }
     }
 
-    if (bitmapEnd > bitmapStart) {
-        data->bitmapSize = bitmapEnd;  // Store entire font data to simplify offsets
+    if (static_cast<unsigned int>(bitmapEnd) > static_cast<unsigned int>(bitmapStart)) {
+        data->bitmapSize = static_cast<unsigned int>(bitmapEnd);  // Store entire font data to simplify offsets
         data->bitmapData = static_cast<unsigned char*>(std::malloc(data->bitmapSize));
         if (data->bitmapData) {
             std::memcpy(data->bitmapData, fontBase, data->bitmapSize);
@@ -2320,67 +2325,67 @@ Font Font::FromTrueType(const char* path, Int32 pixelHeight, FontStyle style) {
         throw ArgumentNullException("path");
     }
 
-    int targetHeight = static_cast<int>(pixelHeight);
-    if (targetHeight <= 0) {
+    Int32 targetHeight = pixelHeight;
+    if (static_cast<int>(targetHeight) <= 0) {
         throw ArgumentException("pixelHeight must be positive.");
     }
 
     // Read file
     Array<UInt8> fileBytes = IO::File::ReadAllBytes(path);
-    int fileSize = fileBytes.Length();
+    Int32 fileSize = Int32(fileBytes.Length());
 
-    if (fileSize < 12) {
+    if (static_cast<int>(fileSize) < 12) {
         throw InvalidDataException("File is too small to be a valid TTF file.");
     }
 
     // Allocate and copy file data (stb_truetype requires persistent data)
-    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(fileSize));
+    unsigned char* fileData = static_cast<unsigned char*>(std::malloc(static_cast<int>(fileSize)));
     if (!fileData) {
         throw InvalidOperationException("Failed to allocate memory.");
     }
 
-    for (int i = 0; i < fileSize; i++) {
-        fileData[i] = static_cast<unsigned char>(fileBytes[i]);
+    for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(fileSize); i += 1) {
+        fileData[static_cast<int>(i)] = static_cast<unsigned char>(fileBytes[static_cast<int>(i)]);
     }
 
     // Initialize stb_truetype
     FontData* data = new FontData();
     data->bitmapData = fileData;
-    data->bitmapSize = fileSize;
-    data->isTrueType = true;
+    data->bitmapSize = static_cast<int>(fileSize);
+    data->isTrueType = Boolean(true);
     data->style = style;
 
     // Get font offset (handles font collections and validates TTF header)
-    int fontOffset = stbtt_GetFontOffsetForIndex(fileData, 0);
-    if (fontOffset < 0) {
+    Int32 fontOffset = Int32(stbtt_GetFontOffsetForIndex(fileData, 0));
+    if (static_cast<int>(fontOffset) < 0) {
         delete data;
         throw InvalidDataException("Invalid TTF file or font index.");
     }
 
-    if (!stbtt_InitFont(&data->ttfInfo, fileData, fontOffset)) {
+    if (!stbtt_InitFont(&data->ttfInfo, fileData, static_cast<int>(fontOffset))) {
         delete data;
         throw InvalidDataException("Failed to parse TTF file.");
     }
 
     // Calculate scale for desired pixel height
-    data->ttfScale = stbtt_ScaleForPixelHeight(&data->ttfInfo, static_cast<float>(targetHeight));
+    data->ttfScale = Float32(stbtt_ScaleForPixelHeight(&data->ttfInfo, static_cast<float>(targetHeight)));
 
     // Get font metrics
     int ascent, descent, lineGap;
     stbtt_GetFontVMetrics(&data->ttfInfo, &ascent, &descent, &lineGap);
 
     data->pixelHeight = targetHeight;
-    data->ascent = static_cast<int>(ascent * data->ttfScale);
+    data->ascent = Int32(static_cast<int>(ascent * static_cast<float>(data->ttfScale)));
     data->pointSize = targetHeight;  // Approximate
-    data->firstChar = 32;   // Space
-    data->lastChar = 126;   // Tilde
+    data->firstChar = Int32(32);   // Space
+    data->lastChar = Int32(126);   // Tilde
 
     // Pre-calculate character widths (round instead of truncate)
-    for (int ch = 0; ch < 256; ch++) {
+    for (Int32 ch = Int32(0); static_cast<int>(ch) < 256; ch += 1) {
         int advanceWidth, leftSideBearing;
-        stbtt_GetCodepointHMetrics(&data->ttfInfo, ch, &advanceWidth, &leftSideBearing);
+        stbtt_GetCodepointHMetrics(&data->ttfInfo, static_cast<int>(ch), &advanceWidth, &leftSideBearing);
         // Add 0.5f for proper rounding to avoid accumulated spacing errors
-        data->charWidths[ch] = static_cast<unsigned short>(advanceWidth * data->ttfScale + 0.5f);
+        data->charWidths[static_cast<int>(ch)] = static_cast<unsigned short>(advanceWidth * static_cast<float>(data->ttfScale) + 0.5f);
     }
 
     // Get font name from TTF name table (simplified - just use filename)
@@ -2392,11 +2397,12 @@ Font Font::FromTrueType(const char* path, Int32 pixelHeight, FontStyle style) {
     }
     // Remove extension
     char nameBuf[64];
-    int nameLen = 0;
-    for (const char* q = nameStart; *q && *q != '.' && nameLen < 63; q++) {
-        nameBuf[nameLen++] = *q;
+    Int32 nameLen = Int32(0);
+    for (const char* q = nameStart; *q && *q != '.' && static_cast<int>(nameLen) < 63; q++) {
+        nameBuf[static_cast<int>(nameLen)] = *q;
+        nameLen += 1;
     }
-    nameBuf[nameLen] = '\0';
+    nameBuf[static_cast<int>(nameLen)] = '\0';
     data->name = String(nameBuf);
 
     return Font(data);
@@ -2407,15 +2413,15 @@ String Font::Name() const {
 }
 
 Int32 Font::Size() const {
-    return _data ? Int32(_data->pointSize) : Int32(0);
+    return _data ? _data->pointSize : Int32(0);
 }
 
 Int32 Font::Height() const {
-    return _data ? Int32(_data->pixelHeight) : Int32(0);
+    return _data ? _data->pixelHeight : Int32(0);
 }
 
 Int32 Font::Ascent() const {
-    return _data ? Int32(_data->ascent) : Int32(0);
+    return _data ? _data->ascent : Int32(0);
 }
 
 FontStyle Font::Style() const {
@@ -2423,27 +2429,27 @@ FontStyle Font::Style() const {
 }
 
 Boolean Font::IsValid() const {
-    return Boolean(_data != nullptr && _data->pixelHeight > 0);
+    return Boolean(_data != nullptr && static_cast<int>(_data->pixelHeight) > 0);
 }
 
 Boolean Font::IsTrueType() const {
-    return Boolean(_data != nullptr && _data->isTrueType);
+    return Boolean(_data != nullptr && static_cast<bool>(_data->isTrueType));
 }
 
 void* Font::GetTTFInfo() const {
-    if (!_data || !_data->isTrueType) return nullptr;
+    if (!_data || !static_cast<bool>(_data->isTrueType)) return nullptr;
     return const_cast<stbtt_fontinfo*>(&_data->ttfInfo);
 }
 
 float Font::GetTTFScale() const {
-    if (!_data || !_data->isTrueType) return 0.0f;
-    return _data->ttfScale;
+    if (!_data || !static_cast<bool>(_data->isTrueType)) return 0.0f;
+    return static_cast<float>(_data->ttfScale);
 }
 
 Int32 Font::GetCharWidth(Char c) const {
     if (!_data) return Int32(0);
-    int ch = static_cast<int>(static_cast<unsigned char>(c));
-    return Int32(_data->charWidths[ch]);
+    Int32 ch = Int32(static_cast<int>(static_cast<unsigned char>(c)));
+    return Int32(_data->charWidths[static_cast<int>(ch)]);
 }
 
 Drawing::Size Font::MeasureString(const String& text) const {
@@ -2454,60 +2460,60 @@ Drawing::Size Font::MeasureString(const char* text) const {
     if (!_data || !text) return Drawing::Size(Int32(0), Int32(0));
 
     // Check if font style includes bold (adds 1 pixel per character)
-    bool isBold = (static_cast<unsigned char>(_data->style) &
-                   static_cast<unsigned char>(FontStyle::Bold)) != 0;
+    Boolean isBold = Boolean((static_cast<unsigned char>(_data->style) &
+                   static_cast<unsigned char>(FontStyle::Bold)) != 0);
 
-    int maxWidth = 0;
-    int currentWidth = 0;
-    int lines = 1;
-    int charsOnLine = 0;
+    Int32 maxWidth = Int32(0);
+    Int32 currentWidth = Int32(0);
+    Int32 lines = Int32(1);
+    Int32 charsOnLine = Int32(0);
 
     for (const char* p = text; *p; p++) {
         if (*p == '\n') {
             // Add extra pixels for bold characters
-            if (isBold && charsOnLine > 0) {
-                currentWidth += charsOnLine;
+            if (static_cast<bool>(isBold) && static_cast<int>(charsOnLine) > 0) {
+                currentWidth = Int32(static_cast<int>(currentWidth) + static_cast<int>(charsOnLine));
             }
-            if (currentWidth > maxWidth) maxWidth = currentWidth;
-            currentWidth = 0;
-            charsOnLine = 0;
-            lines++;
+            if (static_cast<int>(currentWidth) > static_cast<int>(maxWidth)) maxWidth = currentWidth;
+            currentWidth = Int32(0);
+            charsOnLine = Int32(0);
+            lines += 1;
         } else {
-            int ch = static_cast<int>(static_cast<unsigned char>(*p));
-            currentWidth += _data->charWidths[ch];
-            charsOnLine++;
+            Int32 ch = Int32(static_cast<int>(static_cast<unsigned char>(*p)));
+            currentWidth = Int32(static_cast<int>(currentWidth) + _data->charWidths[static_cast<int>(ch)]);
+            charsOnLine += 1;
         }
     }
 
     // Add extra pixels for bold characters on last line
-    if (isBold && charsOnLine > 0) {
-        currentWidth += charsOnLine;
+    if (static_cast<bool>(isBold) && static_cast<int>(charsOnLine) > 0) {
+        currentWidth = Int32(static_cast<int>(currentWidth) + static_cast<int>(charsOnLine));
     }
-    if (currentWidth > maxWidth) maxWidth = currentWidth;
-    return Drawing::Size(Int32(maxWidth), Int32(lines * _data->pixelHeight));
+    if (static_cast<int>(currentWidth) > static_cast<int>(maxWidth)) maxWidth = currentWidth;
+    return Drawing::Size(maxWidth, Int32(static_cast<int>(lines) * static_cast<int>(_data->pixelHeight)));
 }
 
 const Image& Font::GetGlyph(Char c) const {
-    static Image emptyGlyph(1, 1, Color::Transparent);
+    static Image emptyGlyph(Int32(1), Int32(1), Color::Transparent);
     if (!_data) return emptyGlyph;
 
-    int ch = static_cast<int>(static_cast<unsigned char>(c));
-    if (!_data->glyphCached[ch]) {
+    Int32 ch = Int32(static_cast<int>(static_cast<unsigned char>(c)));
+    if (!static_cast<bool>(_data->glyphCached[static_cast<int>(ch)])) {
         _data->RenderGlyph(ch);
     }
-    return _data->glyphCache[ch];
+    return _data->glyphCache[static_cast<int>(ch)];
 }
 
 /******************************************************************************/
 /*    Fast fill for rectangles (32-bit pixels)                                */
 /******************************************************************************/
 
-static void FastFillRect32(unsigned int* data, int stride, int x, int y,
-                           int width, int height, unsigned int color) {
-    for (int row = 0; row < height; row++) {
-        unsigned int* rowStart = data + (y + row) * stride + x;
-        for (int col = 0; col < width; col++) {
-            rowStart[col] = color;
+static void FastFillRect32(unsigned int* data, Int32 stride, Int32 x, Int32 y,
+                           Int32 width, Int32 height, UInt32 color) {
+    for (Int32 row = Int32(0); static_cast<int>(row) < static_cast<int>(height); row += 1) {
+        unsigned int* rowStart = data + (static_cast<int>(y) + static_cast<int>(row)) * static_cast<int>(stride) + static_cast<int>(x);
+        for (Int32 col = Int32(0); static_cast<int>(col) < static_cast<int>(width); col += 1) {
+            rowStart[static_cast<int>(col)] = static_cast<unsigned int>(color);
         }
     }
 }
@@ -2518,36 +2524,36 @@ static void FastFillRect32(unsigned int* data, int stride, int x, int y,
 
 // Global state for dirty rectangle tracking
 static Rectangle g_dirtyRect = Rectangle::Empty;
-static bool g_hasDirtyRect = false;
-static int g_screenWidth = 0;
-static int g_screenHeight = 0;
-static unsigned char g_videoMode = 0;
+static Boolean g_hasDirtyRect = Boolean(false);
+static Int32 g_screenWidth = Int32(0);
+static Int32 g_screenHeight = Int32(0);
+static UInt8 g_videoMode = UInt8(0);
 
 // Mark a region as dirty (needs redraw)
-void MarkDirty(int x, int y, int width, int height) {
-    if (!g_hasDirtyRect) {
+void MarkDirty(Int32 x, Int32 y, Int32 width, Int32 height) {
+    if (!static_cast<bool>(g_hasDirtyRect)) {
         g_dirtyRect = Rectangle(x, y, width, height);
-        g_hasDirtyRect = true;
+        g_hasDirtyRect = Boolean(true);
     } else {
         // Expand dirty rect to include new region
-        int gx = static_cast<int>(g_dirtyRect.x);
-        int gy = static_cast<int>(g_dirtyRect.y);
-        int gw = static_cast<int>(g_dirtyRect.width);
-        int gh = static_cast<int>(g_dirtyRect.height);
-        int left = gx < x ? gx : x;
-        int top = gy < y ? gy : y;
-        int right1 = gx + gw;
-        int right2 = x + width;
-        int right = right1 > right2 ? right1 : right2;
-        int bottom1 = gy + gh;
-        int bottom2 = y + height;
-        int bottom = bottom1 > bottom2 ? bottom1 : bottom2;
-        g_dirtyRect = Rectangle(left, top, right - left, bottom - top);
+        Int32 gx = Int32(static_cast<int>(g_dirtyRect.x));
+        Int32 gy = Int32(static_cast<int>(g_dirtyRect.y));
+        Int32 gw = Int32(static_cast<int>(g_dirtyRect.width));
+        Int32 gh = Int32(static_cast<int>(g_dirtyRect.height));
+        Int32 left = Int32(static_cast<int>(gx) < static_cast<int>(x) ? static_cast<int>(gx) : static_cast<int>(x));
+        Int32 top = Int32(static_cast<int>(gy) < static_cast<int>(y) ? static_cast<int>(gy) : static_cast<int>(y));
+        Int32 right1 = Int32(static_cast<int>(gx) + static_cast<int>(gw));
+        Int32 right2 = Int32(static_cast<int>(x) + static_cast<int>(width));
+        Int32 right = Int32(static_cast<int>(right1) > static_cast<int>(right2) ? static_cast<int>(right1) : static_cast<int>(right2));
+        Int32 bottom1 = Int32(static_cast<int>(gy) + static_cast<int>(gh));
+        Int32 bottom2 = Int32(static_cast<int>(y) + static_cast<int>(height));
+        Int32 bottom = Int32(static_cast<int>(bottom1) > static_cast<int>(bottom2) ? static_cast<int>(bottom1) : static_cast<int>(bottom2));
+        g_dirtyRect = Rectangle(left, top, Int32(static_cast<int>(right) - static_cast<int>(left)), Int32(static_cast<int>(bottom) - static_cast<int>(top)));
     }
 }
 
 void ClearDirty() {
-    g_hasDirtyRect = false;
+    g_hasDirtyRect = Boolean(false);
     g_dirtyRect = Rectangle::Empty;
 }
 
@@ -2557,10 +2563,10 @@ static void FrameBufferWriter(const GraphicsBuffer& buffer) {
     if (!fb) return;
 
     const Rectangle& bounds = buffer.Bounds();
-    int bx = static_cast<int>(bounds.x);
-    int by = static_cast<int>(bounds.y);
-    int bw = static_cast<int>(bounds.width);
-    int bh = static_cast<int>(bounds.height);
+    Int32 bx = Int32(static_cast<int>(bounds.x));
+    Int32 by = Int32(static_cast<int>(bounds.y));
+    Int32 bw = Int32(static_cast<int>(bounds.width));
+    Int32 bh = Int32(static_cast<int>(bounds.height));
     fb->GetImage().CopyFrom(buffer.GetImage(), bounds.x, bounds.y);
     MarkDirty(bx, by, bw, bh);
 }
@@ -2570,92 +2576,92 @@ static void FrameBufferWriter(const GraphicsBuffer& buffer) {
 static void PlanarBufferWriterFast(const Image& img, const Rectangle& region) {
     InitC2PTable();
 
-    int screenWidth = g_screenWidth;
-    int screenWidthBytes = screenWidth / 8;
+    Int32 screenWidth = g_screenWidth;
+    Int32 screenWidthBytes = Int32(static_cast<int>(screenWidth) / 8);
 
-    int rx = static_cast<int>(region.x);
-    int ry = static_cast<int>(region.y);
-    int rw = static_cast<int>(region.width);
-    int rh = static_cast<int>(region.height);
+    Int32 rx = Int32(static_cast<int>(region.x));
+    Int32 ry = Int32(static_cast<int>(region.y));
+    Int32 rw = Int32(static_cast<int>(region.width));
+    Int32 rh = Int32(static_cast<int>(region.height));
 
     // Align region to 8-pixel boundaries for planar mode
-    int x1 = (rx / 8) * 8;
-    int x2 = ((rx + rw + 7) / 8) * 8;
-    int y1 = ry;
-    int y2 = ry + rh;
+    Int32 x1 = Int32((static_cast<int>(rx) / 8) * 8);
+    Int32 x2 = Int32(((static_cast<int>(rx) + static_cast<int>(rw) + 7) / 8) * 8);
+    Int32 y1 = ry;
+    Int32 y2 = Int32(static_cast<int>(ry) + static_cast<int>(rh));
 
     // Clamp to screen bounds
-    if (x1 < 0) x1 = 0;
-    if (y1 < 0) y1 = 0;
-    if (x2 > screenWidth) x2 = screenWidth;
-    if (y2 > g_screenHeight) y2 = g_screenHeight;
+    if (static_cast<int>(x1) < 0) x1 = Int32(0);
+    if (static_cast<int>(y1) < 0) y1 = Int32(0);
+    if (static_cast<int>(x2) > static_cast<int>(screenWidth)) x2 = screenWidth;
+    if (static_cast<int>(y2) > static_cast<int>(g_screenHeight)) y2 = g_screenHeight;
 
-    int regionWidthBytes = (x2 - x1) / 8;
-    int regionHeight = y2 - y1;
+    Int32 regionWidthBytes = Int32((static_cast<int>(x2) - static_cast<int>(x1)) / 8);
+    Int32 regionHeight = Int32(static_cast<int>(y2) - static_cast<int>(y1));
 
-    if (regionWidthBytes <= 0 || regionHeight <= 0) return;
+    if (static_cast<int>(regionWidthBytes) <= 0 || static_cast<int>(regionHeight) <= 0) return;
 
     // Allocate plane buffers for this region only
-    int regionPlaneSize = regionWidthBytes * regionHeight;
-    unsigned char* planes = static_cast<unsigned char*>(std::malloc(regionPlaneSize * 4));
+    Int32 regionPlaneSize = Int32(static_cast<int>(regionWidthBytes) * static_cast<int>(regionHeight));
+    unsigned char* planes = static_cast<unsigned char*>(std::malloc(static_cast<int>(regionPlaneSize) * 4));
     if (!planes) return;
 
-    std::memset(planes, 0, regionPlaneSize * 4);
+    std::memset(planes, 0, static_cast<int>(regionPlaneSize) * 4);
 
     const unsigned int* pixels = img.Data();
-    int imgWidth = static_cast<int>(img.Width());
+    Int32 imgWidth = Int32(static_cast<int>(img.Width()));
 
     // Convert region using lookup table - process 2 pixels at a time
     // Dither from 32-bit ARGB to 4-bit VGA palette
-    for (int row = 0; row < regionHeight; row++) {
-        int srcY = y1 + row;
-        const unsigned int* srcRow = pixels + srcY * imgWidth + x1;
-        int dstByteOffset = row * regionWidthBytes;
+    for (Int32 row = Int32(0); static_cast<int>(row) < static_cast<int>(regionHeight); row += 1) {
+        Int32 srcY = Int32(static_cast<int>(y1) + static_cast<int>(row));
+        const unsigned int* srcRow = pixels + static_cast<int>(srcY) * static_cast<int>(imgWidth) + static_cast<int>(x1);
+        Int32 dstByteOffset = Int32(static_cast<int>(row) * static_cast<int>(regionWidthBytes));
 
-        for (int col = 0; col < regionWidthBytes; col++) {
-            int srcX = col * 8;
+        for (Int32 col = Int32(0); static_cast<int>(col) < static_cast<int>(regionWidthBytes); col += 1) {
+            Int32 srcX = Int32(static_cast<int>(col) * 8);
             unsigned char planeByte[4] = {0, 0, 0, 0};
 
             // Process 8 pixels (4 pairs) using lookup table
-            for (int pair = 0; pair < 4; pair++) {
+            for (Int32 pair = Int32(0); static_cast<int>(pair) < 4; pair += 1) {
                 // Get 32-bit ARGB pixels and dither to VGA indices
-                unsigned int pix0 = srcRow[srcX + pair * 2];
-                unsigned int pix1 = srcRow[srcX + pair * 2 + 1];
+                UInt32 pix0 = UInt32(srcRow[static_cast<int>(srcX) + static_cast<int>(pair) * 2]);
+                UInt32 pix1 = UInt32(srcRow[static_cast<int>(srcX) + static_cast<int>(pair) * 2 + 1]);
 
-                unsigned char p0 = DitherToVga(x1 + srcX + pair * 2, srcY,
-                    (pix0 >> 16) & 0xFF, (pix0 >> 8) & 0xFF, pix0 & 0xFF);
-                unsigned char p1 = DitherToVga(x1 + srcX + pair * 2 + 1, srcY,
-                    (pix1 >> 16) & 0xFF, (pix1 >> 8) & 0xFF, pix1 & 0xFF);
+                unsigned char p0 = DitherToVga(Int32(static_cast<int>(x1) + static_cast<int>(srcX) + static_cast<int>(pair) * 2), srcY,
+                    (static_cast<unsigned int>(pix0) >> 16) & 0xFF, (static_cast<unsigned int>(pix0) >> 8) & 0xFF, static_cast<unsigned int>(pix0) & 0xFF);
+                unsigned char p1 = DitherToVga(Int32(static_cast<int>(x1) + static_cast<int>(srcX) + static_cast<int>(pair) * 2 + 1), srcY,
+                    (static_cast<unsigned int>(pix1) >> 16) & 0xFF, (static_cast<unsigned int>(pix1) >> 8) & 0xFF, static_cast<unsigned int>(pix1) & 0xFF);
 
-                int idx = ((p0 & 0x0F) << 4) | (p1 & 0x0F);
-                int shift = 6 - pair * 2;
+                Int32 idx = Int32(((p0 & 0x0F) << 4) | (p1 & 0x0F));
+                Int32 shift = Int32(6 - static_cast<int>(pair) * 2);
 
-                planeByte[0] |= g_c2p_table[idx][0] << shift;
-                planeByte[1] |= g_c2p_table[idx][1] << shift;
-                planeByte[2] |= g_c2p_table[idx][2] << shift;
-                planeByte[3] |= g_c2p_table[idx][3] << shift;
+                planeByte[0] |= g_c2p_table[static_cast<int>(idx)][0] << static_cast<int>(shift);
+                planeByte[1] |= g_c2p_table[static_cast<int>(idx)][1] << static_cast<int>(shift);
+                planeByte[2] |= g_c2p_table[static_cast<int>(idx)][2] << static_cast<int>(shift);
+                planeByte[3] |= g_c2p_table[static_cast<int>(idx)][3] << static_cast<int>(shift);
             }
 
-            planes[0 * regionPlaneSize + dstByteOffset + col] = planeByte[0];
-            planes[1 * regionPlaneSize + dstByteOffset + col] = planeByte[1];
-            planes[2 * regionPlaneSize + dstByteOffset + col] = planeByte[2];
-            planes[3 * regionPlaneSize + dstByteOffset + col] = planeByte[3];
+            planes[0 * static_cast<int>(regionPlaneSize) + static_cast<int>(dstByteOffset) + static_cast<int>(col)] = planeByte[0];
+            planes[1 * static_cast<int>(regionPlaneSize) + static_cast<int>(dstByteOffset) + static_cast<int>(col)] = planeByte[1];
+            planes[2 * static_cast<int>(regionPlaneSize) + static_cast<int>(dstByteOffset) + static_cast<int>(col)] = planeByte[2];
+            planes[3 * static_cast<int>(regionPlaneSize) + static_cast<int>(dstByteOffset) + static_cast<int>(col)] = planeByte[3];
         }
     }
 
     // Write each plane to VGA memory - only the dirty region
-    int startOffset = y1 * screenWidthBytes + (x1 / 8);
+    Int32 startOffset = Int32(static_cast<int>(y1) * static_cast<int>(screenWidthBytes) + (static_cast<int>(x1) / 8));
 
-    for (int plane = 0; plane < 4; plane++) {
-        Platform::DOS::Graphics::SelectPlane(plane);
+    for (Int32 plane = Int32(0); static_cast<int>(plane) < 4; plane += 1) {
+        Platform::DOS::Graphics::SelectPlane(static_cast<int>(plane));
 
         // Copy row by row to handle stride difference
-        for (int row = 0; row < regionHeight; row++) {
-            int vgaOffset = startOffset + row * screenWidthBytes;
+        for (Int32 row = Int32(0); static_cast<int>(row) < static_cast<int>(regionHeight); row += 1) {
+            Int32 vgaOffset = Int32(static_cast<int>(startOffset) + static_cast<int>(row) * static_cast<int>(screenWidthBytes));
             Platform::DOS::Graphics::CopyToVGA(
-                planes + plane * regionPlaneSize + row * regionWidthBytes,
-                vgaOffset,
-                regionWidthBytes
+                planes + static_cast<int>(plane) * static_cast<int>(regionPlaneSize) + static_cast<int>(row) * static_cast<int>(regionWidthBytes),
+                static_cast<int>(vgaOffset),
+                static_cast<int>(regionWidthBytes)
             );
         }
     }
@@ -2678,24 +2684,24 @@ static void PlanarBufferWriter(const GraphicsBuffer& buffer) {
 // Dithers 32-bit ARGB to 8-bit VGA palette
 static void LinearBufferWriter(const GraphicsBuffer& buffer) {
     const Image& img = buffer.GetImage();
-    int width = static_cast<int>(img.Width());
-    int height = static_cast<int>(img.Height());
+    Int32 width = Int32(static_cast<int>(img.Width()));
+    Int32 height = Int32(static_cast<int>(img.Height()));
     const unsigned int* pixels = img.Data();
 
     // Allocate temporary 8-bit buffer
-    unsigned char* vgaBuffer = static_cast<unsigned char*>(std::malloc(width * height));
+    unsigned char* vgaBuffer = static_cast<unsigned char*>(std::malloc(static_cast<int>(width) * static_cast<int>(height)));
     if (!vgaBuffer) return;
 
     // Dither each pixel
-    for (int y = 0; y < height; y++) {
-        for (int x = 0; x < width; x++) {
-            unsigned int pixel = pixels[y * width + x];
-            vgaBuffer[y * width + x] = DitherToVga(x, y,
-                (pixel >> 16) & 0xFF, (pixel >> 8) & 0xFF, pixel & 0xFF);
+    for (Int32 y = Int32(0); static_cast<int>(y) < static_cast<int>(height); y += 1) {
+        for (Int32 x = Int32(0); static_cast<int>(x) < static_cast<int>(width); x += 1) {
+            UInt32 pixel = UInt32(pixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)]);
+            vgaBuffer[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)] = DitherToVga(x, y,
+                (static_cast<unsigned int>(pixel) >> 16) & 0xFF, (static_cast<unsigned int>(pixel) >> 8) & 0xFF, static_cast<unsigned int>(pixel) & 0xFF);
         }
     }
 
-    Platform::DOS::Graphics::CopyToVGA(vgaBuffer, 0, width * height);
+    Platform::DOS::Graphics::CopyToVGA(vgaBuffer, 0, static_cast<int>(width) * static_cast<int>(height));
     std::free(vgaBuffer);
 }
 
@@ -2703,46 +2709,46 @@ static void LinearBufferWriter(const GraphicsBuffer& buffer) {
 // Uses LDT selector for proper protected mode LFB access
 // Handles both 24bpp and 32bpp display modes
 static void Linear32BufferWriter(const GraphicsBuffer& buffer) {
-    int selector = Platform::DOS::Graphics::GetLfbSelector();
-    if (selector <= 0) return;
+    Int32 selector = Int32(Platform::DOS::Graphics::GetLfbSelector());
+    if (static_cast<int>(selector) <= 0) return;
 
-    unsigned int pitch = static_cast<unsigned int>(buffer.LfbPitch());
-    int width = static_cast<int>(buffer.Bounds().width);
-    int height = static_cast<int>(buffer.Bounds().height);
-    unsigned char bpp = static_cast<unsigned char>(buffer.Bpp());
+    UInt32 pitch = UInt32(static_cast<unsigned int>(buffer.LfbPitch()));
+    Int32 width = Int32(static_cast<int>(buffer.Bounds().width));
+    Int32 height = Int32(static_cast<int>(buffer.Bounds().height));
+    UInt8 bpp = UInt8(static_cast<unsigned char>(buffer.Bpp()));
 
     const Image& img = buffer.GetImage();
     const unsigned int* pixels = img.Data();
 
     // Static row buffer for conversion
     static unsigned char rowBuffer[4096 * 4];  // Max 4096 pixels wide, 4 bytes each
-    int bytesPerPixel = (bpp == 32) ? 4 : 3;
+    Int32 bytesPerPixel = Int32((static_cast<unsigned char>(bpp) == 32) ? 4 : 3);
 
-    for (int y = 0; y < height; y++) {
-        unsigned int dstOffset = static_cast<unsigned int>(y) * pitch;
+    for (Int32 y = Int32(0); static_cast<int>(y) < static_cast<int>(height); y += 1) {
+        UInt32 dstOffset = UInt32(static_cast<unsigned int>(y) * static_cast<unsigned int>(pitch));
 
-        for (int x = 0; x < width; x++) {
-            unsigned int pixel = pixels[y * width + x];
-            unsigned char r = (pixel >> 16) & 0xFF;
-            unsigned char g = (pixel >> 8) & 0xFF;
-            unsigned char b = pixel & 0xFF;
+        for (Int32 x = Int32(0); static_cast<int>(x) < static_cast<int>(width); x += 1) {
+            UInt32 pixel = UInt32(pixels[static_cast<int>(y) * static_cast<int>(width) + static_cast<int>(x)]);
+            unsigned char r = (static_cast<unsigned int>(pixel) >> 16) & 0xFF;
+            unsigned char g = (static_cast<unsigned int>(pixel) >> 8) & 0xFF;
+            unsigned char b = static_cast<unsigned int>(pixel) & 0xFF;
 
-            if (bpp == 32) {
-                rowBuffer[x * 4 + 0] = b;
-                rowBuffer[x * 4 + 1] = g;
-                rowBuffer[x * 4 + 2] = r;
-                rowBuffer[x * 4 + 3] = 0xFF;
+            if (static_cast<unsigned char>(bpp) == 32) {
+                rowBuffer[static_cast<int>(x) * 4 + 0] = b;
+                rowBuffer[static_cast<int>(x) * 4 + 1] = g;
+                rowBuffer[static_cast<int>(x) * 4 + 2] = r;
+                rowBuffer[static_cast<int>(x) * 4 + 3] = 0xFF;
             } else {
-                rowBuffer[x * 3 + 0] = b;
-                rowBuffer[x * 3 + 1] = g;
-                rowBuffer[x * 3 + 2] = r;
+                rowBuffer[static_cast<int>(x) * 3 + 0] = b;
+                rowBuffer[static_cast<int>(x) * 3 + 1] = g;
+                rowBuffer[static_cast<int>(x) * 3 + 2] = r;
             }
         }
 
-        unsigned int rowBytes = static_cast<unsigned int>(width) * bytesPerPixel;
-        unsigned int srcOffset = static_cast<unsigned int>(
-            reinterpret_cast<unsigned long>(rowBuffer) & 0xFFFFFFFF);
-        movedata(_my_ds(), srcOffset, selector, dstOffset, rowBytes);
+        UInt32 rowBytes = UInt32(static_cast<unsigned int>(width) * static_cast<int>(bytesPerPixel));
+        UInt32 srcOffset = UInt32(static_cast<unsigned int>(
+            reinterpret_cast<unsigned long>(rowBuffer) & 0xFFFFFFFF));
+        movedata(_my_ds(), static_cast<unsigned int>(srcOffset), static_cast<int>(selector), static_cast<unsigned int>(dstOffset), static_cast<unsigned int>(rowBytes));
     }
 }
 
@@ -2772,28 +2778,28 @@ void GraphicsBuffer::Invalidate() {
 void GraphicsBuffer::CreateFrameBuffer(Int32 width, Int32 height, UInt8 videoMode) {
     DestroyFrameBuffer();
 
-    g_screenWidth = static_cast<int>(width);
-    g_screenHeight = static_cast<int>(height);
-    g_videoMode = static_cast<unsigned char>(videoMode);
+    g_screenWidth = width;
+    g_screenHeight = height;
+    g_videoMode = videoMode;
 
     Rectangle bounds(0, 0, width, height);
     BufferWriter writer = nullptr;
-    unsigned char bpp = 4;  // Default for VGA
+    UInt8 bpp = UInt8(4);  // Default for VGA
 
-    switch (g_videoMode) {
+    switch (static_cast<unsigned char>(g_videoMode)) {
         case 0x12:  // 640x480x4bpp planar
             writer = PlanarBufferWriter;
-            bpp = 4;
+            bpp = UInt8(4);
             break;
         case 0x13:  // 320x200x8bpp linear
             writer = LinearBufferWriter;
-            bpp = 8;
+            bpp = UInt8(8);
             break;
         default:
             return;
     }
 
-    _frameBuffer = new GraphicsBuffer(writer, bounds, bpp, g_videoMode);
+    _frameBuffer = new GraphicsBuffer(writer, bounds, static_cast<unsigned char>(bpp), static_cast<unsigned char>(g_videoMode));
     _frameBuffer->GetImage().Clear(Color::Black);
 
     // Initialize lookup table
@@ -2804,9 +2810,9 @@ void GraphicsBuffer::CreateFrameBuffer32(Int32 width, Int32 height, UInt16 /*vbe
                                           void* /*lfbAddr*/, UInt32 pitch, UInt8 bpp) {
     DestroyFrameBuffer();
 
-    g_screenWidth = static_cast<int>(width);
-    g_screenHeight = static_cast<int>(height);
-    g_videoMode = 0;  // Not a standard VGA mode
+    g_screenWidth = width;
+    g_screenHeight = height;
+    g_videoMode = UInt8(0);  // Not a standard VGA mode
 
     // LFB access is now via selector, not direct address
     _lfbAddress = nullptr;
@@ -2834,7 +2840,7 @@ void GraphicsBuffer::DestroyFrameBuffer() {
 void GraphicsBuffer::FlushFrameBuffer() {
     if (_frameBuffer) {
         // Use dirty rectangle optimization for mode 0x12
-        if (g_videoMode == 0x12 && g_hasDirtyRect) {
+        if (static_cast<unsigned char>(g_videoMode) == 0x12 && static_cast<bool>(g_hasDirtyRect)) {
             PlanarBufferWriterFast(_frameBuffer->GetImage(), g_dirtyRect);
             ClearDirty();
         } else {
@@ -2860,9 +2866,9 @@ GraphicsBuffer* GraphicsBuffer::Create(BufferMode mode, const Rectangle& bounds)
 /******************************************************************************/
 
 Graphics::Graphics(BufferMode mode, const Rectangle& bounds)
-    : _buffer(nullptr), _bounds(bounds), _ownsBuffer(false) {
+    : _buffer(nullptr), _bounds(bounds), _ownsBuffer(Boolean(false)) {
     _buffer = GraphicsBuffer::Create(mode, bounds);
-    _ownsBuffer = (mode == BufferMode::Double);
+    _ownsBuffer = Boolean(mode == BufferMode::Double);
 }
 
 Graphics::Graphics(BufferMode mode, Int32 x, Int32 y, Int32 width, Int32 height)
@@ -2870,7 +2876,7 @@ Graphics::Graphics(BufferMode mode, Int32 x, Int32 y, Int32 width, Int32 height)
 }
 
 Graphics::~Graphics() {
-    if (_ownsBuffer && _buffer) {
+    if (static_cast<bool>(_ownsBuffer) && _buffer) {
         delete _buffer;
     }
 }
@@ -2878,25 +2884,25 @@ Graphics::~Graphics() {
 void Graphics::Clear(const Color& color) {
     if (!_buffer) return;
     _buffer->GetImage().Clear(color);
-    MarkDirty(0, 0, static_cast<int>(_bounds.width), static_cast<int>(_bounds.height));
+    MarkDirty(Int32(0), Int32(0), Int32(static_cast<int>(_bounds.width)), Int32(static_cast<int>(_bounds.height)));
 }
 
 void Graphics::DrawPixel(Int32 x, Int32 y, const Color& color) {
-    int xi = static_cast<int>(x);
-    int yi = static_cast<int>(y);
-    int bw = static_cast<int>(_bounds.width);
-    int bh = static_cast<int>(_bounds.height);
+    Int32 xi = x;
+    Int32 yi = y;
+    Int32 bw = Int32(static_cast<int>(_bounds.width));
+    Int32 bh = Int32(static_cast<int>(_bounds.height));
 
     if (color == Color::Transparent) return;
-    if (xi < 0 || yi < 0 || xi >= bw || yi >= bh) return;
+    if (static_cast<int>(xi) < 0 || static_cast<int>(yi) < 0 || static_cast<int>(xi) >= static_cast<int>(bw) || static_cast<int>(yi) >= static_cast<int>(bh)) return;
     if (!_buffer) return;
 
     Image& img = _buffer->GetImage();
     if (_buffer == GraphicsBuffer::GetFrameBuffer()) {
-        int bx = static_cast<int>(_bounds.x);
-        int by = static_cast<int>(_bounds.y);
-        img.SetPixel(bx + xi, by + yi, color);
-        MarkDirty(bx + xi, by + yi, 1, 1);
+        Int32 bx = Int32(static_cast<int>(_bounds.x));
+        Int32 by = Int32(static_cast<int>(_bounds.y));
+        img.SetPixel(Int32(static_cast<int>(bx) + static_cast<int>(xi)), Int32(static_cast<int>(by) + static_cast<int>(yi)), color);
+        MarkDirty(Int32(static_cast<int>(bx) + static_cast<int>(xi)), Int32(static_cast<int>(by) + static_cast<int>(yi)), Int32(1), Int32(1));
     } else {
         img.SetPixel(xi, yi, color);
     }
@@ -2909,26 +2915,27 @@ void Graphics::DrawPixel(const Point& pt, const Color& color) {
 void Graphics::DrawLine(Int32 x1, Int32 y1, Int32 x2, Int32 y2, const Color& color) {
     if (color == Color::Transparent) return;
 
-    int xi1 = static_cast<int>(x1);
-    int yi1 = static_cast<int>(y1);
-    int xi2 = static_cast<int>(x2);
-    int yi2 = static_cast<int>(y2);
+    Int32 xi1 = x1;
+    Int32 yi1 = y1;
+    Int32 xi2 = x2;
+    Int32 yi2 = y2;
 
     // Bresenham's line algorithm
-    int dx = xi2 > xi1 ? xi2 - xi1 : xi1 - xi2;
-    int dy = yi2 > yi1 ? yi2 - yi1 : yi1 - yi2;
-    int sx = xi1 < xi2 ? 1 : -1;
-    int sy = yi1 < yi2 ? 1 : -1;
-    int err = dx - dy;
+    Int32 dx = Int32(static_cast<int>(xi2) > static_cast<int>(xi1) ? static_cast<int>(xi2) - static_cast<int>(xi1) : static_cast<int>(xi1) - static_cast<int>(xi2));
+    Int32 dy = Int32(static_cast<int>(yi2) > static_cast<int>(yi1) ? static_cast<int>(yi2) - static_cast<int>(yi1) : static_cast<int>(yi1) - static_cast<int>(yi2));
+    Int32 sx = Int32(static_cast<int>(xi1) < static_cast<int>(xi2) ? 1 : -1);
+    Int32 sy = Int32(static_cast<int>(yi1) < static_cast<int>(yi2) ? 1 : -1);
+    Int32 err = Int32(static_cast<int>(dx) - static_cast<int>(dy));
 
-    int x = xi1, y = yi1;
+    Int32 x = xi1;
+    Int32 y = yi1;
     while (true) {
         DrawPixel(x, y, color);
-        if (x == xi2 && y == yi2) break;
+        if (static_cast<int>(x) == static_cast<int>(xi2) && static_cast<int>(y) == static_cast<int>(yi2)) break;
 
-        int e2 = err * 2;
-        if (e2 > -dy) { err -= dy; x += sx; }
-        if (e2 < dx) { err += dx; y += sy; }
+        Int32 e2 = Int32(static_cast<int>(err) * 2);
+        if (static_cast<int>(e2) > -static_cast<int>(dy)) { err = Int32(static_cast<int>(err) - static_cast<int>(dy)); x = Int32(static_cast<int>(x) + static_cast<int>(sx)); }
+        if (static_cast<int>(e2) < static_cast<int>(dx)) { err = Int32(static_cast<int>(err) + static_cast<int>(dx)); y = Int32(static_cast<int>(y) + static_cast<int>(sy)); }
     }
 }
 
@@ -2939,13 +2946,13 @@ void Graphics::DrawLine(const Point& p1, const Point& p2, const Color& color) {
 void Graphics::DrawRectangle(Int32 x, Int32 y, Int32 width, Int32 height, const Color& color) {
     if (color == Color::Transparent) return;
 
-    int xi = static_cast<int>(x);
-    int yi = static_cast<int>(y);
-    int wi = static_cast<int>(width);
-    int hi = static_cast<int>(height);
+    Int32 xi = x;
+    Int32 yi = y;
+    Int32 wi = width;
+    Int32 hi = height;
 
-    int x2 = xi + wi - 1;
-    int y2 = yi + hi - 1;
+    Int32 x2 = Int32(static_cast<int>(xi) + static_cast<int>(wi) - 1);
+    Int32 y2 = Int32(static_cast<int>(yi) + static_cast<int>(hi) - 1);
 
     DrawLine(xi, yi, x2, yi, color);      // Top
     DrawLine(xi, y2, x2, y2, color);    // Bottom
@@ -2961,36 +2968,36 @@ void Graphics::FillRectangle(Int32 x, Int32 y, Int32 width, Int32 height, const 
     if (color == Color::Transparent) return;
     if (!_buffer) return;
 
-    int xi = static_cast<int>(x);
-    int yi = static_cast<int>(y);
-    int wi = static_cast<int>(width);
-    int hi = static_cast<int>(height);
-    int bw = static_cast<int>(_bounds.width);
-    int bh = static_cast<int>(_bounds.height);
+    Int32 xi = x;
+    Int32 yi = y;
+    Int32 wi = width;
+    Int32 hi = height;
+    Int32 bw = Int32(static_cast<int>(_bounds.width));
+    Int32 bh = Int32(static_cast<int>(_bounds.height));
 
     // Clip to bounds
-    int x1 = xi < 0 ? 0 : xi;
-    int y1 = yi < 0 ? 0 : yi;
-    int x2 = xi + wi > bw ? bw : xi + wi;
-    int y2 = yi + hi > bh ? bh : yi + hi;
+    Int32 x1 = Int32(static_cast<int>(xi) < 0 ? 0 : static_cast<int>(xi));
+    Int32 y1 = Int32(static_cast<int>(yi) < 0 ? 0 : static_cast<int>(yi));
+    Int32 x2 = Int32(static_cast<int>(xi) + static_cast<int>(wi) > static_cast<int>(bw) ? static_cast<int>(bw) : static_cast<int>(xi) + static_cast<int>(wi));
+    Int32 y2 = Int32(static_cast<int>(yi) + static_cast<int>(hi) > static_cast<int>(bh) ? static_cast<int>(bh) : static_cast<int>(yi) + static_cast<int>(hi));
 
-    if (x1 >= x2 || y1 >= y2) return;
+    if (static_cast<int>(x1) >= static_cast<int>(x2) || static_cast<int>(y1) >= static_cast<int>(y2)) return;
 
     Image& img = _buffer->GetImage();
-    int actualX = x1;
-    int actualY = y1;
+    Int32 actualX = x1;
+    Int32 actualY = y1;
 
     if (_buffer == GraphicsBuffer::GetFrameBuffer()) {
-        actualX += static_cast<int>(_bounds.x);
-        actualY += static_cast<int>(_bounds.y);
+        actualX = Int32(static_cast<int>(actualX) + static_cast<int>(_bounds.x));
+        actualY = Int32(static_cast<int>(actualY) + static_cast<int>(_bounds.y));
     }
 
     // Use fast 32-bit fill
-    FastFillRect32(img.Data(), static_cast<int>(img.Width()), actualX, actualY,
-                   x2 - x1, y2 - y1, static_cast<unsigned int>(color));
+    FastFillRect32(img.Data(), Int32(static_cast<int>(img.Width())), actualX, actualY,
+                   Int32(static_cast<int>(x2) - static_cast<int>(x1)), Int32(static_cast<int>(y2) - static_cast<int>(y1)), UInt32(static_cast<unsigned int>(color)));
 
     if (_buffer == GraphicsBuffer::GetFrameBuffer()) {
-        MarkDirty(actualX, actualY, x2 - x1, y2 - y1);
+        MarkDirty(actualX, actualY, Int32(static_cast<int>(x2) - static_cast<int>(x1)), Int32(static_cast<int>(y2) - static_cast<int>(y1)));
     }
 }
 
@@ -2999,10 +3006,10 @@ void Graphics::FillRectangle(const Rectangle& rect, const Color& color) {
 }
 
 void Graphics::FillRectangle(const Rectangle& rect, BorderStyle style) {
-    int x = static_cast<int>(rect.x);
-    int y = static_cast<int>(rect.y);
-    int w = static_cast<int>(rect.width);
-    int h = static_cast<int>(rect.height);
+    Int32 x = Int32(static_cast<int>(rect.x));
+    Int32 y = Int32(static_cast<int>(rect.y));
+    Int32 w = Int32(static_cast<int>(rect.width));
+    Int32 h = Int32(static_cast<int>(rect.height));
 
     switch (style) {
         case BorderStyle::None:
@@ -3019,64 +3026,64 @@ void Graphics::FillRectangle(const Rectangle& rect, BorderStyle style) {
         case BorderStyle::Raised:
             // 3D raised: white top/left, dark gray bottom/right
             FillRectangle(x, y, w, h, Color::Gray);
-            DrawLine(x, y, x + w - 1, y, Color::White);           // Top
-            DrawLine(x, y, x, y + h - 1, Color::White);           // Left
-            DrawLine(x + w - 1, y, x + w - 1, y + h - 1, Color::DarkGray);  // Right
-            DrawLine(x, y + h - 1, x + w - 1, y + h - 1, Color::DarkGray);  // Bottom
+            DrawLine(x, y, Int32(static_cast<int>(x) + static_cast<int>(w) - 1), y, Color::White);           // Top
+            DrawLine(x, y, x, Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::White);           // Left
+            DrawLine(Int32(static_cast<int>(x) + static_cast<int>(w) - 1), y, Int32(static_cast<int>(x) + static_cast<int>(w) - 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::DarkGray);  // Right
+            DrawLine(x, Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::DarkGray);  // Bottom
             break;
 
         case BorderStyle::Sunken:
             // 3D sunken: dark gray top/left, white bottom/right
             FillRectangle(x, y, w, h, Color::Gray);
-            DrawLine(x, y, x + w - 1, y, Color::DarkGray);        // Top
-            DrawLine(x, y, x, y + h - 1, Color::DarkGray);        // Left
-            DrawLine(x + w - 1, y, x + w - 1, y + h - 1, Color::White);  // Right
-            DrawLine(x, y + h - 1, x + w - 1, y + h - 1, Color::White);  // Bottom
+            DrawLine(x, y, Int32(static_cast<int>(x) + static_cast<int>(w) - 1), y, Color::DarkGray);        // Top
+            DrawLine(x, y, x, Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::DarkGray);        // Left
+            DrawLine(Int32(static_cast<int>(x) + static_cast<int>(w) - 1), y, Int32(static_cast<int>(x) + static_cast<int>(w) - 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::White);  // Right
+            DrawLine(x, Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::White);  // Bottom
             break;
 
         case BorderStyle::RaisedDouble:
             // Double 3D raised (button released state)
             FillRectangle(x, y, w, h, Color::Gray);
             // Outer border: White top/left, Black bottom/right
-            DrawLine(x, y, x + w - 1, y, Color::White);           // Top outer
-            DrawLine(x, y, x, y + h - 1, Color::White);           // Left outer
-            DrawLine(x + w - 1, y, x + w - 1, y + h - 1, Color::Black);   // Right outer
-            DrawLine(x, y + h - 1, x + w - 1, y + h - 1, Color::Black);   // Bottom outer
+            DrawLine(x, y, Int32(static_cast<int>(x) + static_cast<int>(w) - 1), y, Color::White);           // Top outer
+            DrawLine(x, y, x, Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::White);           // Left outer
+            DrawLine(Int32(static_cast<int>(x) + static_cast<int>(w) - 1), y, Int32(static_cast<int>(x) + static_cast<int>(w) - 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::Black);   // Right outer
+            DrawLine(x, Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::Black);   // Bottom outer
             // Inner border: Gray top/left, DarkGray bottom/right
-            DrawLine(x + 1, y + 1, x + w - 2, y + 1, Color::Gray);        // Top inner
-            DrawLine(x + 1, y + 1, x + 1, y + h - 2, Color::Gray);        // Left inner
-            DrawLine(x + w - 2, y + 1, x + w - 2, y + h - 2, Color::DarkGray);  // Right inner
-            DrawLine(x + 1, y + h - 2, x + w - 2, y + h - 2, Color::DarkGray);  // Bottom inner
+            DrawLine(Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + 1), Color::Gray);        // Top inner
+            DrawLine(Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + 1), Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Color::Gray);        // Left inner
+            DrawLine(Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Color::DarkGray);  // Right inner
+            DrawLine(Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Color::DarkGray);  // Bottom inner
             break;
 
         case BorderStyle::SunkenDouble:
             // Double 3D sunken (button pressed state)
             FillRectangle(x, y, w, h, Color::Gray);
             // Outer border: Black top/left, White bottom/right
-            DrawLine(x, y, x + w - 1, y, Color::Black);           // Top outer
-            DrawLine(x, y, x, y + h - 1, Color::Black);           // Left outer
-            DrawLine(x + w - 1, y, x + w - 1, y + h - 1, Color::White);   // Right outer
-            DrawLine(x, y + h - 1, x + w - 1, y + h - 1, Color::White);   // Bottom outer
+            DrawLine(x, y, Int32(static_cast<int>(x) + static_cast<int>(w) - 1), y, Color::Black);           // Top outer
+            DrawLine(x, y, x, Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::Black);           // Left outer
+            DrawLine(Int32(static_cast<int>(x) + static_cast<int>(w) - 1), y, Int32(static_cast<int>(x) + static_cast<int>(w) - 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::White);   // Right outer
+            DrawLine(x, Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::White);   // Bottom outer
             // Inner border: DarkGray top/left, Gray bottom/right
-            DrawLine(x + 1, y + 1, x + w - 2, y + 1, Color::DarkGray);    // Top inner
-            DrawLine(x + 1, y + 1, x + 1, y + h - 2, Color::DarkGray);    // Left inner
-            DrawLine(x + w - 2, y + 1, x + w - 2, y + h - 2, Color::Gray);     // Right inner
-            DrawLine(x + 1, y + h - 2, x + w - 2, y + h - 2, Color::Gray);     // Bottom inner
+            DrawLine(Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + 1), Color::DarkGray);    // Top inner
+            DrawLine(Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + 1), Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Color::DarkGray);    // Left inner
+            DrawLine(Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Color::Gray);     // Right inner
+            DrawLine(Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Color::Gray);     // Bottom inner
             break;
 
         case BorderStyle::Window:
             // Window frame style - thick 3D raised border like Windows 95
             FillRectangle(x, y, w, h, Color::Gray);
             // Outer border (row 0): White top/left, Black bottom/right
-            DrawLine(x, y, x + w - 1, y, Color::White);                   // Top outer
-            DrawLine(x, y, x, y + h - 1, Color::White);                   // Left outer
-            DrawLine(x + w - 1, y, x + w - 1, y + h - 1, Color::Black);   // Right outer
-            DrawLine(x, y + h - 1, x + w - 1, y + h - 1, Color::Black);   // Bottom outer
+            DrawLine(x, y, Int32(static_cast<int>(x) + static_cast<int>(w) - 1), y, Color::White);                   // Top outer
+            DrawLine(x, y, x, Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::White);                   // Left outer
+            DrawLine(Int32(static_cast<int>(x) + static_cast<int>(w) - 1), y, Int32(static_cast<int>(x) + static_cast<int>(w) - 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::Black);   // Right outer
+            DrawLine(x, Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::Black);   // Bottom outer
             // Second border (row 1): White top/left, DarkGray bottom/right
-            DrawLine(x + 1, y + 1, x + w - 2, y + 1, Color::White);       // Top row 1
-            DrawLine(x + 1, y + 1, x + 1, y + h - 2, Color::White);       // Left row 1
-            DrawLine(x + w - 2, y + 1, x + w - 2, y + h - 2, Color::DarkGray); // Right row 1
-            DrawLine(x + 1, y + h - 2, x + w - 2, y + h - 2, Color::DarkGray); // Bottom row 1
+            DrawLine(Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + 1), Color::White);       // Top row 1
+            DrawLine(Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + 1), Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Color::White);       // Left row 1
+            DrawLine(Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Color::DarkGray); // Right row 1
+            DrawLine(Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Color::DarkGray); // Bottom row 1
             break;
     }
 }
@@ -3085,48 +3092,48 @@ void Graphics::FillRectangle(Int32 x, Int32 y, Int32 width, Int32 height,
                               const HatchStyle& hatch, const Color& foreColor, const Color& backColor) {
     if (!_buffer) return;
 
-    int xi = static_cast<int>(x);
-    int yi = static_cast<int>(y);
-    int wi = static_cast<int>(width);
-    int hi = static_cast<int>(height);
-    int bw = static_cast<int>(_bounds.width);
-    int bh = static_cast<int>(_bounds.height);
+    Int32 xi = x;
+    Int32 yi = y;
+    Int32 wi = width;
+    Int32 hi = height;
+    Int32 bw = Int32(static_cast<int>(_bounds.width));
+    Int32 bh = Int32(static_cast<int>(_bounds.height));
 
     // Clip to bounds
-    int x1 = xi < 0 ? 0 : xi;
-    int y1 = yi < 0 ? 0 : yi;
-    int x2 = xi + wi > bw ? bw : xi + wi;
-    int y2 = yi + hi > bh ? bh : yi + hi;
+    Int32 x1 = Int32(static_cast<int>(xi) < 0 ? 0 : static_cast<int>(xi));
+    Int32 y1 = Int32(static_cast<int>(yi) < 0 ? 0 : static_cast<int>(yi));
+    Int32 x2 = Int32(static_cast<int>(xi) + static_cast<int>(wi) > static_cast<int>(bw) ? static_cast<int>(bw) : static_cast<int>(xi) + static_cast<int>(wi));
+    Int32 y2 = Int32(static_cast<int>(yi) + static_cast<int>(hi) > static_cast<int>(bh) ? static_cast<int>(bh) : static_cast<int>(yi) + static_cast<int>(hi));
 
-    if (x1 >= x2 || y1 >= y2) return;
+    if (static_cast<int>(x1) >= static_cast<int>(x2) || static_cast<int>(y1) >= static_cast<int>(y2)) return;
 
     Image& img = _buffer->GetImage();
-    int actualX = x1;
-    int actualY = y1;
+    Int32 actualX = x1;
+    Int32 actualY = y1;
 
     // If we're drawing to a framebuffer, offset by bounds position
     if (_buffer == GraphicsBuffer::GetFrameBuffer()) {
-        actualX += static_cast<int>(_bounds.x);
-        actualY += static_cast<int>(_bounds.y);
+        actualX = Int32(static_cast<int>(actualX) + static_cast<int>(_bounds.x));
+        actualY = Int32(static_cast<int>(actualY) + static_cast<int>(_bounds.y));
     }
 
     // Fill with pattern
-    for (int py = y1; py < y2; py++) {
-        for (int px = x1; px < x2; px++) {
+    for (Int32 py = y1; static_cast<int>(py) < static_cast<int>(y2); py += 1) {
+        for (Int32 px = x1; static_cast<int>(px) < static_cast<int>(x2); px += 1) {
             // Determine if this pixel should be foreground or background
             // Pattern repeats every 8 pixels
-            bool isForeground = hatch.GetBit(px, py);
+            Boolean isForeground = Boolean(hatch.GetBit(static_cast<int>(px), static_cast<int>(py)));
 
-            if (isForeground) {
+            if (static_cast<bool>(isForeground)) {
                 if (foreColor != Color::Transparent) {
-                    int destX = actualX + (px - x1);
-                    int destY = actualY + (py - y1);
+                    Int32 destX = Int32(static_cast<int>(actualX) + (static_cast<int>(px) - static_cast<int>(x1)));
+                    Int32 destY = Int32(static_cast<int>(actualY) + (static_cast<int>(py) - static_cast<int>(y1)));
                     img.SetPixel(destX, destY, foreColor);
                 }
             } else {
                 if (backColor != Color::Transparent) {
-                    int destX = actualX + (px - x1);
-                    int destY = actualY + (py - y1);
+                    Int32 destX = Int32(static_cast<int>(actualX) + (static_cast<int>(px) - static_cast<int>(x1)));
+                    Int32 destY = Int32(static_cast<int>(actualY) + (static_cast<int>(py) - static_cast<int>(y1)));
                     img.SetPixel(destX, destY, backColor);
                 }
             }
@@ -3142,19 +3149,19 @@ void Graphics::FillRectangle(const Rectangle& rect,
 void Graphics::DrawImage(const Image& image, Int32 x, Int32 y) {
     if (!_buffer) return;
 
-    int xi = static_cast<int>(x);
-    int yi = static_cast<int>(y);
+    Int32 xi = x;
+    Int32 yi = y;
 
     Image& img = _buffer->GetImage();
-    int actualX = xi;
-    int actualY = yi;
+    Int32 actualX = xi;
+    Int32 actualY = yi;
 
     if (_buffer == GraphicsBuffer::GetFrameBuffer()) {
-        actualX += static_cast<int>(_bounds.x);
-        actualY += static_cast<int>(_bounds.y);
+        actualX = Int32(static_cast<int>(actualX) + static_cast<int>(_bounds.x));
+        actualY = Int32(static_cast<int>(actualY) + static_cast<int>(_bounds.y));
         img.CopyFrom(image, actualX, actualY);
-        MarkDirty(actualX, actualY, static_cast<int>(image.Width()),
-                  static_cast<int>(image.Height()));
+        MarkDirty(actualX, actualY, Int32(static_cast<int>(image.Width())),
+                  Int32(static_cast<int>(image.Height())));
     } else {
         img.CopyFrom(image, xi, yi);
     }
@@ -3185,37 +3192,37 @@ void Graphics::DrawString(const char* text, const Font& font, const Color& color
     if (!text || !_buffer || !font.IsValid()) return;
     if (color == Color::Transparent) return;
 
-    int curX = static_cast<int>(x);
-    int curY = static_cast<int>(y);
-    int startX = curX;
-    int fontHeight = static_cast<int>(font.Height());
-    int fontAscent = static_cast<int>(font.Ascent());
+    Int32 curX = x;
+    Int32 curY = y;
+    Int32 startX = curX;
+    Int32 fontHeight = font.Height();
+    Int32 fontAscent = font.Ascent();
 
     // Check if font style includes bold (for fake bold rendering)
-    bool isBold = (static_cast<unsigned char>(font.Style()) &
-                   static_cast<unsigned char>(FontStyle::Bold)) != 0;
+    Boolean isBold = Boolean((static_cast<unsigned char>(font.Style()) &
+                   static_cast<unsigned char>(FontStyle::Bold)) != 0);
 
     Image& targetImg = _buffer->GetImage();
-    int offsetX = 0;
-    int offsetY = 0;
+    Int32 offsetX = Int32(0);
+    Int32 offsetY = Int32(0);
 
     if (_buffer == GraphicsBuffer::GetFrameBuffer()) {
-        offsetX = static_cast<int>(_bounds.x);
-        offsetY = static_cast<int>(_bounds.y);
+        offsetX = Int32(static_cast<int>(_bounds.x));
+        offsetY = Int32(static_cast<int>(_bounds.y));
     }
 
-    int boundW = static_cast<int>(_bounds.width);
-    int boundH = static_cast<int>(_bounds.height);
-    int imgWidth = static_cast<int>(targetImg.Width());
-    int imgHeight = static_cast<int>(targetImg.Height());
+    Int32 boundW = Int32(static_cast<int>(_bounds.width));
+    Int32 boundH = Int32(static_cast<int>(_bounds.height));
+    Int32 imgWidth = Int32(static_cast<int>(targetImg.Width()));
+    Int32 imgHeight = Int32(static_cast<int>(targetImg.Height()));
 
     // Check if TTF font - use direct rendering like the working example
-    bool isTTF = static_cast<bool>(font.IsTrueType());
+    Boolean isTTF = font.IsTrueType();
     stbtt_fontinfo* ttfInfo = nullptr;
-    float ttfScale = 0.0f;
-    if (isTTF) {
+    Float32 ttfScale = Float32(0.0f);
+    if (static_cast<bool>(isTTF)) {
         ttfInfo = static_cast<stbtt_fontinfo*>(font.GetTTFInfo());
-        ttfScale = font.GetTTFScale();
+        ttfScale = Float32(font.GetTTFScale());
     }
 
     for (const char* p = text; *p; p++) {
@@ -3233,41 +3240,41 @@ void Graphics::DrawString(const char* text, const Font& font, const Color& color
             stbtt_GetCodepointHMetrics(ttfInfo, ch, &advanceWidth, &lsb);
 
             int c_x1, c_y1, c_x2, c_y2;
-            stbtt_GetCodepointBitmapBox(ttfInfo, ch, ttfScale, ttfScale,
+            stbtt_GetCodepointBitmapBox(ttfInfo, ch, static_cast<float>(ttfScale), static_cast<float>(ttfScale),
                                         &c_x1, &c_y1, &c_x2, &c_y2);
 
-            int glyphW = c_x2 - c_x1;
-            int glyphH = c_y2 - c_y1;
+            Int32 glyphW = Int32(c_x2 - c_x1);
+            Int32 glyphH = Int32(c_y2 - c_y1);
 
-            if (glyphW > 0 && glyphH > 0) {
+            if (glyphW > Int32(0) && glyphH > Int32(0)) {
                 // Allocate temporary bitmap
                 unsigned char* bitmap = static_cast<unsigned char*>(
-                    std::malloc(glyphW * glyphH));
+                    std::malloc(static_cast<int>(glyphW) * static_cast<int>(glyphH)));
                 if (bitmap) {
-                    stbtt_MakeCodepointBitmap(ttfInfo, bitmap, glyphW, glyphH,
-                                               glyphW, ttfScale, ttfScale, ch);
+                    stbtt_MakeCodepointBitmap(ttfInfo, bitmap, static_cast<int>(glyphW), static_cast<int>(glyphH),
+                                               static_cast<int>(glyphW), static_cast<float>(ttfScale), static_cast<float>(ttfScale), ch);
 
                     // Position: x + lsb*scale, y + ascent + c_y1
-                    int glyphX = curX + static_cast<int>(lsb * ttfScale + 0.5f);
-                    int glyphY = curY + fontAscent + c_y1;
+                    Int32 glyphX = curX + Int32(static_cast<int>(lsb * static_cast<float>(ttfScale) + 0.5f));
+                    Int32 glyphY = curY + fontAscent + Int32(c_y1);
 
                     // Render bitmap
-                    for (int row = 0; row < glyphH; row++) {
-                        int destY = glyphY + row;
-                        if (destY < 0 || destY >= boundH) continue;
+                    for (Int32 row = Int32(0); row < glyphH; row += 1) {
+                        Int32 destY = glyphY + row;
+                        if (destY < Int32(0) || destY >= boundH) continue;
 
-                        for (int col = 0; col < glyphW; col++) {
-                            int destX = glyphX + col;
-                            if (destX < 0 || destX >= boundW) continue;
+                        for (Int32 col = Int32(0); col < glyphW; col += 1) {
+                            Int32 destX = glyphX + col;
+                            if (destX < Int32(0) || destX >= boundW) continue;
 
-                            unsigned char gray = bitmap[row * glyphW + col];
+                            UInt8 gray = UInt8(bitmap[static_cast<int>(row) * static_cast<int>(glyphW) + static_cast<int>(col)]);
                             // Sharp threshold rendering - no anti-aliasing blur
                             // Use 128 threshold for crisp edges
-                            if (gray > 128) {
-                                int finalX = offsetX + destX;
-                                int finalY = offsetY + destY;
-                                if (finalX >= 0 && finalX < imgWidth && finalY >= 0 && finalY < imgHeight) {
-                                    targetImg.SetPixel(finalX, finalY, color);
+                            if (gray > UInt8(128)) {
+                                Int32 finalX = offsetX + destX;
+                                Int32 finalY = offsetY + destY;
+                                if (finalX >= Int32(0) && finalX < imgWidth && finalY >= Int32(0) && finalY < imgHeight) {
+                                    targetImg.SetPixel(static_cast<int>(finalX), static_cast<int>(finalY), color);
                                 }
                             }
                         }
@@ -3277,59 +3284,59 @@ void Graphics::DrawString(const char* text, const Font& font, const Color& color
             }
 
             // Advance cursor
-            curX += static_cast<int>(advanceWidth * ttfScale + 0.5f);
+            curX += Int32(static_cast<int>(advanceWidth * static_cast<float>(ttfScale) + 0.5f));
         } else {
             // FON font - use glyph cache
             const Image& glyph = font.GetGlyph(Char(ch));
-            int glyphW = static_cast<int>(glyph.Width());
-            int glyphH = static_cast<int>(glyph.Height());
+            Int32 glyphW = glyph.Width();
+            Int32 glyphH = glyph.Height();
 
             // Clip to bounds (account for extra pixel if bold)
-            int effectiveW = isBold ? glyphW + 1 : glyphW;
-            if (curX + effectiveW > 0 && curX < boundW && curY + glyphH > 0 && curY < boundH) {
+            Int32 effectiveW = static_cast<bool>(isBold) ? glyphW + Int32(1) : glyphW;
+            if (curX + effectiveW > Int32(0) && curX < boundW && curY + glyphH > Int32(0) && curY < boundH) {
                 // Blit glyph: white pixels become text color
-                for (int gy = 0; gy < glyphH; gy++) {
-                    int destY = curY + gy;
-                    if (destY < 0 || destY >= boundH) continue;
+                for (Int32 gy = Int32(0); gy < glyphH; gy += 1) {
+                    Int32 destY = curY + gy;
+                    if (destY < Int32(0) || destY >= boundH) continue;
 
-                    for (int gx = 0; gx < glyphW; gx++) {
-                        Color pixel = glyph.GetPixel(gx, gy);
-                        unsigned char glyphAlpha = static_cast<unsigned char>(pixel.A());
-                        if (glyphAlpha > 0) {
+                    for (Int32 gx = Int32(0); gx < glyphW; gx += 1) {
+                        Color pixel = glyph.GetPixel(static_cast<int>(gx), static_cast<int>(gy));
+                        UInt8 glyphAlpha = pixel.A();
+                        if (glyphAlpha > UInt8(0)) {
                             // Draw at normal position
-                            int destX = curX + gx;
-                            if (destX >= 0 && destX < boundW) {
-                                int finalX = offsetX + destX;
-                                int finalY = offsetY + destY;
-                                if (finalX >= 0 && finalX < imgWidth && finalY >= 0 && finalY < imgHeight) {
-                                    if (glyphAlpha >= 255) {
-                                        targetImg.SetPixel(finalX, finalY, color);
+                            Int32 destX = curX + gx;
+                            if (destX >= Int32(0) && destX < boundW) {
+                                Int32 finalX = offsetX + destX;
+                                Int32 finalY = offsetY + destY;
+                                if (finalX >= Int32(0) && finalX < imgWidth && finalY >= Int32(0) && finalY < imgHeight) {
+                                    if (glyphAlpha >= UInt8(255)) {
+                                        targetImg.SetPixel(static_cast<int>(finalX), static_cast<int>(finalY), color);
                                     } else {
-                                        Color bg = targetImg.GetPixel(finalX, finalY);
-                                        unsigned char invAlpha = 255 - glyphAlpha;
-                                        unsigned char r = static_cast<unsigned char>((static_cast<unsigned char>(color.R()) * glyphAlpha + static_cast<unsigned char>(bg.R()) * invAlpha) / 255);
-                                        unsigned char g = static_cast<unsigned char>((static_cast<unsigned char>(color.G()) * glyphAlpha + static_cast<unsigned char>(bg.G()) * invAlpha) / 255);
-                                        unsigned char b = static_cast<unsigned char>((static_cast<unsigned char>(color.B()) * glyphAlpha + static_cast<unsigned char>(bg.B()) * invAlpha) / 255);
-                                        targetImg.SetPixel(finalX, finalY, Color(r, g, b));
+                                        Color bg = targetImg.GetPixel(static_cast<int>(finalX), static_cast<int>(finalY));
+                                        UInt8 invAlpha = UInt8(255) - glyphAlpha;
+                                        UInt8 r = UInt8((static_cast<unsigned char>(color.R()) * static_cast<unsigned char>(glyphAlpha) + static_cast<unsigned char>(bg.R()) * static_cast<unsigned char>(invAlpha)) / 255);
+                                        UInt8 g = UInt8((static_cast<unsigned char>(color.G()) * static_cast<unsigned char>(glyphAlpha) + static_cast<unsigned char>(bg.G()) * static_cast<unsigned char>(invAlpha)) / 255);
+                                        UInt8 b = UInt8((static_cast<unsigned char>(color.B()) * static_cast<unsigned char>(glyphAlpha) + static_cast<unsigned char>(bg.B()) * static_cast<unsigned char>(invAlpha)) / 255);
+                                        targetImg.SetPixel(static_cast<int>(finalX), static_cast<int>(finalY), Color(r, g, b));
                                     }
                                 }
                             }
                             // For fake bold, draw again at x+1
-                            if (isBold) {
-                                destX = curX + gx + 1;
-                                if (destX >= 0 && destX < boundW) {
-                                    int finalX = offsetX + destX;
-                                    int finalY = offsetY + destY;
-                                    if (finalX >= 0 && finalX < imgWidth && finalY >= 0 && finalY < imgHeight) {
-                                        if (glyphAlpha >= 255) {
-                                            targetImg.SetPixel(finalX, finalY, color);
+                            if (static_cast<bool>(isBold)) {
+                                destX = curX + gx + Int32(1);
+                                if (destX >= Int32(0) && destX < boundW) {
+                                    Int32 finalX = offsetX + destX;
+                                    Int32 finalY = offsetY + destY;
+                                    if (finalX >= Int32(0) && finalX < imgWidth && finalY >= Int32(0) && finalY < imgHeight) {
+                                        if (glyphAlpha >= UInt8(255)) {
+                                            targetImg.SetPixel(static_cast<int>(finalX), static_cast<int>(finalY), color);
                                         } else {
-                                            Color bg = targetImg.GetPixel(finalX, finalY);
-                                            unsigned char invAlpha = 255 - glyphAlpha;
-                                            unsigned char r = static_cast<unsigned char>((static_cast<unsigned char>(color.R()) * glyphAlpha + static_cast<unsigned char>(bg.R()) * invAlpha) / 255);
-                                            unsigned char g = static_cast<unsigned char>((static_cast<unsigned char>(color.G()) * glyphAlpha + static_cast<unsigned char>(bg.G()) * invAlpha) / 255);
-                                            unsigned char b = static_cast<unsigned char>((static_cast<unsigned char>(color.B()) * glyphAlpha + static_cast<unsigned char>(bg.B()) * invAlpha) / 255);
-                                            targetImg.SetPixel(finalX, finalY, Color(r, g, b));
+                                            Color bg = targetImg.GetPixel(static_cast<int>(finalX), static_cast<int>(finalY));
+                                            UInt8 invAlpha = UInt8(255) - glyphAlpha;
+                                            UInt8 r = UInt8((static_cast<unsigned char>(color.R()) * static_cast<unsigned char>(glyphAlpha) + static_cast<unsigned char>(bg.R()) * static_cast<unsigned char>(invAlpha)) / 255);
+                                            UInt8 g = UInt8((static_cast<unsigned char>(color.G()) * static_cast<unsigned char>(glyphAlpha) + static_cast<unsigned char>(bg.G()) * static_cast<unsigned char>(invAlpha)) / 255);
+                                            UInt8 b = UInt8((static_cast<unsigned char>(color.B()) * static_cast<unsigned char>(glyphAlpha) + static_cast<unsigned char>(bg.B()) * static_cast<unsigned char>(invAlpha)) / 255);
+                                            targetImg.SetPixel(static_cast<int>(finalX), static_cast<int>(finalY), Color(r, g, b));
                                         }
                                     }
                                 }
@@ -3340,8 +3347,8 @@ void Graphics::DrawString(const char* text, const Font& font, const Color& color
             }
 
             // Advance cursor (extra pixel for bold)
-            curX += static_cast<int>(font.GetCharWidth(Char(ch)));
-            if (isBold) curX += 1;
+            curX += font.GetCharWidth(Char(ch));
+            if (static_cast<bool>(isBold)) curX += Int32(1);
         }
     }
 
@@ -3358,21 +3365,21 @@ void Graphics::DrawString(const String& text, const Font& font, const Color& col
     if (!font.IsValid()) return;
 
     Drawing::Size textSize = font.MeasureString(text);
-    int textW = static_cast<int>(textSize.width);
-    int textH = static_cast<int>(textSize.height);
-    int rectX = static_cast<int>(rect.x);
-    int rectY = static_cast<int>(rect.y);
-    int rectW = static_cast<int>(rect.width);
-    int rectH = static_cast<int>(rect.height);
+    Int32 textW = textSize.width;
+    Int32 textH = textSize.height;
+    Int32 rectX = rect.x;
+    Int32 rectY = rect.y;
+    Int32 rectW = rect.width;
+    Int32 rectH = rect.height;
 
     // Calculate X position based on horizontal alignment
-    int x = rectX;
+    Int32 x = rectX;
     switch (hAlign) {
         case StringAlignment::Near:
             x = rectX;
             break;
         case StringAlignment::Center:
-            x = rectX + (rectW - textW) / 2;
+            x = rectX + (rectW - textW) / Int32(2);
             break;
         case StringAlignment::Far:
             x = rectX + rectW - textW;
@@ -3380,20 +3387,20 @@ void Graphics::DrawString(const String& text, const Font& font, const Color& col
     }
 
     // Calculate Y position based on vertical alignment
-    int y = rectY;
+    Int32 y = rectY;
     switch (vAlign) {
         case StringAlignment::Near:
             y = rectY;
             break;
         case StringAlignment::Center:
-            y = rectY + (rectH - textH) / 2;
+            y = rectY + (rectH - textH) / Int32(2);
             break;
         case StringAlignment::Far:
             y = rectY + rectH - textH;
             break;
     }
 
-    DrawString(text, font, color, Int32(x), Int32(y));
+    DrawString(text, font, color, x, y);
 }
 
 Drawing::Size Graphics::MeasureString(const String& text, const Font& font) const {

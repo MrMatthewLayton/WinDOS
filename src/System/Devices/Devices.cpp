@@ -17,17 +17,17 @@ namespace System { namespace Devices {
 /******************************************************************************/
 
 Display Display::_current = Display::TextMode;
-bool Display::_vbeAvailable = false;
-bool Display::_vbeChecked = false;
+Boolean Display::_vbeAvailable = Boolean(false);
+Boolean Display::_vbeChecked = Boolean(false);
 void* Display::_mappedLfb = nullptr;
 unsigned char Display::_originalPalette[PALETTE_SIZE][3] = {{0}};
-bool Display::_paletteStashed = false;
+Boolean Display::_paletteStashed = Boolean(false);
 
 // VBE 3.0 gamma ramp support
 unsigned char Display::_originalGamma[GAMMA_TABLE_SIZE] = {0};
-bool Display::_gammaStashed = false;
-bool Display::_gammaSupported = false;
-bool Display::_gammaChecked = false;
+Boolean Display::_gammaStashed = Boolean(false);
+Boolean Display::_gammaSupported = Boolean(false);
+Boolean Display::_gammaChecked = Boolean(false);
 
 // Static VbeSurface for tracking current VBE mode state
 static Platform::DOS::VbeSurface g_vbeSurface = {0, 0, 0, 0, 0, 0, 0, false};
@@ -102,28 +102,28 @@ void Display::WaitForVSync() {
 }
 
 void Display::StashPalette() {
-    if (_paletteStashed) return;
+    if (static_cast<bool>(_paletteStashed)) return;
 
     // Read current palette from VGA DAC
     // Port 0x3C7: Set read index
     // Port 0x3C9: Read RGB values (auto-increments)
     outportb(0x3C7, 0);
-    for (int i = 0; i < PALETTE_SIZE; i++) {
-        _originalPalette[i][0] = inportb(0x3C9);  // R
-        _originalPalette[i][1] = inportb(0x3C9);  // G
-        _originalPalette[i][2] = inportb(0x3C9);  // B
+    for (Int32 i = Int32(0); static_cast<int>(i) < PALETTE_SIZE; i += 1) {
+        _originalPalette[static_cast<int>(i)][0] = inportb(0x3C9);  // R
+        _originalPalette[static_cast<int>(i)][1] = inportb(0x3C9);  // G
+        _originalPalette[static_cast<int>(i)][2] = inportb(0x3C9);  // B
     }
-    _paletteStashed = true;
+    _paletteStashed = Boolean(true);
 }
 
-void Display::SetPaletteScale(float scale) {
+void Display::SetPaletteScale(Float32 scale) {
     // Port 0x3C8: Set write index
     // Port 0x3C9: Write RGB values (auto-increments)
     outportb(0x3C8, 0);
-    for (int i = 0; i < PALETTE_SIZE; i++) {
-        outportb(0x3C9, static_cast<unsigned char>(_originalPalette[i][0] * scale));
-        outportb(0x3C9, static_cast<unsigned char>(_originalPalette[i][1] * scale));
-        outportb(0x3C9, static_cast<unsigned char>(_originalPalette[i][2] * scale));
+    for (Int32 i = Int32(0); static_cast<int>(i) < PALETTE_SIZE; i += 1) {
+        outportb(0x3C9, static_cast<unsigned char>(_originalPalette[static_cast<int>(i)][0] * static_cast<float>(scale)));
+        outportb(0x3C9, static_cast<unsigned char>(_originalPalette[static_cast<int>(i)][1] * static_cast<float>(scale)));
+        outportb(0x3C9, static_cast<unsigned char>(_originalPalette[static_cast<int>(i)][2] * static_cast<float>(scale)));
     }
 }
 
@@ -131,44 +131,44 @@ void Display::SetPaletteScale(float scale) {
 /*    VBE 3.0 Gamma Ramp Functions                                             */
 /******************************************************************************/
 
-bool Display::CheckGammaSupport() {
-    if (_gammaChecked) {
+Boolean Display::CheckGammaSupport() {
+    if (static_cast<bool>(_gammaChecked)) {
         return _gammaSupported;
     }
-    _gammaChecked = true;
-    _gammaSupported = Platform::DOS::Graphics::IsGammaSupported();
+    _gammaChecked = Boolean(true);
+    _gammaSupported = Boolean(Platform::DOS::Graphics::IsGammaSupported());
     return _gammaSupported;
 }
 
 Boolean Display::IsGammaSupported() {
-    return Boolean(CheckGammaSupport());
+    return CheckGammaSupport();
 }
 
 void Display::StashGamma() {
-    if (_gammaStashed) return;
+    if (static_cast<bool>(_gammaStashed)) return;
 
     // Try to get current gamma table
     if (Platform::DOS::Graphics::GetGammaTable(_originalGamma)) {
-        _gammaStashed = true;
+        _gammaStashed = Boolean(true);
     } else {
         // Initialize with identity gamma (no correction)
-        for (int i = 0; i < 256; i++) {
-            _originalGamma[i] = static_cast<unsigned char>(i);         // R
-            _originalGamma[256 + i] = static_cast<unsigned char>(i);   // G
-            _originalGamma[512 + i] = static_cast<unsigned char>(i);   // B
+        for (Int32 i = Int32(0); static_cast<int>(i) < 256; i += 1) {
+            _originalGamma[static_cast<int>(i)] = static_cast<unsigned char>(static_cast<int>(i));         // R
+            _originalGamma[256 + static_cast<int>(i)] = static_cast<unsigned char>(static_cast<int>(i));   // G
+            _originalGamma[512 + static_cast<int>(i)] = static_cast<unsigned char>(static_cast<int>(i));   // B
         }
-        _gammaStashed = true;
+        _gammaStashed = Boolean(true);
     }
 }
 
-void Display::SetGammaScale(float scale) {
+void Display::SetGammaScale(Float32 scale) {
     unsigned char scaledGamma[GAMMA_TABLE_SIZE];
 
     // Scale each channel's gamma entries
-    for (int i = 0; i < 256; i++) {
-        scaledGamma[i] = static_cast<unsigned char>(_originalGamma[i] * scale);         // R
-        scaledGamma[256 + i] = static_cast<unsigned char>(_originalGamma[256 + i] * scale);   // G
-        scaledGamma[512 + i] = static_cast<unsigned char>(_originalGamma[512 + i] * scale);   // B
+    for (Int32 i = Int32(0); static_cast<int>(i) < 256; i += 1) {
+        scaledGamma[static_cast<int>(i)] = static_cast<unsigned char>(_originalGamma[static_cast<int>(i)] * static_cast<float>(scale));         // R
+        scaledGamma[256 + static_cast<int>(i)] = static_cast<unsigned char>(_originalGamma[256 + static_cast<int>(i)] * static_cast<float>(scale));   // G
+        scaledGamma[512 + static_cast<int>(i)] = static_cast<unsigned char>(_originalGamma[512 + static_cast<int>(i)] * static_cast<float>(scale));   // B
     }
 
     Platform::DOS::Graphics::SetGammaTable(scaledGamma);
@@ -179,21 +179,21 @@ void Display::SetGammaScale(float scale) {
 /******************************************************************************/
 
 void Display::FadeIn(Int32 milliseconds) {
-    int ms = static_cast<int>(milliseconds);
-    if (ms < FRAME_MS) ms = FRAME_MS;
+    Int32 ms = milliseconds;
+    if (static_cast<int>(ms) < FRAME_MS) ms = Int32(FRAME_MS);
 
-    int steps = ms / FRAME_MS;
-    if (steps < 1) steps = 1;
+    Int32 steps = Int32(static_cast<int>(ms) / FRAME_MS);
+    if (static_cast<int>(steps) < 1) steps = Int32(1);
 
     // For VBE modes, try hardware gamma ramp first (VBE 3.0)
     if (_current._vbeMode != 0 && _current._bitsPerPixel >= 24) {
         // Try VBE 3.0 gamma ramp (hardware-accelerated, like VGA palette)
-        if (CheckGammaSupport()) {
+        if (static_cast<bool>(CheckGammaSupport())) {
             StashGamma();
 
             // Fade from black to full brightness using gamma ramp
-            for (int step = 0; step <= steps; step++) {
-                float scale = static_cast<float>(step) / steps;
+            for (Int32 step = Int32(0); static_cast<int>(step) <= static_cast<int>(steps); step += 1) {
+                Float32 scale = Float32(static_cast<float>(static_cast<int>(step)) / static_cast<int>(steps));
                 SetGammaScale(scale);
                 WaitForVSync();
             }
@@ -202,32 +202,32 @@ void Display::FadeIn(Int32 milliseconds) {
 
         // Fallback: software pixel-based fade (slower)
         // Use fewer steps since each step is expensive
-        const int VBE_FADE_STEPS = 8;
+        const Int32 VBE_FADE_STEPS = Int32(8);
         Drawing::GraphicsBuffer* fb = Drawing::GraphicsBuffer::GetFrameBuffer();
         if (!fb) return;
 
         Drawing::Image& img = fb->GetImage();
-        int width = static_cast<int>(img.Width());
-        int height = static_cast<int>(img.Height());
+        Int32 width = img.Width();
+        Int32 height = img.Height();
 
         // Store original pixel data
-        unsigned int* original = static_cast<unsigned int*>(std::malloc(width * height * sizeof(unsigned int)));
+        UInt32* original = static_cast<UInt32*>(std::malloc(static_cast<int>(width) * static_cast<int>(height) * sizeof(UInt32)));
         if (!original) return;
 
         unsigned int* pixels = img.Data();
-        std::memcpy(original, pixels, width * height * sizeof(unsigned int));
+        std::memcpy(original, pixels, static_cast<int>(width) * static_cast<int>(height) * sizeof(UInt32));
 
         // Fade from black to original
-        for (int step = 0; step <= VBE_FADE_STEPS; step++) {
-            float scale = static_cast<float>(step) / VBE_FADE_STEPS;
+        for (Int32 step = Int32(0); static_cast<int>(step) <= static_cast<int>(VBE_FADE_STEPS); step += 1) {
+            Float32 scale = Float32(static_cast<float>(static_cast<int>(step)) / static_cast<int>(VBE_FADE_STEPS));
 
-            for (int i = 0; i < width * height; i++) {
-                unsigned int p = original[i];
-                unsigned char a = (p >> 24) & 0xFF;
-                unsigned char r = static_cast<unsigned char>(((p >> 16) & 0xFF) * scale);
-                unsigned char g = static_cast<unsigned char>(((p >> 8) & 0xFF) * scale);
-                unsigned char b = static_cast<unsigned char>((p & 0xFF) * scale);
-                pixels[i] = (a << 24) | (r << 16) | (g << 8) | b;
+            for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(width) * static_cast<int>(height); i += 1) {
+                UInt32 p = original[static_cast<int>(i)];
+                UInt8 a = UInt8((static_cast<unsigned int>(p) >> 24) & 0xFF);
+                UInt8 r = UInt8(static_cast<unsigned char>(((static_cast<unsigned int>(p) >> 16) & 0xFF) * static_cast<float>(scale)));
+                UInt8 g = UInt8(static_cast<unsigned char>(((static_cast<unsigned int>(p) >> 8) & 0xFF) * static_cast<float>(scale)));
+                UInt8 b = UInt8(static_cast<unsigned char>((static_cast<unsigned int>(p) & 0xFF) * static_cast<float>(scale)));
+                pixels[static_cast<int>(i)] = (static_cast<unsigned int>(a) << 24) | (static_cast<unsigned int>(r) << 16) | (static_cast<unsigned int>(g) << 8) | static_cast<unsigned int>(b);
             }
 
             Drawing::GraphicsBuffer::FlushFrameBuffer();
@@ -235,7 +235,7 @@ void Display::FadeIn(Int32 milliseconds) {
         }
 
         // Restore original
-        std::memcpy(pixels, original, width * height * sizeof(unsigned int));
+        std::memcpy(pixels, original, static_cast<int>(width) * static_cast<int>(height) * sizeof(UInt32));
         Drawing::GraphicsBuffer::FlushFrameBuffer();
 
         std::free(original);
@@ -246,29 +246,29 @@ void Display::FadeIn(Int32 milliseconds) {
     StashPalette();
 
     // Fade from black to full palette
-    for (int step = 0; step <= steps; step++) {
-        float scale = static_cast<float>(step) / steps;
+    for (Int32 step = Int32(0); static_cast<int>(step) <= static_cast<int>(steps); step += 1) {
+        Float32 scale = Float32(static_cast<float>(static_cast<int>(step)) / static_cast<int>(steps));
         SetPaletteScale(scale);
         WaitForVSync();
     }
 }
 
 void Display::FadeOut(Int32 milliseconds) {
-    int ms = static_cast<int>(milliseconds);
-    if (ms < FRAME_MS) ms = FRAME_MS;
+    Int32 ms = milliseconds;
+    if (static_cast<int>(ms) < FRAME_MS) ms = Int32(FRAME_MS);
 
-    int steps = ms / FRAME_MS;
-    if (steps < 1) steps = 1;
+    Int32 steps = Int32(static_cast<int>(ms) / FRAME_MS);
+    if (static_cast<int>(steps) < 1) steps = Int32(1);
 
     // For VBE modes, try hardware gamma ramp first (VBE 3.0)
     if (_current._vbeMode != 0 && _current._bitsPerPixel >= 24) {
         // Try VBE 3.0 gamma ramp (hardware-accelerated, like VGA palette)
-        if (CheckGammaSupport()) {
+        if (static_cast<bool>(CheckGammaSupport())) {
             StashGamma();
 
             // Fade from full brightness to black using gamma ramp
-            for (int step = steps; step >= 0; step--) {
-                float scale = static_cast<float>(step) / steps;
+            for (Int32 step = steps; static_cast<int>(step) >= 0; step -= 1) {
+                Float32 scale = Float32(static_cast<float>(static_cast<int>(step)) / static_cast<int>(steps));
                 SetGammaScale(scale);
                 WaitForVSync();
             }
@@ -277,32 +277,32 @@ void Display::FadeOut(Int32 milliseconds) {
 
         // Fallback: software pixel-based fade (slower)
         // Use fewer steps since each step is expensive
-        const int VBE_FADE_STEPS = 8;
+        const Int32 VBE_FADE_STEPS = Int32(8);
         Drawing::GraphicsBuffer* fb = Drawing::GraphicsBuffer::GetFrameBuffer();
         if (!fb) return;
 
         Drawing::Image& img = fb->GetImage();
-        int width = static_cast<int>(img.Width());
-        int height = static_cast<int>(img.Height());
+        Int32 width = img.Width();
+        Int32 height = img.Height();
 
         // Store original pixel data
-        unsigned int* original = static_cast<unsigned int*>(std::malloc(width * height * sizeof(unsigned int)));
+        UInt32* original = static_cast<UInt32*>(std::malloc(static_cast<int>(width) * static_cast<int>(height) * sizeof(UInt32)));
         if (!original) return;
 
         unsigned int* pixels = img.Data();
-        std::memcpy(original, pixels, width * height * sizeof(unsigned int));
+        std::memcpy(original, pixels, static_cast<int>(width) * static_cast<int>(height) * sizeof(UInt32));
 
         // Fade from original to black
-        for (int step = VBE_FADE_STEPS; step >= 0; step--) {
-            float scale = static_cast<float>(step) / VBE_FADE_STEPS;
+        for (Int32 step = VBE_FADE_STEPS; static_cast<int>(step) >= 0; step -= 1) {
+            Float32 scale = Float32(static_cast<float>(static_cast<int>(step)) / static_cast<int>(VBE_FADE_STEPS));
 
-            for (int i = 0; i < width * height; i++) {
-                unsigned int p = original[i];
-                unsigned char a = (p >> 24) & 0xFF;
-                unsigned char r = static_cast<unsigned char>(((p >> 16) & 0xFF) * scale);
-                unsigned char g = static_cast<unsigned char>(((p >> 8) & 0xFF) * scale);
-                unsigned char b = static_cast<unsigned char>((p & 0xFF) * scale);
-                pixels[i] = (a << 24) | (r << 16) | (g << 8) | b;
+            for (Int32 i = Int32(0); static_cast<int>(i) < static_cast<int>(width) * static_cast<int>(height); i += 1) {
+                UInt32 p = original[static_cast<int>(i)];
+                UInt8 a = UInt8((static_cast<unsigned int>(p) >> 24) & 0xFF);
+                UInt8 r = UInt8(static_cast<unsigned char>(((static_cast<unsigned int>(p) >> 16) & 0xFF) * static_cast<float>(scale)));
+                UInt8 g = UInt8(static_cast<unsigned char>(((static_cast<unsigned int>(p) >> 8) & 0xFF) * static_cast<float>(scale)));
+                UInt8 b = UInt8(static_cast<unsigned char>((static_cast<unsigned int>(p) & 0xFF) * static_cast<float>(scale)));
+                pixels[static_cast<int>(i)] = (static_cast<unsigned int>(a) << 24) | (static_cast<unsigned int>(r) << 16) | (static_cast<unsigned int>(g) << 8) | static_cast<unsigned int>(b);
             }
 
             Drawing::GraphicsBuffer::FlushFrameBuffer();
@@ -317,36 +317,36 @@ void Display::FadeOut(Int32 milliseconds) {
     StashPalette();
 
     // Fade from full palette to black
-    for (int step = steps; step >= 0; step--) {
-        float scale = static_cast<float>(step) / steps;
+    for (Int32 step = steps; static_cast<int>(step) >= 0; step -= 1) {
+        Float32 scale = Float32(static_cast<float>(static_cast<int>(step)) / static_cast<int>(steps));
         SetPaletteScale(scale);
         WaitForVSync();
     }
 }
 
 Boolean Display::IsVbeAvailable() {
-    if (_vbeChecked) {
-        return Boolean(_vbeAvailable);
+    if (static_cast<bool>(_vbeChecked)) {
+        return _vbeAvailable;
     }
 
-    _vbeChecked = true;
+    _vbeChecked = Boolean(true);
 
     // Check if VBE 2.0+ is available
     static Platform::DOS::VbeInfoBlock vbeInfo;
-    _vbeAvailable = Platform::DOS::Graphics::DetectVBE(&vbeInfo);
+    _vbeAvailable = Boolean(Platform::DOS::Graphics::DetectVBE(&vbeInfo));
 
     // Also verify it's VBE 2.0 or higher (we need LFB support)
-    if (_vbeAvailable && vbeInfo.version < 0x0200) {
-        _vbeAvailable = false;
+    if (static_cast<bool>(_vbeAvailable) && vbeInfo.version < 0x0200) {
+        _vbeAvailable = Boolean(false);
     }
 
-    return Boolean(_vbeAvailable);
+    return _vbeAvailable;
 }
 
 Display Display::DetectVbeMode(UInt16 width, UInt16 height, UInt8 bpp) {
     unsigned short targetWidth = static_cast<unsigned short>(width);
     unsigned short targetHeight = static_cast<unsigned short>(height);
-    unsigned char targetBpp = static_cast<unsigned char>(bpp);
+    UInt8 targetBpp = bpp;
 
     // Use static buffers to avoid large stack allocations
     static Platform::DOS::VbeInfoBlock vbeInfo;
@@ -369,8 +369,8 @@ Display Display::DetectVbeMode(UInt16 width, UInt16 height, UInt8 bpp) {
         0xFFFF  // End marker
     };
 
-    for (int i = 0; modesToTry[i] != 0xFFFF; i++) {
-        unsigned short mode = modesToTry[i];
+    for (Int32 i = Int32(0); modesToTry[static_cast<int>(i)] != 0xFFFF; i += 1) {
+        unsigned short mode = modesToTry[static_cast<int>(i)];
 
         if (!Platform::DOS::Graphics::GetVBEModeInfo(mode, &modeInfo)) {
             continue;
@@ -385,12 +385,12 @@ Display Display::DetectVbeMode(UInt16 width, UInt16 height, UInt8 bpp) {
         }
 
         // Check dimensions and color depth
-        bool matchesWidth = (modeInfo.xResolution == targetWidth);
-        bool matchesHeight = (modeInfo.yResolution == targetHeight);
-        bool matchesBpp = (modeInfo.bitsPerPixel == targetBpp ||
-                          (targetBpp == 32 && modeInfo.bitsPerPixel == 24));  // 24/32 often interchangeable
+        Boolean matchesWidth = Boolean(modeInfo.xResolution == targetWidth);
+        Boolean matchesHeight = Boolean(modeInfo.yResolution == targetHeight);
+        Boolean matchesBpp = Boolean(modeInfo.bitsPerPixel == static_cast<unsigned char>(targetBpp) ||
+                          (static_cast<unsigned char>(targetBpp) == 32 && modeInfo.bitsPerPixel == 24));  // 24/32 often interchangeable
 
-        if (matchesWidth && matchesHeight && matchesBpp) {
+        if (static_cast<bool>(matchesWidth) && static_cast<bool>(matchesHeight) && static_cast<bool>(matchesBpp)) {
             return Display(mode, modeInfo.bitsPerPixel,
                           modeInfo.xResolution, modeInfo.yResolution,
                           modeInfo.physBasePtr, modeInfo.bytesPerScanLine);
@@ -409,31 +409,31 @@ const Display Display::VGA_640x480x4(0x12, 4, 640, 480);
 /*    Mouse implementation                                                    */
 /******************************************************************************/
 
-bool Mouse::_initialized = false;
+Boolean Mouse::_initialized = Boolean(false);
 
 Boolean Mouse::Initialize() {
-    _initialized = Platform::DOS::Mouse::Initialize();
-    return Boolean(_initialized);
+    _initialized = Boolean(Platform::DOS::Mouse::Initialize());
+    return _initialized;
 }
 
 Boolean Mouse::IsAvailable() {
-    return Boolean(_initialized);
+    return _initialized;
 }
 
 void Mouse::ShowCursor() {
-    if (_initialized) {
+    if (static_cast<bool>(_initialized)) {
         Platform::DOS::Mouse::ShowCursor();
     }
 }
 
 void Mouse::HideCursor() {
-    if (_initialized) {
+    if (static_cast<bool>(_initialized)) {
         Platform::DOS::Mouse::HideCursor();
     }
 }
 
 MouseStatus Mouse::GetStatus() {
-    if (!_initialized) {
+    if (!static_cast<bool>(_initialized)) {
         return MouseStatus();
     }
 
@@ -452,20 +452,20 @@ Int32 Mouse::GetY() {
 }
 
 void Mouse::SetPosition(Int32 x, Int32 y) {
-    if (_initialized) {
+    if (static_cast<bool>(_initialized)) {
         Platform::DOS::Mouse::SetPosition(static_cast<int>(x), static_cast<int>(y));
     }
 }
 
 void Mouse::SetBounds(Int32 minX, Int32 minY, Int32 maxX, Int32 maxY) {
-    if (_initialized) {
+    if (static_cast<bool>(_initialized)) {
         Platform::DOS::Mouse::SetHorizontalBounds(static_cast<int>(minX), static_cast<int>(maxX));
         Platform::DOS::Mouse::SetVerticalBounds(static_cast<int>(minY), static_cast<int>(maxY));
     }
 }
 
 void Mouse::SetSensitivity(Int32 horizontalMickeys, Int32 verticalMickeys) {
-    if (_initialized) {
+    if (static_cast<bool>(_initialized)) {
         Platform::DOS::Mouse::SetSensitivity(
             static_cast<int>(horizontalMickeys),
             static_cast<int>(verticalMickeys)

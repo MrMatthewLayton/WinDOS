@@ -8,75 +8,78 @@ namespace System { namespace Windows { namespace Forms {
 /******************************************************************************/
 
 SpatialGrid::SpatialGrid()
-    : _cellsX(0)
-    , _cellsY(0)
-    , _screenWidth(0)
-    , _screenHeight(0) {
+    : _cellsX(Int32(0))
+    , _cellsY(Int32(0))
+    , _screenWidth(Int32(0))
+    , _screenHeight(Int32(0)) {
 }
 
 void SpatialGrid::Initialize(Int32 screenWidth, Int32 screenHeight) {
-    _screenWidth = static_cast<int>(screenWidth);
-    _screenHeight = static_cast<int>(screenHeight);
-    _cellsX = (_screenWidth + CELL_SIZE - 1) / CELL_SIZE;
-    _cellsY = (_screenHeight + CELL_SIZE - 1) / CELL_SIZE;
+    _screenWidth = screenWidth;
+    _screenHeight = screenHeight;
+    Int32 sw = _screenWidth;
+    Int32 sh = _screenHeight;
+    _cellsX = Int32((static_cast<int>(sw) + CELL_SIZE - 1) / CELL_SIZE);
+    _cellsY = Int32((static_cast<int>(sh) + CELL_SIZE - 1) / CELL_SIZE);
 
     // Clamp to max
-    if (_cellsX > MAX_CELLS_X) _cellsX = MAX_CELLS_X;
-    if (_cellsY > MAX_CELLS_Y) _cellsY = MAX_CELLS_Y;
+    if (static_cast<int>(_cellsX) > MAX_CELLS_X) _cellsX = Int32(MAX_CELLS_X);
+    if (static_cast<int>(_cellsY) > MAX_CELLS_Y) _cellsY = Int32(MAX_CELLS_Y);
 
     Clear();
 }
 
 void SpatialGrid::Clear() {
-    for (int y = 0; y < MAX_CELLS_Y; y++) {
-        for (int x = 0; x < MAX_CELLS_X; x++) {
-            _cells[y][x].count = 0;
-            for (int i = 0; i < MAX_CONTROLS_PER_CELL; i++) {
-                _cells[y][x].controls[i] = nullptr;
+    for (Int32 y = Int32(0); static_cast<int>(y) < MAX_CELLS_Y; y += 1) {
+        for (Int32 x = Int32(0); static_cast<int>(x) < MAX_CELLS_X; x += 1) {
+            _cells[static_cast<int>(y)][static_cast<int>(x)].count = 0;
+            for (Int32 i = Int32(0); static_cast<int>(i) < MAX_CONTROLS_PER_CELL; i += 1) {
+                _cells[static_cast<int>(y)][static_cast<int>(x)].controls[static_cast<int>(i)] = nullptr;
             }
         }
     }
 }
 
-void SpatialGrid::GetCellIndex(int x, int y, int& cellX, int& cellY) const {
-    cellX = x / CELL_SIZE;
-    cellY = y / CELL_SIZE;
-    if (cellX < 0) cellX = 0;
-    if (cellY < 0) cellY = 0;
-    if (cellX >= _cellsX) cellX = _cellsX - 1;
-    if (cellY >= _cellsY) cellY = _cellsY - 1;
+void SpatialGrid::GetCellIndex(Int32 x, Int32 y, Int32& cellX, Int32& cellY) const {
+    cellX = Int32(static_cast<int>(x) / CELL_SIZE);
+    cellY = Int32(static_cast<int>(y) / CELL_SIZE);
+    if (static_cast<int>(cellX) < 0) cellX = Int32(0);
+    if (static_cast<int>(cellY) < 0) cellY = Int32(0);
+    if (cellX >= _cellsX) cellX = _cellsX - Int32(1);
+    if (cellY >= _cellsY) cellY = _cellsY - Int32(1);
 }
 
-void SpatialGrid::GetCellRange(const Rectangle& bounds, int& minX, int& minY,
-                               int& maxX, int& maxY) const {
-    int bx = static_cast<int>(bounds.x);
-    int by = static_cast<int>(bounds.y);
-    int bw = static_cast<int>(bounds.width);
-    int bh = static_cast<int>(bounds.height);
+void SpatialGrid::GetCellRange(const Rectangle& bounds, Int32& minX, Int32& minY,
+                               Int32& maxX, Int32& maxY) const {
+    Int32 bx = bounds.x;
+    Int32 by = bounds.y;
+    Int32 bw = bounds.width;
+    Int32 bh = bounds.height;
 
     GetCellIndex(bx, by, minX, minY);
-    GetCellIndex(bx + bw - 1, by + bh - 1, maxX, maxY);
+    GetCellIndex(Int32(static_cast<int>(bx) + static_cast<int>(bw) - 1),
+                 Int32(static_cast<int>(by) + static_cast<int>(bh) - 1), maxX, maxY);
 }
 
 void SpatialGrid::Insert(Control* control, const Rectangle& bounds) {
     if (!control) return;
 
-    int minX, minY, maxX, maxY;
+    Int32 minX, minY, maxX, maxY;
     GetCellRange(bounds, minX, minY, maxX, maxY);
 
-    for (int y = minY; y <= maxY; y++) {
-        for (int x = minX; x <= maxX; x++) {
-            Cell& cell = _cells[y][x];
+    for (Int32 y = minY; y <= maxY; y += 1) {
+        for (Int32 x = minX; x <= maxX; x += 1) {
+            Cell& cell = _cells[static_cast<int>(y)][static_cast<int>(x)];
             if (cell.count < MAX_CONTROLS_PER_CELL) {
                 // Check if already in cell
-                bool found = false;
-                for (int i = 0; i < cell.count; i++) {
-                    if (cell.controls[i] == control) {
-                        found = true;
+                Boolean found = Boolean(false);
+                for (Int32 i = Int32(0); static_cast<int>(i) < cell.count; i += 1) {
+                    if (cell.controls[static_cast<int>(i)] == control) {
+                        found = Boolean(true);
                         break;
                     }
                 }
-                if (!found) {
+                if (!static_cast<bool>(found)) {
                     cell.controls[cell.count++] = control;
                 }
             }
@@ -87,14 +90,14 @@ void SpatialGrid::Insert(Control* control, const Rectangle& bounds) {
 void SpatialGrid::Remove(Control* control) {
     if (!control) return;
 
-    for (int y = 0; y < _cellsY; y++) {
-        for (int x = 0; x < _cellsX; x++) {
-            Cell& cell = _cells[y][x];
-            for (int i = 0; i < cell.count; i++) {
-                if (cell.controls[i] == control) {
+    for (Int32 y = Int32(0); y < _cellsY; y += 1) {
+        for (Int32 x = Int32(0); x < _cellsX; x += 1) {
+            Cell& cell = _cells[static_cast<int>(y)][static_cast<int>(x)];
+            for (Int32 i = Int32(0); static_cast<int>(i) < cell.count; i += 1) {
+                if (cell.controls[static_cast<int>(i)] == control) {
                     // Shift remaining controls down
-                    for (int j = i; j < cell.count - 1; j++) {
-                        cell.controls[j] = cell.controls[j + 1];
+                    for (Int32 j = i; static_cast<int>(j) < cell.count - 1; j += 1) {
+                        cell.controls[static_cast<int>(j)] = cell.controls[static_cast<int>(j) + 1];
                     }
                     cell.controls[--cell.count] = nullptr;
                     break;
@@ -105,21 +108,22 @@ void SpatialGrid::Remove(Control* control) {
 }
 
 Control* SpatialGrid::HitTest(Int32 x, Int32 y) const {
-    int px = static_cast<int>(x);
-    int py = static_cast<int>(y);
+    Int32 px = x;
+    Int32 py = y;
 
-    if (px < 0 || py < 0 || px >= _screenWidth || py >= _screenHeight) {
+    if (static_cast<int>(px) < 0 || static_cast<int>(py) < 0 ||
+        px >= _screenWidth || py >= _screenHeight) {
         return nullptr;
     }
 
-    int cellX, cellY;
+    Int32 cellX, cellY;
     GetCellIndex(px, py, cellX, cellY);
 
-    const Cell& cell = _cells[cellY][cellX];
+    const Cell& cell = _cells[static_cast<int>(cellY)][static_cast<int>(cellX)];
 
     // Check controls in reverse order (last added = highest z-order)
-    for (int i = cell.count - 1; i >= 0; i--) {
-        Control* ctrl = cell.controls[i];
+    for (Int32 i = Int32(cell.count - 1); static_cast<int>(i) >= 0; i -= 1) {
+        Control* ctrl = cell.controls[static_cast<int>(i)];
         if (ctrl && static_cast<bool>(ctrl->HitTest(px, py))) {
             return ctrl;
         }
@@ -154,8 +158,8 @@ Control::Control(Control* parent, const Rectangle& bounds)
 
 Control::~Control() {
     // Delete all children
-    for (int i = 0; i < _children.Length(); i++) {
-        delete _children[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1) {
+        delete _children[static_cast<int>(i)];
     }
 }
 
@@ -166,9 +170,9 @@ void Control::UpdateClientBounds() {
 }
 
 Control* Control::GetChild(Int32 index) const {
-    int idx = static_cast<int>(index);
-    if (idx >= 0 && idx < _children.Length()) {
-        return _children[idx];
+    Int32 idx = index;
+    if (static_cast<int>(idx) >= 0 && static_cast<int>(idx) < _children.Length()) {
+        return _children[static_cast<int>(idx)];
     }
     return nullptr;
 }
@@ -181,76 +185,82 @@ Rectangle Control::ScreenBounds() const {
 
     // Get parent's screen client bounds and offset our bounds
     Rectangle parentClient = _parent->ScreenClientBounds();
-    int px = static_cast<int>(parentClient.x);
-    int py = static_cast<int>(parentClient.y);
-    int bx = static_cast<int>(_bounds.x);
-    int by = static_cast<int>(_bounds.y);
-    int bw = static_cast<int>(_bounds.width);
-    int bh = static_cast<int>(_bounds.height);
-    return Rectangle(px + bx, py + by, bw, bh);
+    Int32 px = parentClient.x;
+    Int32 py = parentClient.y;
+    Int32 bx = _bounds.x;
+    Int32 by = _bounds.y;
+    Int32 bw = _bounds.width;
+    Int32 bh = _bounds.height;
+    return Rectangle(Int32(static_cast<int>(px) + static_cast<int>(bx)),
+                     Int32(static_cast<int>(py) + static_cast<int>(by)), bw, bh);
 }
 
 Rectangle Control::ScreenClientBounds() const {
     Rectangle screenBounds = ScreenBounds();
-    int sx = static_cast<int>(screenBounds.x);
-    int sy = static_cast<int>(screenBounds.y);
-    int cx = static_cast<int>(_clientBounds.x);
-    int cy = static_cast<int>(_clientBounds.y);
-    int cw = static_cast<int>(_clientBounds.width);
-    int ch = static_cast<int>(_clientBounds.height);
-    return Rectangle(sx + cx, sy + cy, cw, ch);
+    Int32 sx = screenBounds.x;
+    Int32 sy = screenBounds.y;
+    Int32 cx = _clientBounds.x;
+    Int32 cy = _clientBounds.y;
+    Int32 cw = _clientBounds.width;
+    Int32 ch = _clientBounds.height;
+    return Rectangle(Int32(static_cast<int>(sx) + static_cast<int>(cx)),
+                     Int32(static_cast<int>(sy) + static_cast<int>(cy)), cw, ch);
 }
 
 Rectangle Control::VisibleBounds() const {
     Rectangle screen = ScreenBounds();
-    int sx = static_cast<int>(screen.x);
-    int sy = static_cast<int>(screen.y);
-    int sw = static_cast<int>(screen.width);
-    int sh = static_cast<int>(screen.height);
+    Int32 sx = screen.x;
+    Int32 sy = screen.y;
+    Int32 sw = screen.width;
+    Int32 sh = screen.height;
 
     // Get screen dimensions from current display mode
     Display current = Display::GetCurrent();
-    int screenWidth = static_cast<int>(current.Width());
-    int screenHeight = static_cast<int>(current.Height());
+    Int32 screenWidth = Int32(static_cast<int>(current.Width()));
+    Int32 screenHeight = Int32(static_cast<int>(current.Height()));
 
     if (!_parent) {
         // Root control - clip to screen
-        int left = sx < 0 ? 0 : sx;
-        int top = sy < 0 ? 0 : sy;
-        int right = sx + sw > screenWidth ? screenWidth : sx + sw;
-        int bottom = sy + sh > screenHeight ? screenHeight : sy + sh;
-        return Rectangle(left, top, right - left, bottom - top);
+        Int32 left = sx < Int32(0) ? Int32(0) : sx;
+        Int32 top = sy < Int32(0) ? Int32(0) : sy;
+        Int32 right = Int32(static_cast<int>(sx) + static_cast<int>(sw)) > screenWidth ?
+                      screenWidth : Int32(static_cast<int>(sx) + static_cast<int>(sw));
+        Int32 bottom = Int32(static_cast<int>(sy) + static_cast<int>(sh)) > screenHeight ?
+                       screenHeight : Int32(static_cast<int>(sy) + static_cast<int>(sh));
+        return Rectangle(left, top, Int32(static_cast<int>(right) - static_cast<int>(left)),
+                         Int32(static_cast<int>(bottom) - static_cast<int>(top)));
     }
 
     // Clip to parent's client area
     Rectangle parentClient = _parent->ScreenClientBounds();
-    int pcx = static_cast<int>(parentClient.x);
-    int pcy = static_cast<int>(parentClient.y);
-    int pcw = static_cast<int>(parentClient.width);
-    int pch = static_cast<int>(parentClient.height);
+    Int32 pcx = parentClient.x;
+    Int32 pcy = parentClient.y;
+    Int32 pcw = parentClient.width;
+    Int32 pch = parentClient.height;
 
-    int left = sx < pcx ? pcx : sx;
-    int top = sy < pcy ? pcy : sy;
-    int right = sx + sw;
-    int bottom = sy + sh;
+    Int32 left = sx < pcx ? pcx : sx;
+    Int32 top = sy < pcy ? pcy : sy;
+    Int32 right = Int32(static_cast<int>(sx) + static_cast<int>(sw));
+    Int32 bottom = Int32(static_cast<int>(sy) + static_cast<int>(sh));
 
-    int parentRight = pcx + pcw;
-    int parentBottom = pcy + pch;
+    Int32 parentRight = Int32(static_cast<int>(pcx) + static_cast<int>(pcw));
+    Int32 parentBottom = Int32(static_cast<int>(pcy) + static_cast<int>(pch));
 
     if (right > parentRight) right = parentRight;
     if (bottom > parentBottom) bottom = parentBottom;
 
     // Also clip to screen bounds
-    if (left < 0) left = 0;
-    if (top < 0) top = 0;
+    if (left < Int32(0)) left = Int32(0);
+    if (top < Int32(0)) top = Int32(0);
     if (right > screenWidth) right = screenWidth;
     if (bottom > screenHeight) bottom = screenHeight;
 
     if (right <= left || bottom <= top) {
-        return Rectangle(0, 0, 0, 0);  // Not visible
+        return Rectangle(Int32(0), Int32(0), Int32(0), Int32(0));  // Not visible
     }
 
-    return Rectangle(left, top, right - left, bottom - top);
+    return Rectangle(left, top, Int32(static_cast<int>(right) - static_cast<int>(left)),
+                     Int32(static_cast<int>(bottom) - static_cast<int>(top)));
 }
 
 void Control::SetBounds(const Rectangle& bounds) {
@@ -265,9 +275,9 @@ void Control::SetBounds(Int32 x, Int32 y, Int32 width, Int32 height) {
 
 void Control::AddChild(Control* child) {
     if (child) {
-        int oldLen = _children.Length();
-        _children.Resize(oldLen + 1);
-        _children[oldLen] = child;
+        Int32 oldLen = Int32(_children.Length());
+        _children.Resize(static_cast<int>(oldLen) + 1);
+        _children[static_cast<int>(oldLen)] = child;
         child->_parent = this;
         Invalidate();
     }
@@ -275,11 +285,11 @@ void Control::AddChild(Control* child) {
 
 void Control::RemoveChild(Control* child) {
     if (child) {
-        int index = _children.IndexOf(child);
-        if (index >= 0) {
+        Int32 index = Int32(_children.IndexOf(child));
+        if (static_cast<int>(index) >= 0) {
             // Shift elements down
-            for (int i = index; i < _children.Length() - 1; i++) {
-                _children[i] = _children[i + 1];
+            for (Int32 i = index; static_cast<int>(i) < _children.Length() - 1; i += 1) {
+                _children[static_cast<int>(i)] = _children[static_cast<int>(i) + 1];
             }
             _children.Resize(_children.Length() - 1);
             child->_parent = nullptr;
@@ -295,8 +305,8 @@ void Control::OnPaint(PaintEventArgs& e) {
 
 void Control::OnPaintClient(PaintEventArgs& e) {
     // Base implementation: paint children
-    for (int i = 0; i < _children.Length(); i++) {
-        Control* child = _children[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1) {
+        Control* child = _children[static_cast<int>(i)];
         if (child) {
             PaintEventArgs childArgs(e.graphics, child->Bounds());
             child->OnPaint(childArgs);
@@ -335,11 +345,11 @@ void Control::OnKeyboard(KeyboardEventArgs& e) {
 }
 
 void Control::NotifyMouse(MouseEventArgs& e) {
-    int ex = static_cast<int>(e.x);
-    int ey = static_cast<int>(e.y);
+    Int32 ex = e.x;
+    Int32 ey = e.y;
     // First check if any child contains the point (in reverse order for z-order)
-    for (int i = _children.Length() - 1; i >= 0; i--) {
-        Control* child = _children[i];
+    for (Int32 i = Int32(_children.Length() - 1); static_cast<int>(i) >= 0; i -= 1) {
+        Control* child = _children[static_cast<int>(i)];
         if (child && static_cast<bool>(child->HitTest(ex, ey))) {
             child->NotifyMouse(e);
             return;
@@ -351,8 +361,8 @@ void Control::NotifyMouse(MouseEventArgs& e) {
 
 void Control::NotifyKeyboard(KeyboardEventArgs& e) {
     // Pass to all children (typically only focused window handles it)
-    for (int i = 0; i < _children.Length(); i++) {
-        Control* child = _children[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1) {
+        Control* child = _children[static_cast<int>(i)];
         if (child) {
             child->NotifyKeyboard(e);
         }
@@ -370,43 +380,43 @@ Boolean Control::HitTest(Int32 x, Int32 y) const {
 
 MeasureResult Control::GetPreferredSize() const {
     // Base implementation: return current bounds size or min size
-    int w = static_cast<int>(_bounds.width);
-    int h = static_cast<int>(_bounds.height);
+    Int32 w = _bounds.width;
+    Int32 h = _bounds.height;
 
     // Apply min constraints
-    int minW = static_cast<int>(_layout.minWidth);
-    int minH = static_cast<int>(_layout.minHeight);
+    Int32 minW = _layout.minWidth;
+    Int32 minH = _layout.minHeight;
     if (w < minW) w = minW;
     if (h < minH) h = minH;
 
-    return MeasureResult(Int32(w), Int32(h));
+    return MeasureResult(w, h);
 }
 
 MeasureResult Control::Measure(Int32 availableWidth, Int32 availableHeight) {
-    int avW = static_cast<int>(availableWidth);
-    int avH = static_cast<int>(availableHeight);
+    Int32 avW = availableWidth;
+    Int32 avH = availableHeight;
 
     // Subtract margins from available space
-    int marginH = static_cast<int>(_layout.marginLeft) + static_cast<int>(_layout.marginRight);
-    int marginV = static_cast<int>(_layout.marginTop) + static_cast<int>(_layout.marginBottom);
-    avW -= marginH;
-    avH -= marginV;
-    if (avW < 0) avW = 0;
-    if (avH < 0) avH = 0;
+    Int32 marginH = Int32(static_cast<int>(_layout.marginLeft) + static_cast<int>(_layout.marginRight));
+    Int32 marginV = Int32(static_cast<int>(_layout.marginTop) + static_cast<int>(_layout.marginBottom));
+    avW = Int32(static_cast<int>(avW) - static_cast<int>(marginH));
+    avH = Int32(static_cast<int>(avH) - static_cast<int>(marginV));
+    if (avW < Int32(0)) avW = Int32(0);
+    if (avH < Int32(0)) avH = Int32(0);
 
-    int resultW = 0;
-    int resultH = 0;
+    Int32 resultW = Int32(0);
+    Int32 resultH = Int32(0);
 
     // Handle different size modes
     if (_layout.widthMode == SizeMode::Fixed) {
-        resultW = static_cast<int>(_bounds.width);
+        resultW = _bounds.width;
     } else if (_layout.widthMode == SizeMode::Fill) {
         resultW = avW;
     }
     // Auto mode: calculate from content/children
 
     if (_layout.heightMode == SizeMode::Fixed) {
-        resultH = static_cast<int>(_bounds.height);
+        resultH = _bounds.height;
     } else if (_layout.heightMode == SizeMode::Fill) {
         resultH = avH;
     }
@@ -415,69 +425,69 @@ MeasureResult Control::Measure(Int32 availableWidth, Int32 availableHeight) {
     // For Auto mode, measure based on children
     if (_layout.widthMode == SizeMode::Auto || _layout.heightMode == SizeMode::Auto) {
         // Get padding
-        int padL = static_cast<int>(_layout.paddingLeft);
-        int padR = static_cast<int>(_layout.paddingRight);
-        int padT = static_cast<int>(_layout.paddingTop);
-        int padB = static_cast<int>(_layout.paddingBottom);
+        Int32 padL = _layout.paddingLeft;
+        Int32 padR = _layout.paddingRight;
+        Int32 padT = _layout.paddingTop;
+        Int32 padB = _layout.paddingBottom;
 
-        int contentW = 0;
-        int contentH = 0;
-        int gap = static_cast<int>(_layout.gap);
+        Int32 contentW = Int32(0);
+        Int32 contentH = Int32(0);
+        Int32 gap = _layout.gap;
 
         // Count participating children
-        int participatingCount = 0;
-        for (int i = 0; i < _children.Length(); i++) {
-            Control* child = _children[i];
+        Int32 participatingCount = Int32(0);
+        for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1) {
+            Control* child = _children[static_cast<int>(i)];
             if (child && child->_layout.participatesInLayout) {
-                participatingCount++;
+                participatingCount += 1;
             }
         }
 
         // Measure children
-        bool isRow = (_layout.direction == FlexDirection::Row);
+        Boolean isRow = Boolean(_layout.direction == FlexDirection::Row);
 
-        for (int i = 0; i < _children.Length(); i++) {
-            Control* child = _children[i];
+        for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1) {
+            Control* child = _children[static_cast<int>(i)];
             if (!child || !child->_layout.participatesInLayout) continue;
 
             // Measure child
             MeasureResult childSize = child->Measure(
-                Int32(avW - padL - padR),
-                Int32(avH - padT - padB)
+                Int32(static_cast<int>(avW) - static_cast<int>(padL) - static_cast<int>(padR)),
+                Int32(static_cast<int>(avH) - static_cast<int>(padT) - static_cast<int>(padB))
             );
 
-            int cw = static_cast<int>(childSize.preferredWidth);
-            int ch = static_cast<int>(childSize.preferredHeight);
+            Int32 cw = childSize.preferredWidth;
+            Int32 ch = childSize.preferredHeight;
 
             // Add child margins
-            cw += static_cast<int>(child->_layout.marginLeft) +
-                  static_cast<int>(child->_layout.marginRight);
-            ch += static_cast<int>(child->_layout.marginTop) +
-                  static_cast<int>(child->_layout.marginBottom);
+            cw = Int32(static_cast<int>(cw) + static_cast<int>(child->_layout.marginLeft) +
+                  static_cast<int>(child->_layout.marginRight));
+            ch = Int32(static_cast<int>(ch) + static_cast<int>(child->_layout.marginTop) +
+                  static_cast<int>(child->_layout.marginBottom));
 
-            if (isRow) {
+            if (static_cast<bool>(isRow)) {
                 // Row: width accumulates, height is max
-                contentW += cw;
+                contentW = Int32(static_cast<int>(contentW) + static_cast<int>(cw));
                 if (ch > contentH) contentH = ch;
             } else {
                 // Column: height accumulates, width is max
-                contentH += ch;
+                contentH = Int32(static_cast<int>(contentH) + static_cast<int>(ch));
                 if (cw > contentW) contentW = cw;
             }
         }
 
         // Add gaps between children
-        if (participatingCount > 1) {
-            if (isRow) {
-                contentW += gap * (participatingCount - 1);
+        if (participatingCount > Int32(1)) {
+            if (static_cast<bool>(isRow)) {
+                contentW = Int32(static_cast<int>(contentW) + static_cast<int>(gap) * (static_cast<int>(participatingCount) - 1));
             } else {
-                contentH += gap * (participatingCount - 1);
+                contentH = Int32(static_cast<int>(contentH) + static_cast<int>(gap) * (static_cast<int>(participatingCount) - 1));
             }
         }
 
         // Add padding
-        contentW += padL + padR;
-        contentH += padT + padB;
+        contentW = Int32(static_cast<int>(contentW) + static_cast<int>(padL) + static_cast<int>(padR));
+        contentH = Int32(static_cast<int>(contentH) + static_cast<int>(padT) + static_cast<int>(padB));
 
         // Use content size for Auto modes
         if (_layout.widthMode == SizeMode::Auto) {
@@ -489,21 +499,21 @@ MeasureResult Control::Measure(Int32 availableWidth, Int32 availableHeight) {
     }
 
     // Apply self preferred size if no children
-    if (resultW == 0 && resultH == 0) {
+    if (resultW == Int32(0) && resultH == Int32(0)) {
         MeasureResult pref = GetPreferredSize();
         if (_layout.widthMode == SizeMode::Auto) {
-            resultW = static_cast<int>(pref.preferredWidth);
+            resultW = pref.preferredWidth;
         }
         if (_layout.heightMode == SizeMode::Auto) {
-            resultH = static_cast<int>(pref.preferredHeight);
+            resultH = pref.preferredHeight;
         }
     }
 
     // Apply min/max constraints
-    int minW = static_cast<int>(_layout.minWidth);
-    int minH = static_cast<int>(_layout.minHeight);
-    int maxW = static_cast<int>(_layout.maxWidth);
-    int maxH = static_cast<int>(_layout.maxHeight);
+    Int32 minW = _layout.minWidth;
+    Int32 minH = _layout.minHeight;
+    Int32 maxW = _layout.maxWidth;
+    Int32 maxH = _layout.maxHeight;
 
     if (resultW < minW) resultW = minW;
     if (resultH < minH) resultH = minH;
@@ -511,7 +521,7 @@ MeasureResult Control::Measure(Int32 availableWidth, Int32 availableHeight) {
     if (resultH > maxH) resultH = maxH;
 
     // Store and return result
-    _measuredSize = MeasureResult(Int32(resultW), Int32(resultH));
+    _measuredSize = MeasureResult(resultW, resultH);
     return _measuredSize;
 }
 
@@ -521,18 +531,18 @@ void Control::Arrange(const Rectangle& finalBounds) {
     UpdateClientBounds();
 
     // Calculate content area (bounds minus padding)
-    int padL = static_cast<int>(_layout.paddingLeft);
-    int padR = static_cast<int>(_layout.paddingRight);
-    int padT = static_cast<int>(_layout.paddingTop);
-    int padB = static_cast<int>(_layout.paddingBottom);
+    Int32 padL = _layout.paddingLeft;
+    Int32 padR = _layout.paddingRight;
+    Int32 padT = _layout.paddingTop;
+    Int32 padB = _layout.paddingBottom;
 
-    int cx = static_cast<int>(_clientBounds.x) + padL;
-    int cy = static_cast<int>(_clientBounds.y) + padT;
-    int cw = static_cast<int>(_clientBounds.width) - padL - padR;
-    int ch = static_cast<int>(_clientBounds.height) - padT - padB;
+    Int32 cx = Int32(static_cast<int>(_clientBounds.x) + static_cast<int>(padL));
+    Int32 cy = Int32(static_cast<int>(_clientBounds.y) + static_cast<int>(padT));
+    Int32 cw = Int32(static_cast<int>(_clientBounds.width) - static_cast<int>(padL) - static_cast<int>(padR));
+    Int32 ch = Int32(static_cast<int>(_clientBounds.height) - static_cast<int>(padT) - static_cast<int>(padB));
 
-    if (cw < 0) cw = 0;
-    if (ch < 0) ch = 0;
+    if (cw < Int32(0)) cw = Int32(0);
+    if (ch < Int32(0)) ch = Int32(0);
 
     Rectangle contentArea(cx, cy, cw, ch);
 
@@ -544,124 +554,126 @@ void Control::Arrange(const Rectangle& finalBounds) {
 }
 
 void Control::ArrangeFlexChildren(const Rectangle& contentArea) {
-    int cx = static_cast<int>(contentArea.x);
-    int cy = static_cast<int>(contentArea.y);
-    int cw = static_cast<int>(contentArea.width);
-    int ch = static_cast<int>(contentArea.height);
-    int gap = static_cast<int>(_layout.gap);
-    bool isRow = (_layout.direction == FlexDirection::Row);
+    Int32 cx = contentArea.x;
+    Int32 cy = contentArea.y;
+    Int32 cw = contentArea.width;
+    Int32 ch = contentArea.height;
+    Int32 gap = _layout.gap;
+    Boolean isRow = Boolean(_layout.direction == FlexDirection::Row);
 
     // First pass: gather info about participating children
-    int participatingCount = 0;
-    int totalMainSize = 0;
-    int totalFlexGrow = 0;
-    int maxCrossSize = 0;
+    Int32 participatingCount = Int32(0);
+    Int32 totalMainSize = Int32(0);
+    Int32 totalFlexGrow = Int32(0);
+    Int32 maxCrossSize = Int32(0);
 
-    for (int i = 0; i < _children.Length(); i++) {
-        Control* child = _children[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1) {
+        Control* child = _children[static_cast<int>(i)];
         if (!child || !child->_layout.participatesInLayout) continue;
 
-        participatingCount++;
+        participatingCount += 1;
 
         // Get measured size
-        int childW = static_cast<int>(child->_measuredSize.preferredWidth);
-        int childH = static_cast<int>(child->_measuredSize.preferredHeight);
+        Int32 childW = child->_measuredSize.preferredWidth;
+        Int32 childH = child->_measuredSize.preferredHeight;
 
         // Add margins to size
-        int marginH = static_cast<int>(child->_layout.marginLeft) +
-                      static_cast<int>(child->_layout.marginRight);
-        int marginV = static_cast<int>(child->_layout.marginTop) +
-                      static_cast<int>(child->_layout.marginBottom);
+        Int32 marginH = Int32(static_cast<int>(child->_layout.marginLeft) +
+                      static_cast<int>(child->_layout.marginRight));
+        Int32 marginV = Int32(static_cast<int>(child->_layout.marginTop) +
+                      static_cast<int>(child->_layout.marginBottom));
 
-        if (isRow) {
-            totalMainSize += childW + marginH;
-            if (childH + marginV > maxCrossSize) {
-                maxCrossSize = childH + marginV;
+        if (static_cast<bool>(isRow)) {
+            totalMainSize = Int32(static_cast<int>(totalMainSize) + static_cast<int>(childW) + static_cast<int>(marginH));
+            Int32 crossSize = Int32(static_cast<int>(childH) + static_cast<int>(marginV));
+            if (crossSize > maxCrossSize) {
+                maxCrossSize = crossSize;
             }
         } else {
-            totalMainSize += childH + marginV;
-            if (childW + marginH > maxCrossSize) {
-                maxCrossSize = childW + marginH;
+            totalMainSize = Int32(static_cast<int>(totalMainSize) + static_cast<int>(childH) + static_cast<int>(marginV));
+            Int32 crossSize = Int32(static_cast<int>(childW) + static_cast<int>(marginH));
+            if (crossSize > maxCrossSize) {
+                maxCrossSize = crossSize;
             }
         }
 
-        totalFlexGrow += static_cast<int>(child->_layout.flexGrow);
+        totalFlexGrow = Int32(static_cast<int>(totalFlexGrow) + static_cast<int>(child->_layout.flexGrow));
     }
 
     // Add gaps
-    if (participatingCount > 1) {
-        totalMainSize += gap * (participatingCount - 1);
+    if (participatingCount > Int32(1)) {
+        totalMainSize = Int32(static_cast<int>(totalMainSize) + static_cast<int>(gap) * (static_cast<int>(participatingCount) - 1));
     }
 
-    if (participatingCount == 0) return;
+    if (participatingCount == Int32(0)) return;
 
     // Calculate available space for distribution
-    int mainAxisSize = isRow ? cw : ch;
-    int crossAxisSize = isRow ? ch : cw;
-    int extraSpace = mainAxisSize - totalMainSize;
-    if (extraSpace < 0) extraSpace = 0;
+    Int32 mainAxisSize = static_cast<bool>(isRow) ? cw : ch;
+    Int32 crossAxisSize = static_cast<bool>(isRow) ? ch : cw;
+    Int32 extraSpace = Int32(static_cast<int>(mainAxisSize) - static_cast<int>(totalMainSize));
+    if (extraSpace < Int32(0)) extraSpace = Int32(0);
 
     // Calculate starting position based on JustifyContent
-    int mainPos = 0;
-    int spaceBetween = 0;
-    int spaceAround = 0;
+    Int32 mainPos = Int32(0);
+    Int32 spaceBetween = Int32(0);
+    Int32 spaceAround = Int32(0);
 
     switch (_layout.justifyContent) {
         case JustifyContent::Start:
-            mainPos = 0;
+            mainPos = Int32(0);
             break;
         case JustifyContent::End:
             mainPos = extraSpace;
             break;
         case JustifyContent::Center:
-            mainPos = extraSpace / 2;
+            mainPos = Int32(static_cast<int>(extraSpace) / 2);
             break;
         case JustifyContent::SpaceBetween:
-            mainPos = 0;
-            if (participatingCount > 1) {
-                spaceBetween = extraSpace / (participatingCount - 1);
+            mainPos = Int32(0);
+            if (participatingCount > Int32(1)) {
+                spaceBetween = Int32(static_cast<int>(extraSpace) / (static_cast<int>(participatingCount) - 1));
             }
             break;
         case JustifyContent::SpaceAround:
-            if (participatingCount > 0) {
-                spaceAround = extraSpace / (participatingCount * 2);
+            if (participatingCount > Int32(0)) {
+                spaceAround = Int32(static_cast<int>(extraSpace) / (static_cast<int>(participatingCount) * 2));
                 mainPos = spaceAround;
             }
             break;
     }
 
     // Second pass: arrange children
-    for (int i = 0; i < _children.Length(); i++) {
-        Control* child = _children[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1) {
+        Control* child = _children[static_cast<int>(i)];
         if (!child || !child->_layout.participatesInLayout) continue;
 
         // Get measured size
-        int childW = static_cast<int>(child->_measuredSize.preferredWidth);
-        int childH = static_cast<int>(child->_measuredSize.preferredHeight);
+        Int32 childW = child->_measuredSize.preferredWidth;
+        Int32 childH = child->_measuredSize.preferredHeight;
 
         // Get margins
-        int mTop = static_cast<int>(child->_layout.marginTop);
-        int mRight = static_cast<int>(child->_layout.marginRight);
-        int mBottom = static_cast<int>(child->_layout.marginBottom);
-        int mLeft = static_cast<int>(child->_layout.marginLeft);
+        Int32 mTop = child->_layout.marginTop;
+        Int32 mRight = child->_layout.marginRight;
+        Int32 mBottom = child->_layout.marginBottom;
+        Int32 mLeft = child->_layout.marginLeft;
 
         // Calculate flex grow contribution
-        int flexGrow = static_cast<int>(child->_layout.flexGrow);
-        int growAmount = 0;
-        if (totalFlexGrow > 0 && flexGrow > 0 && extraSpace > 0) {
-            growAmount = (extraSpace * flexGrow) / totalFlexGrow;
+        Int32 flexGrow = child->_layout.flexGrow;
+        Int32 growAmount = Int32(0);
+        if (totalFlexGrow > Int32(0) && flexGrow > Int32(0) && extraSpace > Int32(0)) {
+            growAmount = Int32((static_cast<int>(extraSpace) * static_cast<int>(flexGrow)) / static_cast<int>(totalFlexGrow));
         }
 
         // Calculate final size
-        int finalW = childW;
-        int finalH = childH;
+        Int32 finalW = childW;
+        Int32 finalH = childH;
 
-        if (isRow) {
-            finalW += growAmount;
+        if (static_cast<bool>(isRow)) {
+            finalW = Int32(static_cast<int>(finalW) + static_cast<int>(growAmount));
             // Handle AlignItems for cross axis (height)
             switch (_layout.alignItems) {
                 case AlignItems::Stretch:
-                    finalH = crossAxisSize - mTop - mBottom;
+                    finalH = Int32(static_cast<int>(crossAxisSize) - static_cast<int>(mTop) - static_cast<int>(mBottom));
                     break;
                 case AlignItems::Start:
                 case AlignItems::Center:
@@ -670,11 +682,11 @@ void Control::ArrangeFlexChildren(const Rectangle& contentArea) {
                     break;
             }
         } else {
-            finalH += growAmount;
+            finalH = Int32(static_cast<int>(finalH) + static_cast<int>(growAmount));
             // Handle AlignItems for cross axis (width)
             switch (_layout.alignItems) {
                 case AlignItems::Stretch:
-                    finalW = crossAxisSize - mLeft - mRight;
+                    finalW = Int32(static_cast<int>(crossAxisSize) - static_cast<int>(mLeft) - static_cast<int>(mRight));
                     break;
                 case AlignItems::Start:
                 case AlignItems::Center:
@@ -685,10 +697,10 @@ void Control::ArrangeFlexChildren(const Rectangle& contentArea) {
         }
 
         // Apply min/max constraints
-        int minW = static_cast<int>(child->_layout.minWidth);
-        int minH = static_cast<int>(child->_layout.minHeight);
-        int maxW = static_cast<int>(child->_layout.maxWidth);
-        int maxH = static_cast<int>(child->_layout.maxHeight);
+        Int32 minW = child->_layout.minWidth;
+        Int32 minH = child->_layout.minHeight;
+        Int32 maxW = child->_layout.maxWidth;
+        Int32 maxH = child->_layout.maxHeight;
 
         if (finalW < minW) finalW = minW;
         if (finalH < minH) finalH = minH;
@@ -696,52 +708,52 @@ void Control::ArrangeFlexChildren(const Rectangle& contentArea) {
         if (finalH > maxH) finalH = maxH;
 
         // Calculate position
-        int childX, childY;
+        Int32 childX, childY;
 
-        if (isRow) {
-            childX = cx + mainPos + mLeft;
+        if (static_cast<bool>(isRow)) {
+            childX = Int32(static_cast<int>(cx) + static_cast<int>(mainPos) + static_cast<int>(mLeft));
 
             // Cross axis position (Y) based on AlignItems
             switch (_layout.alignItems) {
                 case AlignItems::Start:
-                    childY = cy + mTop;
+                    childY = Int32(static_cast<int>(cy) + static_cast<int>(mTop));
                     break;
                 case AlignItems::End:
-                    childY = cy + crossAxisSize - finalH - mBottom;
+                    childY = Int32(static_cast<int>(cy) + static_cast<int>(crossAxisSize) - static_cast<int>(finalH) - static_cast<int>(mBottom));
                     break;
                 case AlignItems::Center:
-                    childY = cy + (crossAxisSize - finalH - mTop - mBottom) / 2 + mTop;
+                    childY = Int32(static_cast<int>(cy) + (static_cast<int>(crossAxisSize) - static_cast<int>(finalH) - static_cast<int>(mTop) - static_cast<int>(mBottom)) / 2 + static_cast<int>(mTop));
                     break;
                 case AlignItems::Stretch:
                 default:
-                    childY = cy + mTop;
+                    childY = Int32(static_cast<int>(cy) + static_cast<int>(mTop));
                     break;
             }
 
             // Advance main axis position
-            mainPos += finalW + mLeft + mRight + gap + spaceBetween + spaceAround * 2;
+            mainPos = Int32(static_cast<int>(mainPos) + static_cast<int>(finalW) + static_cast<int>(mLeft) + static_cast<int>(mRight) + static_cast<int>(gap) + static_cast<int>(spaceBetween) + static_cast<int>(spaceAround) * 2);
         } else {
-            childY = cy + mainPos + mTop;
+            childY = Int32(static_cast<int>(cy) + static_cast<int>(mainPos) + static_cast<int>(mTop));
 
             // Cross axis position (X) based on AlignItems
             switch (_layout.alignItems) {
                 case AlignItems::Start:
-                    childX = cx + mLeft;
+                    childX = Int32(static_cast<int>(cx) + static_cast<int>(mLeft));
                     break;
                 case AlignItems::End:
-                    childX = cx + crossAxisSize - finalW - mRight;
+                    childX = Int32(static_cast<int>(cx) + static_cast<int>(crossAxisSize) - static_cast<int>(finalW) - static_cast<int>(mRight));
                     break;
                 case AlignItems::Center:
-                    childX = cx + (crossAxisSize - finalW - mLeft - mRight) / 2 + mLeft;
+                    childX = Int32(static_cast<int>(cx) + (static_cast<int>(crossAxisSize) - static_cast<int>(finalW) - static_cast<int>(mLeft) - static_cast<int>(mRight)) / 2 + static_cast<int>(mLeft));
                     break;
                 case AlignItems::Stretch:
                 default:
-                    childX = cx + mLeft;
+                    childX = Int32(static_cast<int>(cx) + static_cast<int>(mLeft));
                     break;
             }
 
             // Advance main axis position
-            mainPos += finalH + mTop + mBottom + gap + spaceBetween + spaceAround * 2;
+            mainPos = Int32(static_cast<int>(mainPos) + static_cast<int>(finalH) + static_cast<int>(mTop) + static_cast<int>(mBottom) + static_cast<int>(gap) + static_cast<int>(spaceBetween) + static_cast<int>(spaceAround) * 2);
         }
 
         // Recursively arrange child
@@ -750,8 +762,8 @@ void Control::ArrangeFlexChildren(const Rectangle& contentArea) {
     }
 
     // Arrange non-participating children (they keep their current bounds)
-    for (int i = 0; i < _children.Length(); i++) {
-        Control* child = _children[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1) {
+        Control* child = _children[static_cast<int>(i)];
         if (child && !child->_layout.participatesInLayout) {
             // Just trigger their own layout with current bounds
             child->Arrange(child->_bounds);
@@ -763,9 +775,9 @@ void Control::PerformLayout() {
     if (!_layout.needsLayout) return;
 
     // Measure pass (bottom-up)
-    int availW = static_cast<int>(_bounds.width);
-    int availH = static_cast<int>(_bounds.height);
-    Measure(Int32(availW), Int32(availH));
+    Int32 availW = _bounds.width;
+    Int32 availH = _bounds.height;
+    Measure(availW, availH);
 
     // Arrange pass (top-down)
     Arrange(_bounds);
@@ -786,49 +798,49 @@ Desktop::Desktop(const Color& backgroundColor)
     , _backgroundColor(backgroundColor)
     , _focusedWindow(nullptr)
     , _dragWindow(nullptr)
-    , _dragOffsetX(0)
-    , _dragOffsetY(0)
-    , _dragStartX(0)
-    , _dragStartY(0)
+    , _dragOffsetX(Int32(0))
+    , _dragOffsetY(Int32(0))
+    , _dragStartX(Int32(0))
+    , _dragStartY(Int32(0))
     , _dragBitmap()
     , _cursorImage()
     , _icons()
     , _isDragging(false)
     , _running(false)
-    , _cursorX(0)
-    , _cursorY(0)
-    , _prevCursorX(0)
-    , _prevCursorY(0)
+    , _cursorX(Int32(0))
+    , _cursorY(Int32(0))
+    , _prevCursorX(Int32(0))
+    , _prevCursorY(Int32(0))
     , _cursorVisible(true)
     , _wasMouseDown(false)
     , _cursorSaved(false)
-    , _screenWidth(0)
-    , _screenHeight(0)
-    , _nextIconX(ICON_MARGIN_X)
-    , _nextIconY(ICON_MARGIN_Y)
+    , _screenWidth(Int32(0))
+    , _screenHeight(Int32(0))
+    , _nextIconX(Int32(ICON_MARGIN_X))
+    , _nextIconY(Int32(ICON_MARGIN_Y))
     , _spatialGrid()
     , _taskBar(nullptr)
     , _startMenu(nullptr) {
     // Get screen dimensions from current display mode
     Display current = Display::GetCurrent();
-    _screenWidth = static_cast<int>(current.Width());
-    _screenHeight = static_cast<int>(current.Height());
+    _screenWidth = Int32(static_cast<int>(current.Width()));
+    _screenHeight = Int32(static_cast<int>(current.Height()));
 
     // Initialize spatial grid
-    _spatialGrid.Initialize(Int32(_screenWidth), Int32(_screenHeight));
+    _spatialGrid.Initialize(_screenWidth, _screenHeight);
 
     // Center cursor initially
-    _cursorX = _screenWidth / 2;
-    _cursorY = _screenHeight / 2;
+    _cursorX = Int32(static_cast<int>(_screenWidth) / 2);
+    _cursorY = Int32(static_cast<int>(_screenHeight) / 2);
     _prevCursorX = _cursorX;
     _prevCursorY = _cursorY;
 
     // Desktop fills the screen
-    _bounds = Rectangle(0, 0, _screenWidth, _screenHeight);
-    _clientBounds = Rectangle(0, 0, _screenWidth, _screenHeight);
+    _bounds = Rectangle(Int32(0), Int32(0), _screenWidth, _screenHeight);
+    _clientBounds = Rectangle(Int32(0), Int32(0), _screenWidth, _screenHeight);
     // Initialize cursor save buffer
-    for (int i = 0; i < CURSOR_SIZE * CURSOR_SIZE; i++) {
-        _cursorSave[i] = 0;
+    for (Int32 i = Int32(0); static_cast<int>(i) < CURSOR_SIZE * CURSOR_SIZE; i += 1) {
+        _cursorSave[static_cast<int>(i)] = 0;
     }
 }
 
@@ -845,19 +857,19 @@ void Desktop::LoadCursorFromLibrary(const char* path, Int32 iconIndex) {
 
 void Desktop::AddIcon(const Image& icon) {
     // Calculate position for new icon (arrange in columns)
-    int taskBarHeight = 28;  // Reserve space for taskbar
-    int maxY = _screenHeight - taskBarHeight - ICON_SIZE - ICON_MARGIN_Y;
+    Int32 taskBarHeight = Int32(28);  // Reserve space for taskbar
+    Int32 maxY = Int32(static_cast<int>(_screenHeight) - static_cast<int>(taskBarHeight) - ICON_SIZE - ICON_MARGIN_Y);
 
     // Add the icon at current position
-    int oldLen = _icons.Length();
-    _icons.Resize(oldLen + 1);
-    _icons[oldLen] = DesktopIcon(icon, _nextIconX, _nextIconY);
+    Int32 oldLen = Int32(_icons.Length());
+    _icons.Resize(static_cast<int>(oldLen) + 1);
+    _icons[static_cast<int>(oldLen)] = DesktopIcon(icon, static_cast<int>(_nextIconX), static_cast<int>(_nextIconY));
 
     // Move to next position (flow down, then right)
-    _nextIconY += ICON_SPACING_Y;
+    _nextIconY = Int32(static_cast<int>(_nextIconY) + ICON_SPACING_Y);
     if (_nextIconY > maxY) {
-        _nextIconY = ICON_MARGIN_Y;
-        _nextIconX += ICON_SPACING_X;
+        _nextIconY = Int32(ICON_MARGIN_Y);
+        _nextIconX = Int32(static_cast<int>(_nextIconX) + ICON_SPACING_X);
     }
 
     Invalidate();
@@ -883,12 +895,12 @@ void Desktop::DrawIcons() {
 
     Image& img = fb->GetImage();
 
-    for (int i = 0; i < _icons.Length(); i++) {
-        const DesktopIcon& icon = _icons[i];
-        int iw = static_cast<int>(icon.image.Width());
-        int ih = static_cast<int>(icon.image.Height());
+    for (Int32 i = Int32(0); static_cast<int>(i) < _icons.Length(); i += 1) {
+        const DesktopIcon& icon = _icons[static_cast<int>(i)];
+        Int32 iw = icon.image.Width();
+        Int32 ih = icon.image.Height();
 
-        if (iw > 0 && ih > 0) {
+        if (iw > Int32(0) && ih > Int32(0)) {
             // Draw icon with alpha blending
             img.CopyFromWithAlpha(icon.image, icon.x, icon.y);
         }
@@ -900,21 +912,21 @@ void Desktop::SetFocusedWindow(Window* window) {
 
     // Unfocus previous window
     if (_focusedWindow) {
-        _focusedWindow->SetFocused(false);
+        _focusedWindow->SetFocused(Boolean(false));
     }
 
     _focusedWindow = window;
 
     // Focus new window and bring to front (move to end of children array)
     if (_focusedWindow) {
-        _focusedWindow->SetFocused(true);
+        _focusedWindow->SetFocused(Boolean(true));
 
         // Find and move to end for z-order
-        int idx = _children.IndexOf(static_cast<Control*>(_focusedWindow));
-        if (idx >= 0 && idx < _children.Length() - 1) {
+        Int32 idx = Int32(_children.IndexOf(static_cast<Control*>(_focusedWindow)));
+        if (static_cast<int>(idx) >= 0 && static_cast<int>(idx) < _children.Length() - 1) {
             // Shift elements down
-            for (int i = idx; i < _children.Length() - 1; i++) {
-                _children[i] = _children[i + 1];
+            for (Int32 i = idx; static_cast<int>(i) < _children.Length() - 1; i += 1) {
+                _children[static_cast<int>(i)] = _children[static_cast<int>(i) + 1];
             }
             _children[_children.Length() - 1] = _focusedWindow;
         }
@@ -965,8 +977,8 @@ void Desktop::RemoveChild(Control* child) {
 
 void Desktop::UpdateSpatialGrid() {
     _spatialGrid.Clear();
-    for (int i = 0; i < _children.Length(); i++) {
-        Control* child = _children[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1) {
+        Control* child = _children[static_cast<int>(i)];
         if (child) {
             _spatialGrid.Insert(child, child->ScreenBounds());
         }
@@ -981,8 +993,8 @@ void Desktop::OnPaint(PaintEventArgs& e) {
     DrawIcons();
 
     // Paint all children (windows, taskbar, etc.) EXCEPT start menu
-    for (int i = 0; i < _children.Length(); i++) {
-        Control* child = _children[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1) {
+        Control* child = _children[static_cast<int>(i)];
         if (child && child != static_cast<Control*>(_startMenu)) {
             PaintEventArgs childArgs(e.graphics, child->Bounds());
             child->OnPaint(childArgs);
@@ -1001,12 +1013,12 @@ void Desktop::SaveUnderCursor() {
     if (!fb) return;
 
     Image& img = fb->GetImage();
-    for (int dy = 0; dy < CURSOR_SIZE; dy++) {
-        for (int dx = 0; dx < CURSOR_SIZE; dx++) {
-            int px = _cursorX + dx;
-            int py = _cursorY + dy;
-            if (px >= 0 && px < _screenWidth && py >= 0 && py < _screenHeight) {
-                _cursorSave[dy * CURSOR_SIZE + dx] = static_cast<unsigned int>(img.GetPixel(px, py));
+    for (Int32 dy = Int32(0); static_cast<int>(dy) < CURSOR_SIZE; dy += 1) {
+        for (Int32 dx = Int32(0); static_cast<int>(dx) < CURSOR_SIZE; dx += 1) {
+            Int32 px = Int32(static_cast<int>(_cursorX) + static_cast<int>(dx));
+            Int32 py = Int32(static_cast<int>(_cursorY) + static_cast<int>(dy));
+            if (px >= Int32(0) && px < _screenWidth && py >= Int32(0) && py < _screenHeight) {
+                _cursorSave[static_cast<int>(dy) * CURSOR_SIZE + static_cast<int>(dx)] = static_cast<unsigned int>(img.GetPixel(px, py));
             }
         }
     }
@@ -1022,12 +1034,12 @@ void Desktop::RestoreCursor() {
     if (!fb) return;
 
     Image& img = fb->GetImage();
-    for (int dy = 0; dy < CURSOR_SIZE; dy++) {
-        for (int dx = 0; dx < CURSOR_SIZE; dx++) {
-            int px = _prevCursorX + dx;
-            int py = _prevCursorY + dy;
-            if (px >= 0 && px < _screenWidth && py >= 0 && py < _screenHeight) {
-                img.SetPixel(px, py, Color(_cursorSave[dy * CURSOR_SIZE + dx]));
+    for (Int32 dy = Int32(0); static_cast<int>(dy) < CURSOR_SIZE; dy += 1) {
+        for (Int32 dx = Int32(0); static_cast<int>(dx) < CURSOR_SIZE; dx += 1) {
+            Int32 px = Int32(static_cast<int>(_prevCursorX) + static_cast<int>(dx));
+            Int32 py = Int32(static_cast<int>(_prevCursorY) + static_cast<int>(dy));
+            if (px >= Int32(0) && px < _screenWidth && py >= Int32(0) && py < _screenHeight) {
+                img.SetPixel(px, py, Color(_cursorSave[static_cast<int>(dy) * CURSOR_SIZE + static_cast<int>(dx)]));
             }
         }
     }
@@ -1041,20 +1053,20 @@ void Desktop::DrawCursor() {
 
     Image& img = fb->GetImage();
 
-    int cursorW = static_cast<int>(_cursorImage.Width());
-    int cursorH = static_cast<int>(_cursorImage.Height());
+    Int32 cursorW = _cursorImage.Width();
+    Int32 cursorH = _cursorImage.Height();
 
     // If we have a cursor image, draw it with alpha blending
-    if (cursorW > 0 && cursorH > 0) {
-        for (int dy = 0; dy < cursorH && dy < CURSOR_SIZE; dy++) {
-            for (int dx = 0; dx < cursorW && dx < CURSOR_SIZE; dx++) {
-                int px = _cursorX + dx;
-                int py = _cursorY + dy;
-                if (px >= 0 && px < _screenWidth && py >= 0 && py < _screenHeight) {
+    if (cursorW > Int32(0) && cursorH > Int32(0)) {
+        for (Int32 dy = Int32(0); static_cast<int>(dy) < static_cast<int>(cursorH) && static_cast<int>(dy) < CURSOR_SIZE; dy += 1) {
+            for (Int32 dx = Int32(0); static_cast<int>(dx) < static_cast<int>(cursorW) && static_cast<int>(dx) < CURSOR_SIZE; dx += 1) {
+                Int32 px = Int32(static_cast<int>(_cursorX) + static_cast<int>(dx));
+                Int32 py = Int32(static_cast<int>(_cursorY) + static_cast<int>(dy));
+                if (px >= Int32(0) && px < _screenWidth && py >= Int32(0) && py < _screenHeight) {
                     Color pixel = _cursorImage.GetPixel(dx, dy);
                     // Only draw non-transparent pixels (alpha >= 128)
-                    unsigned char alpha = static_cast<unsigned char>(pixel.A());
-                    if (alpha >= 128) {
+                    UInt32 alpha = UInt32(static_cast<unsigned int>(pixel.A()));
+                    if (static_cast<unsigned int>(alpha) >= 128) {
                         img.SetPixel(px, py, pixel);
                     }
                 }
@@ -1062,16 +1074,16 @@ void Desktop::DrawCursor() {
         }
     } else {
         // Fallback: draw a simple arrow cursor
-        for (int dy = 0; dy < CURSOR_SIZE; dy++) {
-            for (int dx = 0; dx < CURSOR_SIZE; dx++) {
-                int px = _cursorX + dx;
-                int py = _cursorY + dy;
-                if (px >= 0 && px < _screenWidth && py >= 0 && py < _screenHeight) {
+        for (Int32 dy = Int32(0); static_cast<int>(dy) < CURSOR_SIZE; dy += 1) {
+            for (Int32 dx = Int32(0); static_cast<int>(dx) < CURSOR_SIZE; dx += 1) {
+                Int32 px = Int32(static_cast<int>(_cursorX) + static_cast<int>(dx));
+                Int32 py = Int32(static_cast<int>(_cursorY) + static_cast<int>(dy));
+                if (px >= Int32(0) && px < _screenWidth && py >= Int32(0) && py < _screenHeight) {
                     // Simple arrow shape
-                    bool isArrow = (dx <= dy && dx < 12 && dy < 18);
-                    bool isBorder = isArrow && (dx == 0 || dx == dy || dy == 17);
-                    if (isArrow) {
-                        img.SetPixel(px, py, isBorder ? Color::Black : Color::White);
+                    Boolean isArrow = Boolean(static_cast<int>(dx) <= static_cast<int>(dy) && static_cast<int>(dx) < 12 && static_cast<int>(dy) < 18);
+                    Boolean isBorder = Boolean(static_cast<bool>(isArrow) && (static_cast<int>(dx) == 0 || dx == dy || static_cast<int>(dy) == 17));
+                    if (static_cast<bool>(isArrow)) {
+                        img.SetPixel(px, py, static_cast<bool>(isBorder) ? Color::Black : Color::White);
                     }
                 }
             }
@@ -1083,10 +1095,10 @@ void Desktop::CaptureWindowBitmap(Window* win) {
     if (!win) return;
 
     Rectangle screen = win->ScreenBounds();
-    int sw = static_cast<int>(screen.width);
-    int sh = static_cast<int>(screen.height);
-    int sx = static_cast<int>(screen.x);
-    int sy = static_cast<int>(screen.y);
+    Int32 sw = screen.width;
+    Int32 sh = screen.height;
+    Int32 sx = screen.x;
+    Int32 sy = screen.y;
     _dragBitmap = Image(sw, sh);
 
     GraphicsBuffer* fb = GraphicsBuffer::GetFrameBuffer();
@@ -1094,11 +1106,11 @@ void Desktop::CaptureWindowBitmap(Window* win) {
 
     // Copy window region from frame buffer
     const Image& fbImg = fb->GetImage();
-    for (int y = 0; y < sh; y++) {
-        for (int x = 0; x < sw; x++) {
-            int srcX = sx + x;
-            int srcY = sy + y;
-            if (srcX >= 0 && srcX < _screenWidth && srcY >= 0 && srcY < _screenHeight) {
+    for (Int32 y = Int32(0); y < sh; y += 1) {
+        for (Int32 x = Int32(0); x < sw; x += 1) {
+            Int32 srcX = Int32(static_cast<int>(sx) + static_cast<int>(x));
+            Int32 srcY = Int32(static_cast<int>(sy) + static_cast<int>(y));
+            if (srcX >= Int32(0) && srcX < _screenWidth && srcY >= Int32(0) && srcY < _screenHeight) {
                 _dragBitmap.SetPixel(x, y, fbImg.GetPixel(srcX, srcY));
             }
         }
@@ -1117,18 +1129,18 @@ void Desktop::DrawDragBitmap() {
     Image& img = fb->GetImage();
 
     // Calculate current drag position
-    int newX = _cursorX - _dragOffsetX;
-    int newY = _cursorY - _dragOffsetY;
+    Int32 newX = Int32(static_cast<int>(_cursorX) - static_cast<int>(_dragOffsetX));
+    Int32 newY = Int32(static_cast<int>(_cursorY) - static_cast<int>(_dragOffsetY));
 
-    int dh = static_cast<int>(_dragBitmap.Height());
-    int dw = static_cast<int>(_dragBitmap.Width());
+    Int32 dh = _dragBitmap.Height();
+    Int32 dw = _dragBitmap.Width();
 
     // Draw the captured bitmap at new position
-    for (int y = 0; y < dh; y++) {
-        for (int x = 0; x < dw; x++) {
-            int dstX = newX + x;
-            int dstY = newY + y;
-            if (dstX >= 0 && dstX < _screenWidth && dstY >= 0 && dstY < _screenHeight) {
+    for (Int32 y = Int32(0); y < dh; y += 1) {
+        for (Int32 x = Int32(0); x < dw; x += 1) {
+            Int32 dstX = Int32(static_cast<int>(newX) + static_cast<int>(x));
+            Int32 dstY = Int32(static_cast<int>(newY) + static_cast<int>(y));
+            if (dstX >= Int32(0) && dstX < _screenWidth && dstY >= Int32(0) && dstY < _screenHeight) {
                 img.SetPixel(dstX, dstY, _dragBitmap.GetPixel(x, y));
             }
         }
@@ -1143,25 +1155,25 @@ void Desktop::OnKeyboard(KeyboardEventArgs& e) {
 }
 
 void Desktop::HandleMouse(MouseEventArgs& e) {
-    int ex = static_cast<int>(e.x);
-    int ey = static_cast<int>(e.y);
-    bool leftButton = static_cast<bool>(e.leftButton);
-    bool isNewClick = leftButton && !_wasMouseDown;
+    Int32 ex = e.x;
+    Int32 ey = e.y;
+    Boolean leftButton = e.leftButton;
+    Boolean isNewClick = Boolean(static_cast<bool>(leftButton) && !_wasMouseDown);
 
     // Handle ongoing drag
-    if (_isDragging && _dragWindow && leftButton) {
+    if (_isDragging && _dragWindow && static_cast<bool>(leftButton)) {
         // During drag, just update position - bitmap is drawn in Run()
-        _wasMouseDown = leftButton;
+        _wasMouseDown = static_cast<bool>(leftButton);
         return;
     }
 
     // End drag if mouse released
-    if (!leftButton && _isDragging && _dragWindow) {
+    if (!static_cast<bool>(leftButton) && _isDragging && _dragWindow) {
         // Apply final position
-        int newX = _cursorX - _dragOffsetX;
-        int newY = _cursorY - _dragOffsetY;
-        int bw = static_cast<int>(_dragWindow->Bounds().width);
-        int bh = static_cast<int>(_dragWindow->Bounds().height);
+        Int32 newX = Int32(static_cast<int>(_cursorX) - static_cast<int>(_dragOffsetX));
+        Int32 newY = Int32(static_cast<int>(_cursorY) - static_cast<int>(_dragOffsetY));
+        Int32 bw = _dragWindow->Bounds().width;
+        Int32 bh = _dragWindow->Bounds().height;
         _dragWindow->SetBounds(newX, newY, bw, bh);
 
         _isDragging = false;
@@ -1173,12 +1185,12 @@ void Desktop::HandleMouse(MouseEventArgs& e) {
 
     // Handle start menu - continuous mouse tracking for hover effects
     if (_startMenu && static_cast<bool>(_startMenu->IsVisible())) {
-        bool mouseOnMenu = static_cast<bool>(_startMenu->HitTest(ex, ey));
-        bool clickOnStartButton = _taskBar && _taskBar->StartButton() &&
-            static_cast<bool>(_taskBar->StartButton()->HitTest(ex, ey));
+        Boolean mouseOnMenu = _startMenu->HitTest(ex, ey);
+        Boolean clickOnStartButton = Boolean(_taskBar && _taskBar->StartButton() &&
+            static_cast<bool>(_taskBar->StartButton()->HitTest(ex, ey)));
 
         // Hide menu if clicked outside
-        if (isNewClick && !mouseOnMenu && !clickOnStartButton) {
+        if (static_cast<bool>(isNewClick) && !static_cast<bool>(mouseOnMenu) && !static_cast<bool>(clickOnStartButton)) {
             _startMenu->Hide();
             Invalidate();
         }
@@ -1187,19 +1199,19 @@ void Desktop::HandleMouse(MouseEventArgs& e) {
         _startMenu->OnMouse(e);
 
         // If mouse is on menu, don't process other controls
-        if (mouseOnMenu) {
-            _wasMouseDown = leftButton;
+        if (static_cast<bool>(mouseOnMenu)) {
+            _wasMouseDown = static_cast<bool>(leftButton);
             return;
         }
     }
 
     // Find child under cursor (for event propagation)
-    Control* hitChild = _spatialGrid.HitTest(Int32(ex), Int32(ey));
+    Control* hitChild = _spatialGrid.HitTest(ex, ey);
 
     // Fall back to linear search if spatial grid misses (e.g., for TaskBar)
     if (!hitChild) {
-        for (int i = _children.Length() - 1; i >= 0; i--) {
-            Control* child = _children[i];
+        for (Int32 i = Int32(_children.Length() - 1); static_cast<int>(i) >= 0; i -= 1) {
+            Control* child = _children[static_cast<int>(i)];
             if (child && static_cast<bool>(child->HitTest(ex, ey))) {
                 hitChild = child;
                 break;
@@ -1208,20 +1220,20 @@ void Desktop::HandleMouse(MouseEventArgs& e) {
     }
 
     // Handle window focus and drag initiation on new click only
-    if (isNewClick && hitChild) {
+    if (static_cast<bool>(isNewClick) && hitChild) {
         Window* win = hitChild->AsWindow();
         if (win) {
             Rectangle screen = hitChild->ScreenBounds();
-            int sy = static_cast<int>(screen.y);
-            int sx = static_cast<int>(screen.x);
+            Int32 sy = screen.y;
+            Int32 sx = screen.x;
 
             SetFocusedWindow(win);
 
             // Check if click is on title bar (top 22 pixels)
-            if (ey < sy + 22) {
+            if (static_cast<int>(ey) < static_cast<int>(sy) + 22) {
                 _dragWindow = win;
-                _dragOffsetX = ex - sx;
-                _dragOffsetY = ey - sy;
+                _dragOffsetX = Int32(static_cast<int>(ex) - static_cast<int>(sx));
+                _dragOffsetY = Int32(static_cast<int>(ey) - static_cast<int>(sy));
 
                 // Capture the window as a bitmap before starting drag
                 Invalidate();
@@ -1244,19 +1256,25 @@ void Desktop::HandleMouse(MouseEventArgs& e) {
         hitChild->NotifyMouse(e);
     }
 
-    _wasMouseDown = leftButton;
+    _wasMouseDown = static_cast<bool>(leftButton);
 }
 
 void Desktop::CheckForUpdates() {
-    // Check mouse
+    // Check mouse - create temporary int variables for platform function
+    int tempX, tempY;
+    bool tempLeftBtn, tempRightBtn;
     MouseStatus ms = Mouse::GetStatus();
+    tempX = static_cast<int>(ms.x);
+    tempY = static_cast<int>(ms.y);
+    tempLeftBtn = static_cast<bool>(ms.leftButton);
+    tempRightBtn = static_cast<bool>(ms.rightButton);
 
     // Update cursor position
-    _cursorX = static_cast<int>(ms.x);
-    _cursorY = static_cast<int>(ms.y);
+    _cursorX = Int32(tempX);
+    _cursorY = Int32(tempY);
 
     // Create mouse event and handle (always call to track drag state)
-    MouseEventArgs mouseArgs(ms.x, ms.y, ms.leftButton, ms.rightButton);
+    MouseEventArgs mouseArgs{Int32(tempX), Int32(tempY), Boolean(tempLeftBtn), Boolean(tempRightBtn)};
     HandleMouse(mouseArgs);
 
     // Check keyboard
@@ -1290,7 +1308,7 @@ void Desktop::Run() {
     _isInvalid = false;
 
     // Fade in from black
-    Display::FadeIn(500);
+    Display::FadeIn(Int32(500));
 
     while (_running) {
         // Wait for vertical sync to limit frame rate (~60fps)
@@ -1317,8 +1335,8 @@ void Desktop::Run() {
                 DrawIcons();
 
                 // Paint children except dragged window
-                for (int i = 0; i < _children.Length(); i++) {
-                    Control* child = _children[i];
+                for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1) {
+                    Control* child = _children[static_cast<int>(i)];
                     if (child && child != _dragWindow) {
                         PaintEventArgs childArgs(&g, child->ScreenBounds());
                         child->OnPaint(childArgs);
@@ -1350,8 +1368,8 @@ void Desktop::Run() {
             GraphicsBuffer::FlushFrameBuffer();
         } else {
             // Just update cursor position
-            bool cursorMoved = (_cursorX != _prevCursorX || _cursorY != _prevCursorY);
-            if (cursorMoved) {
+            Boolean cursorMoved = Boolean(_cursorX != _prevCursorX || _cursorY != _prevCursorY);
+            if (static_cast<bool>(cursorMoved)) {
                 RestoreCursor();
                 SaveUnderCursor();
                 DrawCursor();
@@ -1361,7 +1379,7 @@ void Desktop::Run() {
     }
 
     // Fade out to black
-    Display::FadeOut(500);
+    Display::FadeOut(Int32(500));
 }
 
 void Desktop::Stop() {
@@ -1413,40 +1431,44 @@ Window::~Window() {
 void Window::UpdateClientBounds() {
     // Client area is relative to window bounds (not screen)
     // Outer frame: 2 pixels, title bar: 20 pixels, client sunken border: 1 pixel
-    int bw = static_cast<int>(_bounds.width);
-    int bh = static_cast<int>(_bounds.height);
+    Int32 bw = _bounds.width;
+    Int32 bh = _bounds.height;
     _clientBounds = Rectangle(
-        FRAME_WIDTH,
-        TITLE_BAR_HEIGHT + FRAME_WIDTH,
-        bw - FRAME_WIDTH * 2,
-        bh - TITLE_BAR_HEIGHT - FRAME_WIDTH * 2
+        Int32(FRAME_WIDTH),
+        Int32(TITLE_BAR_HEIGHT + FRAME_WIDTH),
+        Int32(static_cast<int>(bw) - FRAME_WIDTH * 2),
+        Int32(static_cast<int>(bh) - TITLE_BAR_HEIGHT - FRAME_WIDTH * 2)
     );
 }
 
 void Window::OnPaint(PaintEventArgs& e) {
     Rectangle screen = ScreenBounds();
-    int sx = static_cast<int>(screen.x);
-    int sy = static_cast<int>(screen.y);
-    int sw = static_cast<int>(screen.width);
-    int sh = static_cast<int>(screen.height);
+    Int32 sx = screen.x;
+    Int32 sy = screen.y;
+    Int32 sw = screen.width;
+    Int32 sh = screen.height;
 
     // Draw window frame with Window border style (2-pixel thick 3D border)
     e.graphics->FillRectangle(screen, BorderStyle::Window);
 
     // Draw title bar - blue if focused, dark gray if not
-    Rectangle titleBar(sx + 2, sy + 2, sw - 4, TITLE_BAR_HEIGHT);
+    Rectangle titleBar(Int32(static_cast<int>(sx) + 2), Int32(static_cast<int>(sy) + 2),
+                       Int32(static_cast<int>(sw) - 4), Int32(TITLE_BAR_HEIGHT));
     Color titleColor = _isFocused ? Color::DarkBlue : Color::DarkGray;
     e.graphics->FillRectangle(titleBar, titleColor);
 
     // Draw title text (white, centered vertically, left-aligned with padding)
-    if (_title.Length() > 0 && _font.IsValid()) {
-        int textX = sx + 6;  // Left padding
-        int textY = sy + 2 + (TITLE_BAR_HEIGHT - static_cast<int>(_font.Height())) / 2;
-        e.graphics->DrawString(_title, _font, Color::White, Int32(textX), Int32(textY));
+    if (_title.Length() > Int32(0) && static_cast<bool>(_font.IsValid())) {
+        Int32 textX = Int32(static_cast<int>(sx) + 6);  // Left padding
+        Int32 textY = Int32(static_cast<int>(sy) + 2 + (TITLE_BAR_HEIGHT - static_cast<int>(_font.Height())) / 2);
+        e.graphics->DrawString(_title, _font, Color::White, textX, textY);
     }
 
     // Draw client area with sunken border effect
-    Rectangle clientFrame(sx + 2, sy + TITLE_BAR_HEIGHT + 2, sw - 4, sh - TITLE_BAR_HEIGHT - 4);
+    Rectangle clientFrame(Int32(static_cast<int>(sx) + 2),
+                          Int32(static_cast<int>(sy) + TITLE_BAR_HEIGHT + 2),
+                          Int32(static_cast<int>(sw) - 4),
+                          Int32(static_cast<int>(sh) - TITLE_BAR_HEIGHT - 4));
     e.graphics->FillRectangle(clientFrame, BorderStyle::Sunken);
 
     // Paint children in client area
@@ -1474,31 +1496,32 @@ void TaskBar::OnStartButtonClick(Button* sender, void* userData) {
 }
 
 TaskBar::TaskBar(Control* parent, StartMenu* startMenu)
-    : Control(parent, Rectangle(0, 0, 0, 28))  // Temporary bounds, updated below
+    : Control(parent, Rectangle(Int32(0), Int32(0), Int32(0), Int32(28)))  // Temporary bounds, updated below
     , _startButton(nullptr)
     , _startMenu(startMenu)
     , _desktop(nullptr)
     , _windowButtons() {
     // Get screen dimensions from current display mode
     Display current = Display::GetCurrent();
-    int screenWidth = static_cast<int>(current.Width());
-    int screenHeight = static_cast<int>(current.Height());
-    int taskBarHeight = 28;
+    Int32 screenWidth = Int32(static_cast<int>(current.Width()));
+    Int32 screenHeight = Int32(static_cast<int>(current.Height()));
+    Int32 taskBarHeight = Int32(28);
 
     // Position taskbar at bottom of screen
-    SetBounds(0, screenHeight - taskBarHeight, screenWidth, taskBarHeight);
+    SetBounds(Int32(0), Int32(static_cast<int>(screenHeight) - static_cast<int>(taskBarHeight)),
+              screenWidth, taskBarHeight);
 
     // Configure layout: row direction, fixed height, items centered vertically
     _layout.direction = FlexDirection::Row;
     _layout.alignItems = AlignItems::Center;
-    _layout.gap = 2;
+    _layout.gap = Int32(2);
     _layout.heightMode = SizeMode::Fixed;
-    _layout.paddingLeft = 4;
-    _layout.paddingTop = 4;
-    _layout.paddingBottom = 4;
+    _layout.paddingLeft = Int32(4);
+    _layout.paddingTop = Int32(4);
+    _layout.paddingBottom = Int32(4);
 
     // Create Start button (positioned relative to taskbar, not screen)
-    _startButton = new Button(this, Rectangle(4, 4, 54, 20));
+    _startButton = new Button(this, Rectangle(Int32(4), Int32(4), Int32(54), Int32(20)));
     _startButton->SetText("Start");
     _startButton->SetOnClick(OnStartButtonClick, this);
 
@@ -1516,26 +1539,26 @@ void TaskBar::AddWindowButton(Window* window) {
     if (!window) return;
 
     // Check if button already exists
-    for (int i = 0; i < _windowButtons.Length(); i++) {
-        if (_windowButtons[i]->GetWindow() == window) {
+    for (Int32 i = Int32(0); static_cast<int>(i) < _windowButtons.Length(); i += 1) {
+        if (_windowButtons[static_cast<int>(i)]->GetWindow() == window) {
             return;
         }
     }
 
     // Calculate button position (relative to taskbar, not screen)
-    int buttonX = WINDOW_BUTTON_START_X + _windowButtons.Length() *
-                  (WINDOW_BUTTON_WIDTH + WINDOW_BUTTON_SPACING);
-    int buttonY = 4;  // 4 pixels from top of taskbar
+    Int32 buttonX = Int32(WINDOW_BUTTON_START_X + _windowButtons.Length() *
+                  (WINDOW_BUTTON_WIDTH + WINDOW_BUTTON_SPACING));
+    Int32 buttonY = Int32(4);  // 4 pixels from top of taskbar
 
     // Create new button
     TaskBarButton* btn = new TaskBarButton(this,
-        Rectangle(buttonX, buttonY, WINDOW_BUTTON_WIDTH, WINDOW_BUTTON_HEIGHT),
+        Rectangle(buttonX, buttonY, Int32(WINDOW_BUTTON_WIDTH), Int32(WINDOW_BUTTON_HEIGHT)),
         window);
 
     // Add to array
-    int oldLen = _windowButtons.Length();
-    _windowButtons.Resize(oldLen + 1);
-    _windowButtons[oldLen] = btn;
+    Int32 oldLen = Int32(_windowButtons.Length());
+    _windowButtons.Resize(static_cast<int>(oldLen) + 1);
+    _windowButtons[static_cast<int>(oldLen)] = btn;
 
     RefreshWindowButtons();
     Invalidate();
@@ -1544,13 +1567,13 @@ void TaskBar::AddWindowButton(Window* window) {
 void TaskBar::RemoveWindowButton(Window* window) {
     if (!window) return;
 
-    for (int i = 0; i < _windowButtons.Length(); i++) {
-        if (_windowButtons[i]->GetWindow() == window) {
-            TaskBarButton* btn = _windowButtons[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < _windowButtons.Length(); i += 1) {
+        if (_windowButtons[static_cast<int>(i)]->GetWindow() == window) {
+            TaskBarButton* btn = _windowButtons[static_cast<int>(i)];
 
             // Remove from array
-            for (int j = i; j < _windowButtons.Length() - 1; j++) {
-                _windowButtons[j] = _windowButtons[j + 1];
+            for (Int32 j = i; static_cast<int>(j) < _windowButtons.Length() - 1; j += 1) {
+                _windowButtons[static_cast<int>(j)] = _windowButtons[static_cast<int>(j) + 1];
             }
             _windowButtons.Resize(_windowButtons.Length() - 1);
 
@@ -1559,11 +1582,11 @@ void TaskBar::RemoveWindowButton(Window* window) {
             delete btn;
 
             // Reposition remaining buttons (relative to taskbar)
-            for (int k = 0; k < _windowButtons.Length(); k++) {
-                int buttonX = WINDOW_BUTTON_START_X + k *
-                              (WINDOW_BUTTON_WIDTH + WINDOW_BUTTON_SPACING);
-                _windowButtons[k]->SetBounds(buttonX, 4,
-                    WINDOW_BUTTON_WIDTH, WINDOW_BUTTON_HEIGHT);
+            for (Int32 k = Int32(0); static_cast<int>(k) < _windowButtons.Length(); k += 1) {
+                Int32 buttonX = Int32(WINDOW_BUTTON_START_X + static_cast<int>(k) *
+                              (WINDOW_BUTTON_WIDTH + WINDOW_BUTTON_SPACING));
+                _windowButtons[static_cast<int>(k)]->SetBounds(buttonX, Int32(4),
+                    Int32(WINDOW_BUTTON_WIDTH), Int32(WINDOW_BUTTON_HEIGHT));
             }
 
             Invalidate();
@@ -1576,17 +1599,17 @@ void TaskBar::RefreshWindowButtons() {
     if (!_desktop) return;
 
     Window* focused = _desktop->FocusedWindow();
-    for (int i = 0; i < _windowButtons.Length(); i++) {
-        TaskBarButton* btn = _windowButtons[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < _windowButtons.Length(); i += 1) {
+        TaskBarButton* btn = _windowButtons[static_cast<int>(i)];
         btn->SetPressed(Boolean(btn->GetWindow() == focused));
     }
     Invalidate();
 }
 
 TaskBarButton* TaskBar::FindButtonForWindow(Window* window) const {
-    for (int i = 0; i < _windowButtons.Length(); i++) {
-        if (_windowButtons[i]->GetWindow() == window) {
-            return _windowButtons[i];
+    for (Int32 i = Int32(0); static_cast<int>(i) < _windowButtons.Length(); i += 1) {
+        if (_windowButtons[static_cast<int>(i)]->GetWindow() == window) {
+            return _windowButtons[static_cast<int>(i)];
         }
     }
     return nullptr;
@@ -1594,15 +1617,15 @@ TaskBarButton* TaskBar::FindButtonForWindow(Window* window) const {
 
 void TaskBar::OnPaint(PaintEventArgs& e) {
     Rectangle screen = ScreenBounds();
-    int sx = static_cast<int>(screen.x);
-    int sy = static_cast<int>(screen.y);
-    int sw = static_cast<int>(screen.width);
+    Int32 sx = screen.x;
+    Int32 sy = screen.y;
+    Int32 sw = screen.width;
 
     // Draw taskbar background (gray)
     e.graphics->FillRectangle(screen, Color::Gray);
 
     // Draw white highlight line at top
-    e.graphics->DrawLine(sx, sy, sx + sw - 1, sy, Color::White);
+    e.graphics->DrawLine(sx, sy, Int32(static_cast<int>(sx) + static_cast<int>(sw) - 1), sy, Color::White);
 
     // Paint children (Start button, window buttons, etc.)
     OnPaintClient(e);
@@ -1633,33 +1656,33 @@ void Button::SetOnClick(ClickEventHandler handler, void* userData) {
 
 void Button::OnPaint(PaintEventArgs& e) {
     Rectangle screen = ScreenBounds();
-    int sx = static_cast<int>(screen.x);
-    int sy = static_cast<int>(screen.y);
-    int sw = static_cast<int>(screen.width);
-    int sh = static_cast<int>(screen.height);
+    Int32 sx = screen.x;
+    Int32 sy = screen.y;
+    Int32 sw = screen.width;
+    Int32 sh = screen.height;
 
     // Draw with appropriate border style based on pressed state
     // Visual state is toggled OR mouse down
-    bool visualPressed = _isToggled || _isMouseDown;
-    if (visualPressed) {
+    Boolean visualPressed = Boolean(_isToggled || _isMouseDown);
+    if (static_cast<bool>(visualPressed)) {
         e.graphics->FillRectangle(screen, BorderStyle::SunkenDouble);
     } else {
         e.graphics->FillRectangle(screen, BorderStyle::RaisedDouble);
     }
 
     // Draw button text (centered)
-    if (_text.Length() > 0 && _font.IsValid()) {
+    if (_text.Length() > Int32(0) && static_cast<bool>(_font.IsValid())) {
         Drawing::Size textSize = _font.MeasureString(_text);
-        int textW = static_cast<int>(textSize.width);
-        int textH = static_cast<int>(textSize.height);
-        int textX = sx + (sw - textW) / 2;
-        int textY = sy + (sh - textH) / 2;
+        Int32 textW = textSize.width;
+        Int32 textH = textSize.height;
+        Int32 textX = Int32(static_cast<int>(sx) + (static_cast<int>(sw) - static_cast<int>(textW)) / 2);
+        Int32 textY = Int32(static_cast<int>(sy) + (static_cast<int>(sh) - static_cast<int>(textH)) / 2);
         // Offset by 1 pixel when pressed for 3D effect
-        if (visualPressed) {
-            textX++;
-            textY++;
+        if (static_cast<bool>(visualPressed)) {
+            textX = Int32(static_cast<int>(textX) + 1);
+            textY = Int32(static_cast<int>(textY) + 1);
         }
-        e.graphics->DrawString(_text, _font, Color::Black, Int32(textX), Int32(textY));
+        e.graphics->DrawString(_text, _font, Color::Black, textX, textY);
     }
 
     // Paint children
@@ -1667,27 +1690,27 @@ void Button::OnPaint(PaintEventArgs& e) {
 }
 
 void Button::OnMouse(MouseEventArgs& e) {
-    bool wasVisuallyPressed = _isToggled || _isMouseDown;
-    int ex = static_cast<int>(e.x);
-    int ey = static_cast<int>(e.y);
-    bool isOver = static_cast<bool>(HitTest(ex, ey));
-    bool leftDown = static_cast<bool>(e.leftButton);
+    Boolean wasVisuallyPressed = Boolean(_isToggled || _isMouseDown);
+    Int32 ex = e.x;
+    Int32 ey = e.y;
+    Boolean isOver = HitTest(ex, ey);
+    Boolean leftDown = e.leftButton;
 
     // Only track mouse-down state, don't affect toggle state
-    _isMouseDown = leftDown && isOver;
+    _isMouseDown = static_cast<bool>(leftDown) && static_cast<bool>(isOver);
 
     // Detect click: was pressed, now released while still over button
-    if (_wasMouseDown && !leftDown && isOver) {
+    if (_wasMouseDown && !static_cast<bool>(leftDown) && static_cast<bool>(isOver)) {
         // Fire click event
         if (_onClick) {
             _onClick(this, _onClickUserData);
         }
     }
 
-    _wasMouseDown = leftDown && isOver;
+    _wasMouseDown = static_cast<bool>(leftDown) && static_cast<bool>(isOver);
 
-    bool nowVisuallyPressed = _isToggled || _isMouseDown;
-    if (nowVisuallyPressed != wasVisuallyPressed) {
+    Boolean nowVisuallyPressed = Boolean(_isToggled || _isMouseDown);
+    if (static_cast<bool>(nowVisuallyPressed) != static_cast<bool>(wasVisuallyPressed)) {
         Invalidate();
     }
 }
@@ -1720,41 +1743,41 @@ void Picture::SetImage(const Image& image) {
 }
 
 void Picture::OnPaint(PaintEventArgs& e) {
-    int iw = static_cast<int>(_image.Width());
-    int ih = static_cast<int>(_image.Height());
+    Int32 iw = _image.Width();
+    Int32 ih = _image.Height();
 
-    if (iw > 0 && ih > 0) {
+    if (iw > Int32(0) && ih > Int32(0)) {
         Rectangle screen = ScreenBounds();
         Rectangle visible = VisibleBounds();
 
-        int vw = static_cast<int>(visible.width);
-        int vh = static_cast<int>(visible.height);
+        Int32 vw = visible.width;
+        Int32 vh = visible.height;
 
         // Check if anything is visible
-        if (vw <= 0 || vh <= 0) {
+        if (vw <= Int32(0) || vh <= Int32(0)) {
             return;
         }
 
-        int sx = static_cast<int>(screen.x);
-        int sy = static_cast<int>(screen.y);
-        int vx = static_cast<int>(visible.x);
-        int vy = static_cast<int>(visible.y);
+        Int32 sx = screen.x;
+        Int32 sy = screen.y;
+        Int32 vx = visible.x;
+        Int32 vy = visible.y;
 
         // Calculate which part of the image to draw
-        int srcX = vx - sx;
-        int srcY = vy - sy;
-        int drawWidth = vw;
-        int drawHeight = vh;
+        Int32 srcX = Int32(static_cast<int>(vx) - static_cast<int>(sx));
+        Int32 srcY = Int32(static_cast<int>(vy) - static_cast<int>(sy));
+        Int32 drawWidth = vw;
+        Int32 drawHeight = vh;
 
         // Clamp to image dimensions
-        if (srcX + drawWidth > iw) {
-            drawWidth = iw - srcX;
+        if (Int32(static_cast<int>(srcX) + static_cast<int>(drawWidth)) > iw) {
+            drawWidth = Int32(static_cast<int>(iw) - static_cast<int>(srcX));
         }
-        if (srcY + drawHeight > ih) {
-            drawHeight = ih - srcY;
+        if (Int32(static_cast<int>(srcY) + static_cast<int>(drawHeight)) > ih) {
+            drawHeight = Int32(static_cast<int>(ih) - static_cast<int>(srcY));
         }
 
-        if (drawWidth > 0 && drawHeight > 0 && srcX >= 0 && srcY >= 0) {
+        if (drawWidth > Int32(0) && drawHeight > Int32(0) && srcX >= Int32(0) && srcY >= Int32(0)) {
             Image region = _image.GetRegion(srcX, srcY, drawWidth, drawHeight);
             e.graphics->DrawImage(region, vx, vy);
         }
@@ -1766,16 +1789,16 @@ void Picture::OnPaint(PaintEventArgs& e) {
 
 MeasureResult Picture::GetPreferredSize() const {
     // Pictures prefer their image dimensions if available
-    int w = static_cast<int>(_image.Width());
-    int h = static_cast<int>(_image.Height());
+    Int32 w = _image.Width();
+    Int32 h = _image.Height();
 
     // Fall back to bounds if no image
-    if (w <= 0 || h <= 0) {
-        w = static_cast<int>(_bounds.width);
-        h = static_cast<int>(_bounds.height);
+    if (w <= Int32(0) || h <= Int32(0)) {
+        w = _bounds.width;
+        h = _bounds.height;
     }
 
-    return MeasureResult(Int32(w), Int32(h));
+    return MeasureResult(w, h);
 }
 
 /******************************************************************************/
@@ -1800,53 +1823,53 @@ void SpectrumControl::SetBaseColor(const Color& color) {
 }
 
 void SpectrumControl::RegenerateGradient() {
-    int w = static_cast<int>(_bounds.width);
-    int h = static_cast<int>(_bounds.height);
+    Int32 w = _bounds.width;
+    Int32 h = _bounds.height;
 
-    if (w <= 0 || h <= 0) return;
+    if (w <= Int32(0) || h <= Int32(0)) return;
 
-    _gradient = Image(Int32(w), Int32(h));
+    _gradient = Image(w, h);
 
     // Generate gradient: white at top, base color in middle, black at bottom
-    int midY = h / 2;
+    Int32 midY = Int32(static_cast<int>(h) / 2);
 
-    for (int y = 0; y < h; y++) {
+    for (Int32 y = Int32(0); y < h; y += 1) {
         Color lineColor;
 
         if (y <= midY) {
             // Top half: white to base color
-            float t = (midY > 0) ? static_cast<float>(y) / midY : 0.0f;
+            float t = (static_cast<int>(midY) > 0) ? static_cast<float>(static_cast<int>(y)) / static_cast<int>(midY) : 0.0f;
             lineColor = Color::Lerp(Color::White, _baseColor, t);
         } else {
             // Bottom half: base color to black
-            float t = (h - 1 - midY > 0) ?
-                      static_cast<float>(y - midY) / (h - 1 - midY) : 0.0f;
+            float t = (static_cast<int>(h) - 1 - static_cast<int>(midY) > 0) ?
+                      static_cast<float>(static_cast<int>(y) - static_cast<int>(midY)) / (static_cast<int>(h) - 1 - static_cast<int>(midY)) : 0.0f;
             lineColor = Color::Lerp(_baseColor, Color::Black, t);
         }
 
         // Fill entire row with this color
-        for (int x = 0; x < w; x++) {
-            _gradient.SetPixel(Int32(x), Int32(y), lineColor);
+        for (Int32 x = Int32(0); x < w; x += 1) {
+            _gradient.SetPixel(x, y, lineColor);
         }
     }
 }
 
 Color SpectrumControl::GetColorAtY(Int32 y) const {
-    int yi = static_cast<int>(y);
-    int h = static_cast<int>(_bounds.height);
+    Int32 yi = y;
+    Int32 h = _bounds.height;
 
-    if (yi < 0) yi = 0;
-    if (yi >= h) yi = h - 1;
-    if (h <= 0) return _baseColor;
+    if (yi < Int32(0)) yi = Int32(0);
+    if (yi >= h) yi = Int32(static_cast<int>(h) - 1);
+    if (h <= Int32(0)) return _baseColor;
 
-    int midY = h / 2;
+    Int32 midY = Int32(static_cast<int>(h) / 2);
 
     if (yi <= midY) {
-        float t = (midY > 0) ? static_cast<float>(yi) / midY : 0.0f;
+        float t = (static_cast<int>(midY) > 0) ? static_cast<float>(static_cast<int>(yi)) / static_cast<int>(midY) : 0.0f;
         return Color::Lerp(Color::White, _baseColor, t);
     } else {
-        float t = (h - 1 - midY > 0) ?
-                  static_cast<float>(yi - midY) / (h - 1 - midY) : 0.0f;
+        float t = (static_cast<int>(h) - 1 - static_cast<int>(midY) > 0) ?
+                  static_cast<float>(static_cast<int>(yi) - static_cast<int>(midY)) / (static_cast<int>(h) - 1 - static_cast<int>(midY)) : 0.0f;
         return Color::Lerp(_baseColor, Color::Black, t);
     }
 }
@@ -1856,16 +1879,16 @@ void SpectrumControl::OnPaint(PaintEventArgs& e) {
     if (!fb) return;
 
     Rectangle screen = ScreenBounds();
-    int sx = static_cast<int>(screen.x);
-    int sy = static_cast<int>(screen.y);
-    int gw = static_cast<int>(_gradient.Width());
-    int gh = static_cast<int>(_gradient.Height());
+    Int32 sx = screen.x;
+    Int32 sy = screen.y;
+    Int32 gw = _gradient.Width();
+    Int32 gh = _gradient.Height();
 
     // Copy gradient directly to framebuffer image
     // The buffer writer will handle dithering if needed for VGA modes
     Image& img = fb->GetImage();
-    if (gw > 0 && gh > 0) {
-        img.CopyFrom(_gradient, Int32(sx), Int32(sy));
+    if (gw > Int32(0) && gh > Int32(0)) {
+        img.CopyFrom(_gradient, sx, sy);
     }
 
     // Paint children (if any)
@@ -1907,15 +1930,15 @@ TaskBarButton::~TaskBarButton() {
 
 void TaskBarButton::OnPaint(PaintEventArgs& e) {
     Rectangle screen = ScreenBounds();
-    int x = static_cast<int>(screen.x);
-    int y = static_cast<int>(screen.y);
-    int w = static_cast<int>(screen.width);
-    int h = static_cast<int>(screen.height);
+    Int32 x = screen.x;
+    Int32 y = screen.y;
+    Int32 w = screen.width;
+    Int32 h = screen.height;
 
     // Check if button is visually pressed (toggled OR mouse down)
-    bool visualPressed = static_cast<bool>(IsPressed());
+    Boolean visualPressed = IsPressed();
 
-    if (visualPressed) {
+    if (static_cast<bool>(visualPressed)) {
         // Pressed state: use checkerboard hatch pattern (Windows 95 style)
         // Fill with hatch pattern: 50% checkerboard with Gray and White
         e.graphics->FillRectangle(x, y, w, h,
@@ -1923,15 +1946,15 @@ void TaskBarButton::OnPaint(PaintEventArgs& e) {
 
         // Draw sunken border on top of hatch pattern
         // Outer border: Black top/left, White bottom/right
-        e.graphics->DrawLine(x, y, x + w - 1, y, Color::Black);           // Top outer
-        e.graphics->DrawLine(x, y, x, y + h - 1, Color::Black);           // Left outer
-        e.graphics->DrawLine(x + w - 1, y, x + w - 1, y + h - 1, Color::White);   // Right outer
-        e.graphics->DrawLine(x, y + h - 1, x + w - 1, y + h - 1, Color::White);   // Bottom outer
+        e.graphics->DrawLine(x, y, Int32(static_cast<int>(x) + static_cast<int>(w) - 1), y, Color::Black);           // Top outer
+        e.graphics->DrawLine(x, y, x, Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::Black);           // Left outer
+        e.graphics->DrawLine(Int32(static_cast<int>(x) + static_cast<int>(w) - 1), y, Int32(static_cast<int>(x) + static_cast<int>(w) - 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::White);   // Right outer
+        e.graphics->DrawLine(x, Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 1), Color::White);   // Bottom outer
         // Inner border: DarkGray top/left, Gray bottom/right
-        e.graphics->DrawLine(x + 1, y + 1, x + w - 2, y + 1, Color::DarkGray);    // Top inner
-        e.graphics->DrawLine(x + 1, y + 1, x + 1, y + h - 2, Color::DarkGray);    // Left inner
-        e.graphics->DrawLine(x + w - 2, y + 1, x + w - 2, y + h - 2, Color::Gray);     // Right inner
-        e.graphics->DrawLine(x + 1, y + h - 2, x + w - 2, y + h - 2, Color::Gray);     // Bottom inner
+        e.graphics->DrawLine(Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + 1), Color::DarkGray);    // Top inner
+        e.graphics->DrawLine(Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + 1), Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Color::DarkGray);    // Left inner
+        e.graphics->DrawLine(Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + 1), Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Color::Gray);     // Right inner
+        e.graphics->DrawLine(Int32(static_cast<int>(x) + 1), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Int32(static_cast<int>(x) + static_cast<int>(w) - 2), Int32(static_cast<int>(y) + static_cast<int>(h) - 2), Color::Gray);     // Bottom inner
     } else {
         // Normal state: use standard raised button style
         e.graphics->FillRectangle(screen, BorderStyle::RaisedDouble);
@@ -1941,15 +1964,15 @@ void TaskBarButton::OnPaint(PaintEventArgs& e) {
     if (_window) {
         const String& title = _window->Title();
         const Font& font = _window->GetFont();
-        if (title.Length() > 0 && font.IsValid()) {
-            int textX = x + 4;  // Left padding
-            int textY = y + (h - static_cast<int>(font.Height())) / 2;
+        if (title.Length() > Int32(0) && static_cast<bool>(font.IsValid())) {
+            Int32 textX = Int32(static_cast<int>(x) + 4);  // Left padding
+            Int32 textY = Int32(static_cast<int>(y) + (static_cast<int>(h) - static_cast<int>(font.Height())) / 2);
             // Offset by 1 pixel when pressed for 3D effect
-            if (visualPressed) {
-                textX++;
-                textY++;
+            if (static_cast<bool>(visualPressed)) {
+                textX = Int32(static_cast<int>(textX) + 1);
+                textY = Int32(static_cast<int>(textY) + 1);
             }
-            e.graphics->DrawString(title, font, Color::Black, Int32(textX), Int32(textY));
+            e.graphics->DrawString(title, font, Color::Black, textX, textY);
         }
     }
 
@@ -1985,26 +2008,26 @@ void MenuItem::SetOnClick(ClickEventHandler handler, void* userData) {
 
 void MenuItem::OnPaint(PaintEventArgs& e) {
     Rectangle screen = ScreenBounds();
-    int sx = static_cast<int>(screen.x);
-    int sy = static_cast<int>(screen.y);
-    int sh = static_cast<int>(screen.height);
+    Int32 sx = screen.x;
+    Int32 sy = screen.y;
+    Int32 sh = screen.height;
 
     // Draw background
     Color bgColor = _isHighlighted ? Color::DarkBlue : Color::Gray;
     e.graphics->FillRectangle(screen, bgColor);
 
     // Draw icon if present
-    int iw = static_cast<int>(_icon.Width());
-    int ih = static_cast<int>(_icon.Height());
-    if (iw > 0 && ih > 0) {
+    Int32 iw = _icon.Width();
+    Int32 ih = _icon.Height();
+    if (iw > Int32(0) && ih > Int32(0)) {
         // Center icon vertically in item
-        int iconY = sy + (sh - ih) / 2;
-        int iconX = sx + ICON_MARGIN;
+        Int32 iconY = Int32(static_cast<int>(sy) + (static_cast<int>(sh) - static_cast<int>(ih)) / 2);
+        Int32 iconX = Int32(static_cast<int>(sx) + ICON_MARGIN);
 
         GraphicsBuffer* fb = GraphicsBuffer::GetFrameBuffer();
         if (fb) {
             Image& fbImg = fb->GetImage();
-            fbImg.CopyFromWithAlpha(_icon, iconX, iconY);
+            fbImg.CopyFromWithAlpha(_icon, static_cast<int>(iconX), static_cast<int>(iconY));
         }
     }
 
@@ -2013,22 +2036,22 @@ void MenuItem::OnPaint(PaintEventArgs& e) {
 }
 
 void MenuItem::OnMouse(MouseEventArgs& e) {
-    int ex = static_cast<int>(e.x);
-    int ey = static_cast<int>(e.y);
-    bool isOver = static_cast<bool>(HitTest(ex, ey));
-    bool leftDown = static_cast<bool>(e.leftButton);
+    Int32 ex = e.x;
+    Int32 ey = e.y;
+    Boolean isOver = HitTest(ex, ey);
+    Boolean leftDown = e.leftButton;
 
-    bool wasHighlighted = _isHighlighted;
-    _isHighlighted = isOver;
+    Boolean wasHighlighted = Boolean(_isHighlighted);
+    _isHighlighted = static_cast<bool>(isOver);
 
     // Fire click on release while over
     static bool wasPressed = false;
-    if (wasPressed && !leftDown && isOver && _onClick) {
+    if (wasPressed && !static_cast<bool>(leftDown) && static_cast<bool>(isOver) && _onClick) {
         _onClick(reinterpret_cast<Button*>(this), _onClickUserData);
     }
-    wasPressed = leftDown && isOver;
+    wasPressed = static_cast<bool>(leftDown) && static_cast<bool>(isOver);
 
-    if (_isHighlighted != wasHighlighted) {
+    if (_isHighlighted != static_cast<bool>(wasHighlighted)) {
         Invalidate();
     }
 }
@@ -2044,39 +2067,39 @@ StartMenu::StartMenu(Desktop* desktop)
     , _items() {
     // Get screen dimensions
     Display current = Display::GetCurrent();
-    int screenHeight = static_cast<int>(current.Height());
-    int taskBarHeight = 28;
+    Int32 screenHeight = Int32(static_cast<int>(current.Height()));
+    Int32 taskBarHeight = Int32(28);
 
     // Calculate menu height and position
-    int menuHeight = ITEM_COUNT * ITEM_HEIGHT + 4;  // +4 for border
-    int menuX = 0;
-    int menuY = screenHeight - taskBarHeight - menuHeight;
+    Int32 menuHeight = Int32(ITEM_COUNT * ITEM_HEIGHT + 4);  // +4 for border
+    Int32 menuX = Int32(0);
+    Int32 menuY = Int32(static_cast<int>(screenHeight) - static_cast<int>(taskBarHeight) - static_cast<int>(menuHeight));
 
     // Set bounds (positioned above taskbar, aligned with Start button)
-    _bounds = Rectangle(menuX, menuY, MENU_WIDTH, menuHeight);
-    _clientBounds = Rectangle(SIDEBAR_WIDTH, 2, MENU_WIDTH - SIDEBAR_WIDTH - 2, menuHeight - 4);
+    _bounds = Rectangle(menuX, menuY, Int32(MENU_WIDTH), menuHeight);
+    _clientBounds = Rectangle(Int32(SIDEBAR_WIDTH), Int32(2), Int32(MENU_WIDTH - SIDEBAR_WIDTH - 2), Int32(static_cast<int>(menuHeight) - 4));
 
     // Configure layout: column direction for menu items
     _layout.direction = FlexDirection::Column;
     _layout.alignItems = AlignItems::Stretch;
-    _layout.gap = 0;
-    _layout.paddingLeft = SIDEBAR_WIDTH;
-    _layout.paddingTop = 2;
-    _layout.paddingRight = 2;
-    _layout.paddingBottom = 2;
+    _layout.gap = Int32(0);
+    _layout.paddingLeft = Int32(SIDEBAR_WIDTH);
+    _layout.paddingTop = Int32(2);
+    _layout.paddingRight = Int32(2);
+    _layout.paddingBottom = Int32(2);
 
     // Create menu items with RELATIVE positioning (to parent's client area)
     _items.Resize(ITEM_COUNT);
-    for (int i = 0; i < ITEM_COUNT; i++) {
+    for (Int32 i = Int32(0); static_cast<int>(i) < ITEM_COUNT; i += 1) {
         // Items positioned relative to client area (after sidebar)
-        int itemY = i * ITEM_HEIGHT;  // Relative Y position within client
-        int itemX = 0;                // Relative X position within client
-        _items[i] = new MenuItem(this, Rectangle(itemX, itemY,
-            MENU_WIDTH - SIDEBAR_WIDTH - 2, ITEM_HEIGHT), i);
+        Int32 itemY = Int32(static_cast<int>(i) * ITEM_HEIGHT);  // Relative Y position within client
+        Int32 itemX = Int32(0);                // Relative X position within client
+        _items[static_cast<int>(i)] = new MenuItem(this, Rectangle(itemX, itemY,
+            Int32(MENU_WIDTH - SIDEBAR_WIDTH - 2), Int32(ITEM_HEIGHT)), static_cast<int>(i));
 
         // Menu items have fixed height
-        _items[i]->Layout().heightMode = SizeMode::Fixed;
-        _items[i]->Layout().widthMode = SizeMode::Fill;
+        _items[static_cast<int>(i)]->Layout().heightMode = SizeMode::Fixed;
+        _items[static_cast<int>(i)]->Layout().widthMode = SizeMode::Fill;
     }
 
     // Load icons
@@ -2110,10 +2133,10 @@ void StartMenu::LoadIcons() {
         Drawing::SystemIcons::DialogQuestion1 // Log Off
     };
 
-    for (int i = 0; i < ITEM_COUNT && i < _items.Length(); i++) {
+    for (Int32 i = Int32(0); static_cast<int>(i) < ITEM_COUNT && static_cast<int>(i) < _items.Length(); i += 1) {
         try {
-            Image icon = Drawing::SystemIcons::Load(iconNames[i], Size::IconSmall);
-            _items[i]->SetIcon(icon);
+            Image icon = Drawing::SystemIcons::Load(iconNames[static_cast<int>(i)], Size::IconSmall);
+            _items[static_cast<int>(i)]->SetIcon(icon);
         } catch (...) {
             // Icon loading failed - item will show without icon
         }
@@ -2126,7 +2149,7 @@ void StartMenu::Show() {
     if (_desktop) {
         TaskBar* taskBar = _desktop->GetTaskBar();
         if (taskBar && taskBar->StartButton()) {
-            taskBar->StartButton()->SetPressed(true);
+            taskBar->StartButton()->SetPressed(Boolean(true));
         }
     }
     Invalidate();
@@ -2138,7 +2161,7 @@ void StartMenu::Hide() {
     if (_desktop) {
         TaskBar* taskBar = _desktop->GetTaskBar();
         if (taskBar && taskBar->StartButton()) {
-            taskBar->StartButton()->SetPressed(false);
+            taskBar->StartButton()->SetPressed(Boolean(false));
         }
     }
     Invalidate();
@@ -2156,15 +2179,16 @@ void StartMenu::OnPaint(PaintEventArgs& e) {
     if (!_isVisible) return;
 
     Rectangle screen = ScreenBounds();
-    int sx = static_cast<int>(screen.x);
-    int sy = static_cast<int>(screen.y);
-    int sh = static_cast<int>(screen.height);
+    Int32 sx = screen.x;
+    Int32 sy = screen.y;
+    Int32 sh = screen.height;
 
     // Draw raised border
     e.graphics->FillRectangle(screen, BorderStyle::RaisedDouble);
 
     // Draw blue sidebar on left (Windows 95 style)
-    Rectangle sidebar(sx + 2, sy + 2, SIDEBAR_WIDTH - 2, sh - 4);
+    Rectangle sidebar(Int32(static_cast<int>(sx) + 2), Int32(static_cast<int>(sy) + 2),
+                      Int32(SIDEBAR_WIDTH - 2), Int32(static_cast<int>(sh) - 4));
     e.graphics->FillRectangle(sidebar, Color::DarkBlue);
 
     // Paint menu items
@@ -2174,9 +2198,9 @@ void StartMenu::OnPaint(PaintEventArgs& e) {
 void StartMenu::OnMouse(MouseEventArgs& e) {
     // Propagate mouse events to ALL menu items so they can update highlight state
     // (not just the one under cursor, so items can un-highlight when mouse leaves)
-    for (int i = 0; i < _items.Length(); i++) {
-        if (_items[i]) {
-            _items[i]->OnMouse(e);
+    for (Int32 i = Int32(0); static_cast<int>(i) < _items.Length(); i += 1) {
+        if (_items[static_cast<int>(i)]) {
+            _items[static_cast<int>(i)]->OnMouse(e);
         }
     }
 }

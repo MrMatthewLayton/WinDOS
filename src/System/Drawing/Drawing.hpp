@@ -101,7 +101,7 @@ public:
     Boolean operator!=(const Color& other) const { return Boolean(_value != other._value); }
 
     // Linear interpolation between two colors
-    static Color Lerp(const Color& c1, const Color& c2, float t);
+    static Color Lerp(const Color& c1, const Color& c2, Float32 t);
 
     // Find closest VGA palette index (0-15) for this color
     UInt8 ToVgaIndex() const;
@@ -292,7 +292,7 @@ private:
     int _width;
     int _height;
 
-    void _allocate(int w, int h, unsigned int fill);
+    void _allocate(Int32 w, Int32 h, UInt32 fill);
     void _free();
     void _copy(const Image& other);
 

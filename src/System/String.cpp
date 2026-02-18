@@ -14,61 +14,59 @@ const String String::Empty;
 // Private helpers
 // ============================================================================
 
-void String::_copy(const char* src, int len) {
+void String::_copy(const char* src, Int32 len) {
     if (len > 0 && src) {
         _length = len;
-        _data = new char[_length + 1];
-        std::memcpy(_data, src, _length);
-        _data[_length] = '\0';
+        _data = new char[static_cast<int>(_length) + 1];
+        std::memcpy(_data, src, static_cast<int>(_length));
+        _data[static_cast<int>(_length)] = '\0';
     } else {
         _data = nullptr;
-        _length = 0;
+        _length = Int32(0);
     }
 }
 
 void String::_free() {
     delete[] _data;
     _data = nullptr;
-    _length = 0;
+    _length = Int32(0);
 }
 
 // ============================================================================
 // Constructors
 // ============================================================================
 
-String::String() : _data(nullptr), _length(0) {
+String::String() : _data(nullptr), _length(Int32(0)) {
 }
 
-String::String(const char* s) : _data(nullptr), _length(0) {
+String::String(const char* s) : _data(nullptr), _length(Int32(0)) {
     if (s) {
-        _copy(s, std::strlen(s));
+        _copy(s, Int32(std::strlen(s)));
     }
 }
 
-String::String(const char* s, Int32 length) : _data(nullptr), _length(0) {
-    int len = static_cast<int>(length);
-    if (s && len > 0) {
-        _copy(s, len);
+String::String(const char* s, Int32 length) : _data(nullptr), _length(Int32(0)) {
+    if (s && length > 0) {
+        _copy(s, length);
     }
 }
 
-String::String(Char c, Int32 count) : _data(nullptr), _length(0) {
-    int cnt = static_cast<int>(count);
-    if (cnt > 0) {
-        _length = cnt;
-        _data = new char[_length + 1];
-        std::memset(_data, static_cast<char>(c), _length);
-        _data[_length] = '\0';
+String::String(Char c, Int32 count) : _data(nullptr), _length(Int32(0)) {
+    if (count > 0) {
+        _length = count;
+        _data = new char[static_cast<int>(_length) + 1];
+        std::memset(_data, static_cast<char>(c), static_cast<int>(_length));
+        _data[static_cast<int>(_length)] = '\0';
     }
 }
 
-String::String(const String& other) : _data(nullptr), _length(0) {
+String::String(const String& other) : _data(nullptr), _length(Int32(0)) {
     _copy(other._data, other._length);
 }
 
 String::String(String&& other) noexcept : _data(other._data), _length(other._length) {
     other._data = nullptr;
-    other._length = 0;
+    other._length = Int32(0);
 }
 
 String::~String() {
@@ -111,7 +109,7 @@ String& String::operator=(const char* s) {
 // ============================================================================
 
 Int32 String::Length() const {
-    return Int32(_length);
+    return _length;
 }
 
 Boolean String::IsEmpty() const {
@@ -119,11 +117,10 @@ Boolean String::IsEmpty() const {
 }
 
 Char String::operator[](Int32 index) const {
-    int idx = static_cast<int>(index);
-    if (idx < 0 || idx >= _length) {
+    if (index < 0 || index >= _length) {
         throw IndexOutOfRangeException();
     }
-    return Char(_data[idx]);
+    return Char(_data[static_cast<int>(index)]);
 }
 
 const char* String::CStr() const {
@@ -135,32 +132,28 @@ const char* String::CStr() const {
 // ============================================================================
 
 String String::Substring(Int32 startIndex) const {
-    int start = static_cast<int>(startIndex);
-    return Substring(start, _length - start);
+    return Substring(startIndex, _length - startIndex);
 }
 
 String String::Substring(Int32 startIndex, Int32 length) const {
-    int start = static_cast<int>(startIndex);
-    int len = static_cast<int>(length);
-
-    if (start < 0) {
+    if (startIndex < 0) {
         throw ArgumentOutOfRangeException("startIndex");
     }
-    if (len < 0) {
+    if (length < 0) {
         throw ArgumentOutOfRangeException("length");
     }
-    if (start > _length) {
+    if (startIndex > _length) {
         throw ArgumentOutOfRangeException("startIndex");
     }
-    if (start + len > _length) {
+    if (startIndex + length > _length) {
         throw ArgumentOutOfRangeException("length");
     }
 
-    if (len == 0) {
+    if (length == 0) {
         return String();
     }
 
-    return String(_data + start, len);
+    return String(_data + static_cast<int>(startIndex), length);
 }
 
 // ============================================================================
@@ -172,16 +165,15 @@ Int32 String::IndexOf(Char c) const {
 }
 
 Int32 String::IndexOf(Char c, Int32 startIndex) const {
-    int start = static_cast<int>(startIndex);
-    char ch = static_cast<char>(c);
+    Char ch = c;
 
-    if (start < 0 || start > _length) {
+    if (startIndex < 0 || startIndex > _length) {
         throw ArgumentOutOfRangeException("startIndex");
     }
 
-    for (int i = start; i < _length; i++) {
-        if (_data[i] == ch) {
-            return Int32(i);
+    for (Int32 i = startIndex; i < _length; i += 1) {
+        if (_data[static_cast<int>(i)] == static_cast<char>(ch)) {
+            return i;
         }
     }
     return Int32(-1);
@@ -192,40 +184,38 @@ Int32 String::IndexOf(const String& s) const {
 }
 
 Int32 String::IndexOf(const String& s, Int32 startIndex) const {
-    int start = static_cast<int>(startIndex);
-
-    if (start < 0 || start > _length) {
+    if (startIndex < 0 || startIndex > _length) {
         throw ArgumentOutOfRangeException("startIndex");
     }
 
     if (s._length == 0) {
-        return Int32(start);
+        return startIndex;
     }
 
-    if (s._length > _length - start) {
+    if (s._length > _length - startIndex) {
         return Int32(-1);
     }
 
-    for (int i = start; i <= _length - s._length; i++) {
-        bool match = true;
-        for (int j = 0; j < s._length; j++) {
-            if (_data[i + j] != s._data[j]) {
-                match = false;
+    for (Int32 i = startIndex; i <= _length - s._length; i += 1) {
+        Boolean match = Boolean(true);
+        for (Int32 j = Int32(0); j < s._length; j += 1) {
+            if (_data[static_cast<int>(i + j)] != s._data[static_cast<int>(j)]) {
+                match = Boolean(false);
                 break;
             }
         }
         if (match) {
-            return Int32(i);
+            return i;
         }
     }
     return Int32(-1);
 }
 
 Int32 String::LastIndexOf(Char c) const {
-    char ch = static_cast<char>(c);
-    for (int i = _length - 1; i >= 0; i--) {
-        if (_data[i] == ch) {
-            return Int32(i);
+    Char ch = c;
+    for (Int32 i = _length - 1; i >= 0; i -= 1) {
+        if (_data[static_cast<int>(i)] == static_cast<char>(ch)) {
+            return i;
         }
     }
     return Int32(-1);
@@ -233,30 +223,30 @@ Int32 String::LastIndexOf(Char c) const {
 
 Int32 String::LastIndexOf(const String& s) const {
     if (s._length == 0) {
-        return Int32(_length);
+        return _length;
     }
 
     if (s._length > _length) {
         return Int32(-1);
     }
 
-    for (int i = _length - s._length; i >= 0; i--) {
-        bool match = true;
-        for (int j = 0; j < s._length; j++) {
-            if (_data[i + j] != s._data[j]) {
-                match = false;
+    for (Int32 i = _length - s._length; i >= 0; i -= 1) {
+        Boolean match = Boolean(true);
+        for (Int32 j = Int32(0); j < s._length; j += 1) {
+            if (_data[static_cast<int>(i + j)] != s._data[static_cast<int>(j)]) {
+                match = Boolean(false);
                 break;
             }
         }
         if (match) {
-            return Int32(i);
+            return i;
         }
     }
     return Int32(-1);
 }
 
 Boolean String::Contains(const String& s) const {
-    return Boolean(static_cast<int>(IndexOf(s)) >= 0);
+    return Boolean(IndexOf(s) >= 0);
 }
 
 Boolean String::StartsWith(const String& s) const {
@@ -267,8 +257,8 @@ Boolean String::StartsWith(const String& s) const {
         return Boolean(true);
     }
 
-    for (int i = 0; i < s._length; i++) {
-        if (_data[i] != s._data[i]) {
+    for (Int32 i = Int32(0); i < s._length; i += 1) {
+        if (_data[static_cast<int>(i)] != s._data[static_cast<int>(i)]) {
             return Boolean(false);
         }
     }
@@ -283,9 +273,9 @@ Boolean String::EndsWith(const String& s) const {
         return Boolean(true);
     }
 
-    int offset = _length - s._length;
-    for (int i = 0; i < s._length; i++) {
-        if (_data[offset + i] != s._data[i]) {
+    Int32 offset = _length - s._length;
+    for (Int32 i = Int32(0); i < s._length; i += 1) {
+        if (_data[static_cast<int>(offset + i)] != s._data[static_cast<int>(i)]) {
             return Boolean(false);
         }
     }
@@ -301,11 +291,11 @@ String String::ToUpper() const {
         return String();
     }
 
-    char* buffer = new char[_length + 1];
-    for (int i = 0; i < _length; i++) {
-        buffer[i] = std::toupper(static_cast<unsigned char>(_data[i]));
+    char* buffer = new char[static_cast<int>(_length) + 1];
+    for (Int32 i = Int32(0); i < _length; i += 1) {
+        buffer[static_cast<int>(i)] = std::toupper(static_cast<unsigned char>(_data[static_cast<int>(i)]));
     }
-    buffer[_length] = '\0';
+    buffer[static_cast<int>(_length)] = '\0';
 
     String result(buffer, _length);
     delete[] buffer;
@@ -317,11 +307,11 @@ String String::ToLower() const {
         return String();
     }
 
-    char* buffer = new char[_length + 1];
-    for (int i = 0; i < _length; i++) {
-        buffer[i] = std::tolower(static_cast<unsigned char>(_data[i]));
+    char* buffer = new char[static_cast<int>(_length) + 1];
+    for (Int32 i = Int32(0); i < _length; i += 1) {
+        buffer[static_cast<int>(i)] = std::tolower(static_cast<unsigned char>(_data[static_cast<int>(i)]));
     }
-    buffer[_length] = '\0';
+    buffer[static_cast<int>(_length)] = '\0';
 
     String result(buffer, _length);
     delete[] buffer;
@@ -337,9 +327,9 @@ String String::TrimStart() const {
         return String();
     }
 
-    int start = 0;
-    while (start < _length && std::isspace(static_cast<unsigned char>(_data[start]))) {
-        start++;
+    Int32 start = Int32(0);
+    while (start < _length && std::isspace(static_cast<unsigned char>(_data[static_cast<int>(start)]))) {
+        start += 1;
     }
 
     if (start == _length) {
@@ -354,16 +344,16 @@ String String::TrimEnd() const {
         return String();
     }
 
-    int end = _length;
-    while (end > 0 && std::isspace(static_cast<unsigned char>(_data[end - 1]))) {
-        end--;
+    Int32 end = _length;
+    while (end > 0 && std::isspace(static_cast<unsigned char>(_data[static_cast<int>(end - 1)]))) {
+        end -= 1;
     }
 
     if (end == 0) {
         return String();
     }
 
-    return Substring(0, end);
+    return Substring(Int32(0), end);
 }
 
 String String::Replace(Char oldChar, Char newChar) const {
@@ -371,14 +361,14 @@ String String::Replace(Char oldChar, Char newChar) const {
         return String();
     }
 
-    char oldCh = static_cast<char>(oldChar);
-    char newCh = static_cast<char>(newChar);
+    Char oldCh = oldChar;
+    Char newCh = newChar;
 
-    char* buffer = new char[_length + 1];
-    for (int i = 0; i < _length; i++) {
-        buffer[i] = (_data[i] == oldCh) ? newCh : _data[i];
+    char* buffer = new char[static_cast<int>(_length) + 1];
+    for (Int32 i = Int32(0); i < _length; i += 1) {
+        buffer[static_cast<int>(i)] = (_data[static_cast<int>(i)] == static_cast<char>(oldCh)) ? static_cast<char>(newCh) : _data[static_cast<int>(i)];
     }
-    buffer[_length] = '\0';
+    buffer[static_cast<int>(_length)] = '\0';
 
     String result(buffer, _length);
     delete[] buffer;
@@ -395,10 +385,10 @@ String String::Replace(const String& oldValue, const String& newValue) const {
     }
 
     // Count occurrences
-    int count = 0;
-    int pos = 0;
-    while ((pos = static_cast<int>(IndexOf(oldValue, pos))) >= 0) {
-        count++;
+    Int32 count = Int32(0);
+    Int32 pos = Int32(0);
+    while ((pos = IndexOf(oldValue, pos)) >= 0) {
+        count += 1;
         pos += oldValue._length;
     }
 
@@ -407,57 +397,55 @@ String String::Replace(const String& oldValue, const String& newValue) const {
     }
 
     // Calculate new length with overflow protection
-    int lengthDiff = newValue._length - oldValue._length;
+    Int32 lengthDiff = newValue._length - oldValue._length;
     Int32 totalDiff;
-    if (!Math::TryMultiply(Int32(lengthDiff), Int32(count), totalDiff)) {
+    if (!Math::TryMultiply(lengthDiff, count, totalDiff)) {
         throw OverflowException("String replacement would result in overflow.");
     }
     Int32 checkedNewLength;
-    if (!Math::TryAdd(Int32(_length), totalDiff, checkedNewLength)) {
+    if (!Math::TryAdd(_length, totalDiff, checkedNewLength)) {
         throw OverflowException("String replacement would result in overflow.");
     }
-    int newLength = static_cast<int>(checkedNewLength);
+    Int32 newLength = checkedNewLength;
     if (newLength < 0) {
         throw OverflowException("String replacement would result in negative length.");
     }
-    char* buffer = new char[newLength + 1];
+    char* buffer = new char[static_cast<int>(newLength) + 1];
 
-    int srcPos = 0;
-    int dstPos = 0;
+    Int32 srcPos = Int32(0);
+    Int32 dstPos = Int32(0);
     while (srcPos < _length) {
-        int foundPos = static_cast<int>(IndexOf(oldValue, srcPos));
+        Int32 foundPos = IndexOf(oldValue, srcPos);
         if (foundPos < 0) {
             // Copy rest
-            std::memcpy(buffer + dstPos, _data + srcPos, _length - srcPos);
+            std::memcpy(buffer + static_cast<int>(dstPos), _data + static_cast<int>(srcPos), static_cast<int>(_length - srcPos));
             dstPos += _length - srcPos;
             break;
         }
 
         // Copy before match
         if (foundPos > srcPos) {
-            std::memcpy(buffer + dstPos, _data + srcPos, foundPos - srcPos);
+            std::memcpy(buffer + static_cast<int>(dstPos), _data + static_cast<int>(srcPos), static_cast<int>(foundPos - srcPos));
             dstPos += foundPos - srcPos;
         }
 
         // Copy replacement
         if (newValue._length > 0) {
-            std::memcpy(buffer + dstPos, newValue._data, newValue._length);
+            std::memcpy(buffer + static_cast<int>(dstPos), newValue._data, static_cast<int>(newValue._length));
             dstPos += newValue._length;
         }
 
         srcPos = foundPos + oldValue._length;
     }
 
-    buffer[newLength] = '\0';
+    buffer[static_cast<int>(newLength)] = '\0';
     String result(buffer, newLength);
     delete[] buffer;
     return result;
 }
 
 String String::Insert(Int32 startIndex, const String& value) const {
-    int start = static_cast<int>(startIndex);
-
-    if (start < 0 || start > _length) {
+    if (startIndex < 0 || startIndex > _length) {
         throw ArgumentOutOfRangeException("startIndex");
     }
 
@@ -465,17 +453,17 @@ String String::Insert(Int32 startIndex, const String& value) const {
         return *this;
     }
 
-    int newLength = _length + value._length;
-    char* buffer = new char[newLength + 1];
+    Int32 newLength = _length + value._length;
+    char* buffer = new char[static_cast<int>(newLength) + 1];
 
-    if (start > 0) {
-        std::memcpy(buffer, _data, start);
+    if (startIndex > 0) {
+        std::memcpy(buffer, _data, static_cast<int>(startIndex));
     }
-    std::memcpy(buffer + start, value._data, value._length);
-    if (start < _length) {
-        std::memcpy(buffer + start + value._length, _data + start, _length - start);
+    std::memcpy(buffer + static_cast<int>(startIndex), value._data, static_cast<int>(value._length));
+    if (startIndex < _length) {
+        std::memcpy(buffer + static_cast<int>(startIndex + value._length), _data + static_cast<int>(startIndex), static_cast<int>(_length - startIndex));
     }
-    buffer[newLength] = '\0';
+    buffer[static_cast<int>(newLength)] = '\0';
 
     String result(buffer, newLength);
     delete[] buffer;
@@ -483,82 +471,82 @@ String String::Insert(Int32 startIndex, const String& value) const {
 }
 
 String String::Remove(Int32 startIndex) const {
-    int start = static_cast<int>(startIndex);
-    return Remove(start, _length - start);
+    return Remove(startIndex, _length - startIndex);
 }
 
 String String::Remove(Int32 startIndex, Int32 count) const {
-    int start = static_cast<int>(startIndex);
-    int cnt = static_cast<int>(count);
-
-    if (start < 0) {
+    if (startIndex < 0) {
         throw ArgumentOutOfRangeException("startIndex");
     }
-    if (cnt < 0) {
+    if (count < 0) {
         throw ArgumentOutOfRangeException("count");
     }
-    if (start + cnt > _length) {
+    if (startIndex + count > _length) {
         throw ArgumentOutOfRangeException("count");
     }
 
-    if (cnt == 0) {
+    if (count == 0) {
         return *this;
     }
 
-    int newLength = _length - cnt;
+    Int32 newLength = _length - count;
     if (newLength == 0) {
         return String();
     }
 
-    char* buffer = new char[newLength + 1];
-    if (start > 0) {
-        std::memcpy(buffer, _data, start);
+    char* buffer = new char[static_cast<int>(newLength) + 1];
+    if (startIndex > 0) {
+        std::memcpy(buffer, _data, static_cast<int>(startIndex));
     }
-    if (start + cnt < _length) {
-        std::memcpy(buffer + start, _data + start + cnt, _length - start - cnt);
+    if (startIndex + count < _length) {
+        std::memcpy(buffer + static_cast<int>(startIndex), _data + static_cast<int>(startIndex + count), static_cast<int>(_length - startIndex - count));
     }
-    buffer[newLength] = '\0';
+    buffer[static_cast<int>(newLength)] = '\0';
 
     String result(buffer, newLength);
     delete[] buffer;
     return result;
 }
 
-String String::PadLeft(Int32 totalWidth, char paddingChar) const {
-    int total = static_cast<int>(totalWidth);
+String String::PadLeft(Int32 totalWidth) const {
+    return PadLeft(totalWidth, Char(' '));
+}
 
-    if (total <= _length) {
+String String::PadLeft(Int32 totalWidth, Char paddingChar) const {
+    if (totalWidth <= _length) {
         return *this;
     }
 
-    int padCount = total - _length;
-    char* buffer = new char[total + 1];
-    std::memset(buffer, paddingChar, padCount);
+    Int32 padCount = totalWidth - _length;
+    char* buffer = new char[static_cast<int>(totalWidth) + 1];
+    std::memset(buffer, static_cast<char>(paddingChar), static_cast<int>(padCount));
     if (_length > 0) {
-        std::memcpy(buffer + padCount, _data, _length);
+        std::memcpy(buffer + static_cast<int>(padCount), _data, static_cast<int>(_length));
     }
-    buffer[total] = '\0';
+    buffer[static_cast<int>(totalWidth)] = '\0';
 
-    String result(buffer, total);
+    String result(buffer, totalWidth);
     delete[] buffer;
     return result;
 }
 
-String String::PadRight(Int32 totalWidth, char paddingChar) const {
-    int total = static_cast<int>(totalWidth);
+String String::PadRight(Int32 totalWidth) const {
+    return PadRight(totalWidth, Char(' '));
+}
 
-    if (total <= _length) {
+String String::PadRight(Int32 totalWidth, Char paddingChar) const {
+    if (totalWidth <= _length) {
         return *this;
     }
 
-    char* buffer = new char[total + 1];
+    char* buffer = new char[static_cast<int>(totalWidth) + 1];
     if (_length > 0) {
-        std::memcpy(buffer, _data, _length);
+        std::memcpy(buffer, _data, static_cast<int>(_length));
     }
-    std::memset(buffer + _length, paddingChar, total - _length);
-    buffer[total] = '\0';
+    std::memset(buffer + static_cast<int>(_length), static_cast<char>(paddingChar), static_cast<int>(totalWidth - _length));
+    buffer[static_cast<int>(totalWidth)] = '\0';
 
-    String result(buffer, total);
+    String result(buffer, totalWidth);
     delete[] buffer;
     return result;
 }
@@ -575,38 +563,39 @@ Array<String> String::Split(Char delimiter) const {
 Array<String> String::Split(const char* delimiters) const {
     if (_length == 0 || !delimiters || delimiters[0] == '\0') {
         Array<String> result(1);
-        result[0] = *this;
+        result[Int32(0)] = *this;
         return result;
     }
 
     // Count parts
-    int count = 1;
-    for (int i = 0; i < _length; i++) {
+    Int32 count = Int32(1);
+    for (Int32 i = Int32(0); i < _length; i += 1) {
         for (const char* d = delimiters; *d; d++) {
-            if (_data[i] == *d) {
-                count++;
+            if (_data[static_cast<int>(i)] == *d) {
+                count += 1;
                 break;
             }
         }
     }
 
     Array<String> result(count);
-    int partIndex = 0;
-    int start = 0;
+    Int32 partIndex = Int32(0);
+    Int32 start = Int32(0);
 
-    for (int i = 0; i <= _length; i++) {
-        bool isDelimiter = false;
+    for (Int32 i = Int32(0); i <= _length; i += 1) {
+        Boolean isDelimiter = Boolean(false);
         if (i < _length) {
             for (const char* d = delimiters; *d; d++) {
-                if (_data[i] == *d) {
-                    isDelimiter = true;
+                if (_data[static_cast<int>(i)] == *d) {
+                    isDelimiter = Boolean(true);
                     break;
                 }
             }
         }
 
         if (isDelimiter || i == _length) {
-            result[partIndex++] = Substring(start, i - start);
+            result[partIndex] = Substring(start, i - start);
+            partIndex += 1;
             start = i + 1;
         }
     }
@@ -618,45 +607,45 @@ Array<String> String::Split(const char* delimiters) const {
 // Comparison operators
 // ============================================================================
 
-bool String::operator==(const String& other) const {
+Boolean String::operator==(const String& other) const {
     if (_length != other._length) {
-        return false;
+        return Boolean(false);
     }
     if (_length == 0) {
-        return true;
+        return Boolean(true);
     }
-    return std::memcmp(_data, other._data, _length) == 0;
+    return Boolean(std::memcmp(_data, other._data, static_cast<int>(_length)) == 0);
 }
 
-bool String::operator!=(const String& other) const {
-    return !(*this == other);
+Boolean String::operator!=(const String& other) const {
+    return Boolean(!(*this == other));
 }
 
-bool String::operator<(const String& other) const {
-    return static_cast<int>(CompareTo(other)) < 0;
+Boolean String::operator<(const String& other) const {
+    return Boolean(CompareTo(other) < 0);
 }
 
-bool String::operator>(const String& other) const {
-    return static_cast<int>(CompareTo(other)) > 0;
+Boolean String::operator>(const String& other) const {
+    return Boolean(CompareTo(other) > 0);
 }
 
-bool String::operator<=(const String& other) const {
-    return static_cast<int>(CompareTo(other)) <= 0;
+Boolean String::operator<=(const String& other) const {
+    return Boolean(CompareTo(other) <= 0);
 }
 
-bool String::operator>=(const String& other) const {
-    return static_cast<int>(CompareTo(other)) >= 0;
+Boolean String::operator>=(const String& other) const {
+    return Boolean(CompareTo(other) >= 0);
 }
 
-bool String::operator==(const char* other) const {
+Boolean String::operator==(const char* other) const {
     if (!other) {
-        return _length == 0;
+        return Boolean(_length == 0);
     }
     return *this == String(other);
 }
 
-bool String::operator!=(const char* other) const {
-    return !(*this == other);
+Boolean String::operator!=(const char* other) const {
+    return Boolean(!(*this == other));
 }
 
 // ============================================================================
@@ -673,14 +662,14 @@ String String::operator+(const String& other) const {
 
     // Check for overflow
     Int32 newLengthChecked;
-    if (!Math::TryAdd(Int32(_length), Int32(other._length), newLengthChecked)) {
+    if (!Math::TryAdd(_length, other._length, newLengthChecked)) {
         throw OverflowException("String concatenation would result in overflow.");
     }
-    int newLength = static_cast<int>(newLengthChecked);
-    char* buffer = new char[newLength + 1];
-    std::memcpy(buffer, _data, _length);
-    std::memcpy(buffer + _length, other._data, other._length);
-    buffer[newLength] = '\0';
+    Int32 newLength = newLengthChecked;
+    char* buffer = new char[static_cast<int>(newLength) + 1];
+    std::memcpy(buffer, _data, static_cast<int>(_length));
+    std::memcpy(buffer + static_cast<int>(_length), other._data, static_cast<int>(other._length));
+    buffer[static_cast<int>(newLength)] = '\0';
 
     String result(buffer, newLength);
     delete[] buffer;
@@ -695,13 +684,13 @@ String String::operator+(const char* other) const {
 }
 
 String String::operator+(Char c) const {
-    int newLength = _length + 1;
-    char* buffer = new char[newLength + 1];
+    Int32 newLength = _length + 1;
+    char* buffer = new char[static_cast<int>(newLength) + 1];
     if (_length > 0) {
-        std::memcpy(buffer, _data, _length);
+        std::memcpy(buffer, _data, static_cast<int>(_length));
     }
-    buffer[_length] = static_cast<char>(c);
-    buffer[newLength] = '\0';
+    buffer[static_cast<int>(_length)] = static_cast<char>(c);
+    buffer[static_cast<int>(newLength)] = '\0';
 
     String result(buffer, newLength);
     delete[] buffer;
@@ -735,8 +724,8 @@ Boolean String::IsNullOrWhiteSpace(const String& s) {
     if (s._length == 0) {
         return Boolean(true);
     }
-    for (int i = 0; i < s._length; i++) {
-        if (!std::isspace(static_cast<unsigned char>(s._data[i]))) {
+    for (Int32 i = Int32(0); i < s._length; i += 1) {
+        if (!std::isspace(static_cast<unsigned char>(s._data[static_cast<int>(i)]))) {
             return Boolean(false);
         }
     }
@@ -756,17 +745,17 @@ Int32 String::Compare(const String& s1, const String& s2) {
 }
 
 Int32 String::CompareIgnoreCase(const String& s1, const String& s2) {
-    int len = (s1._length < s2._length) ? s1._length : s2._length;
+    Int32 len = (s1._length < s2._length) ? s1._length : s2._length;
 
-    for (int i = 0; i < len; i++) {
-        int c1 = std::tolower(static_cast<unsigned char>(s1._data[i]));
-        int c2 = std::tolower(static_cast<unsigned char>(s2._data[i]));
+    for (Int32 i = Int32(0); i < len; i += 1) {
+        Int32 c1 = Int32(std::tolower(static_cast<unsigned char>(s1._data[static_cast<int>(i)])));
+        Int32 c2 = Int32(std::tolower(static_cast<unsigned char>(s2._data[static_cast<int>(i)])));
         if (c1 != c2) {
-            return Int32(c1 - c2);
+            return c1 - c2;
         }
     }
 
-    return Int32(s1._length - s2._length);
+    return s1._length - s2._length;
 }
 
 // ============================================================================
@@ -784,20 +773,20 @@ Int32 String::CompareTo(const String& other) const {
         return Int32(1);
     }
 
-    int len = (_length < other._length) ? _length : other._length;
-    int cmp = std::memcmp(_data, other._data, len);
+    Int32 len = (_length < other._length) ? _length : other._length;
+    Int32 cmp = Int32(std::memcmp(_data, other._data, static_cast<int>(len)));
     if (cmp != 0) {
-        return Int32(cmp);
+        return cmp;
     }
-    return Int32(_length - other._length);
+    return _length - other._length;
 }
 
 Boolean String::Equals(const String& other) const {
-    return Boolean(*this == other);
+    return *this == other;
 }
 
 Boolean String::EqualsIgnoreCase(const String& other) const {
-    return Boolean(static_cast<int>(CompareIgnoreCase(*this, other)) == 0);
+    return Boolean(CompareIgnoreCase(*this, other) == 0);
 }
 
 Int32 String::GetHashCode() const {
@@ -806,10 +795,10 @@ Int32 String::GetHashCode() const {
     }
 
     // Simple FNV-1a hash
-    unsigned int hash = 2166136261u;
-    for (int i = 0; i < _length; i++) {
-        hash ^= static_cast<unsigned char>(_data[i]);
-        hash *= 16777619u;
+    UInt32 hash = UInt32(2166136261u);
+    for (Int32 i = Int32(0); i < _length; i += 1) {
+        hash ^= UInt32(static_cast<unsigned char>(_data[static_cast<int>(i)]));
+        hash *= UInt32(16777619u);
     }
     return Int32(static_cast<int>(hash));
 }
@@ -826,20 +815,23 @@ String operator+(const char* lhs, const String& rhs) {
 // StringBuilder Implementation
 // ============================================================================
 
-void StringBuilder::EnsureCapacity(int minCapacity) {
+const Int32 StringBuilder::DEFAULT_CAPACITY = Int32(16);
+const Int32 StringBuilder::GROWTH_FACTOR = Int32(2);
+
+void StringBuilder::EnsureCapacity(Int32 minCapacity) {
     if (minCapacity <= _capacity) return;
 
     // Grow by at least GROWTH_FACTOR or to minCapacity, whichever is larger
-    int newCapacity = _capacity * GROWTH_FACTOR;
+    Int32 newCapacity = _capacity * GROWTH_FACTOR;
     if (newCapacity < minCapacity) {
         newCapacity = minCapacity;
     }
 
-    char* newBuffer = new char[newCapacity];
+    char* newBuffer = new char[static_cast<int>(newCapacity)];
     if (_buffer && _length > 0) {
-        std::memcpy(newBuffer, _buffer, _length);
+        std::memcpy(newBuffer, _buffer, static_cast<int>(_length));
     }
-    newBuffer[_length] = '\0';
+    newBuffer[static_cast<int>(_length)] = '\0';
 
     delete[] _buffer;
     _buffer = newBuffer;
@@ -848,42 +840,42 @@ void StringBuilder::EnsureCapacity(int minCapacity) {
 
 StringBuilder::StringBuilder()
     : _buffer(nullptr)
-    , _length(0)
-    , _capacity(0) {
+    , _length(Int32(0))
+    , _capacity(Int32(0)) {
     EnsureCapacity(DEFAULT_CAPACITY);
 }
 
 StringBuilder::StringBuilder(Int32 capacity)
     : _buffer(nullptr)
-    , _length(0)
-    , _capacity(0) {
-    int cap = static_cast<int>(capacity);
+    , _length(Int32(0))
+    , _capacity(Int32(0)) {
+    Int32 cap = capacity;
     if (cap < DEFAULT_CAPACITY) cap = DEFAULT_CAPACITY;
     EnsureCapacity(cap);
 }
 
 StringBuilder::StringBuilder(const String& value)
     : _buffer(nullptr)
-    , _length(0)
-    , _capacity(0) {
-    int len = static_cast<int>(value.Length());
+    , _length(Int32(0))
+    , _capacity(Int32(0)) {
+    Int32 len = value.Length();
     EnsureCapacity(len + DEFAULT_CAPACITY);
     if (len > 0) {
-        std::memcpy(_buffer, value.CStr(), len);
+        std::memcpy(_buffer, value.CStr(), static_cast<int>(len));
         _length = len;
-        _buffer[_length] = '\0';
+        _buffer[static_cast<int>(_length)] = '\0';
     }
 }
 
 StringBuilder::StringBuilder(const StringBuilder& other)
     : _buffer(nullptr)
-    , _length(0)
-    , _capacity(0) {
+    , _length(Int32(0))
+    , _capacity(Int32(0)) {
     EnsureCapacity(other._capacity);
     if (other._length > 0) {
-        std::memcpy(_buffer, other._buffer, other._length);
+        std::memcpy(_buffer, other._buffer, static_cast<int>(other._length));
         _length = other._length;
-        _buffer[_length] = '\0';
+        _buffer[static_cast<int>(_length)] = '\0';
     }
 }
 
@@ -892,8 +884,8 @@ StringBuilder::StringBuilder(StringBuilder&& other) noexcept
     , _length(other._length)
     , _capacity(other._capacity) {
     other._buffer = nullptr;
-    other._length = 0;
-    other._capacity = 0;
+    other._length = Int32(0);
+    other._capacity = Int32(0);
 }
 
 StringBuilder::~StringBuilder() {
@@ -904,10 +896,10 @@ StringBuilder& StringBuilder::operator=(const StringBuilder& other) {
     if (this != &other) {
         EnsureCapacity(other._length + 1);
         if (other._length > 0) {
-            std::memcpy(_buffer, other._buffer, other._length);
+            std::memcpy(_buffer, other._buffer, static_cast<int>(other._length));
         }
         _length = other._length;
-        _buffer[_length] = '\0';
+        _buffer[static_cast<int>(_length)] = '\0';
     }
     return *this;
 }
@@ -919,55 +911,53 @@ StringBuilder& StringBuilder::operator=(StringBuilder&& other) noexcept {
         _length = other._length;
         _capacity = other._capacity;
         other._buffer = nullptr;
-        other._length = 0;
-        other._capacity = 0;
+        other._length = Int32(0);
+        other._capacity = Int32(0);
     }
     return *this;
 }
 
 Int32 StringBuilder::Length() const {
-    return Int32(_length);
+    return _length;
 }
 
 Int32 StringBuilder::Capacity() const {
-    return Int32(_capacity);
+    return _capacity;
 }
 
 Char StringBuilder::operator[](Int32 index) const {
-    int idx = static_cast<int>(index);
-    if (idx < 0 || idx >= _length) {
+    if (index < 0 || index >= _length) {
         throw IndexOutOfRangeException();
     }
-    return Char(_buffer[idx]);
+    return Char(_buffer[static_cast<int>(index)]);
 }
 
 void StringBuilder::SetCharAt(Int32 index, Char c) {
-    int idx = static_cast<int>(index);
-    if (idx < 0 || idx >= _length) {
+    if (index < 0 || index >= _length) {
         throw IndexOutOfRangeException();
     }
-    _buffer[idx] = static_cast<char>(c);
+    _buffer[static_cast<int>(index)] = static_cast<char>(c);
 }
 
 StringBuilder& StringBuilder::Append(const String& value) {
-    int len = static_cast<int>(value.Length());
+    Int32 len = value.Length();
     if (len > 0) {
         EnsureCapacity(_length + len + 1);
-        std::memcpy(_buffer + _length, value.CStr(), len);
+        std::memcpy(_buffer + static_cast<int>(_length), value.CStr(), static_cast<int>(len));
         _length += len;
-        _buffer[_length] = '\0';
+        _buffer[static_cast<int>(_length)] = '\0';
     }
     return *this;
 }
 
 StringBuilder& StringBuilder::Append(const char* value) {
     if (value) {
-        int len = static_cast<int>(std::strlen(value));
+        Int32 len = Int32(std::strlen(value));
         if (len > 0) {
             EnsureCapacity(_length + len + 1);
-            std::memcpy(_buffer + _length, value, len);
+            std::memcpy(_buffer + static_cast<int>(_length), value, static_cast<int>(len));
             _length += len;
-            _buffer[_length] = '\0';
+            _buffer[static_cast<int>(_length)] = '\0';
         }
     }
     return *this;
@@ -975,46 +965,52 @@ StringBuilder& StringBuilder::Append(const char* value) {
 
 StringBuilder& StringBuilder::Append(Char value) {
     EnsureCapacity(_length + 2);
-    _buffer[_length++] = static_cast<char>(value);
-    _buffer[_length] = '\0';
+    _buffer[static_cast<int>(_length)] = static_cast<char>(value);
+    _length += 1;
+    _buffer[static_cast<int>(_length)] = '\0';
     return *this;
 }
 
 StringBuilder& StringBuilder::Append(char value) {
     EnsureCapacity(_length + 2);
-    _buffer[_length++] = value;
-    _buffer[_length] = '\0';
+    _buffer[static_cast<int>(_length)] = value;
+    _length += 1;
+    _buffer[static_cast<int>(_length)] = '\0';
     return *this;
 }
 
 StringBuilder& StringBuilder::Append(Int32 value) {
     // Convert integer to string
     char temp[12];  // Enough for -2147483648
-    int val = static_cast<int>(value);
-    bool negative = val < 0;
+    Int32 val = value;
+    Boolean negative = val < 0;
     if (negative) val = -val;
 
-    int i = 0;
+    Int32 i = Int32(0);
     do {
-        temp[i++] = '0' + (val % 10);
+        temp[static_cast<int>(i)] = '0' + static_cast<int>(val % 10);
+        i += 1;
         val /= 10;
     } while (val > 0);
 
     if (negative) {
-        temp[i++] = '-';
+        temp[static_cast<int>(i)] = '-';
+        i += 1;
     }
 
     // Reverse and append
     EnsureCapacity(_length + i + 1);
     while (i > 0) {
-        _buffer[_length++] = temp[--i];
+        i -= 1;
+        _buffer[static_cast<int>(_length)] = temp[static_cast<int>(i)];
+        _length += 1;
     }
-    _buffer[_length] = '\0';
+    _buffer[static_cast<int>(_length)] = '\0';
     return *this;
 }
 
-StringBuilder& StringBuilder::Append(bool value) {
-    return Append(value ? "True" : "False");
+StringBuilder& StringBuilder::Append(Boolean value) {
+    return Append(static_cast<bool>(value) ? "True" : "False");
 }
 
 StringBuilder& StringBuilder::AppendLine() {
@@ -1032,19 +1028,20 @@ StringBuilder& StringBuilder::AppendLine(const char* value) {
 }
 
 StringBuilder& StringBuilder::Insert(Int32 index, const String& value) {
-    int idx = static_cast<int>(index);
-    if (idx < 0 || idx > _length) {
+    if (index < 0 || index > _length) {
         throw ArgumentOutOfRangeException("index");
     }
 
-    int len = static_cast<int>(value.Length());
+    Int32 len = value.Length();
     if (len > 0) {
         EnsureCapacity(_length + len + 1);
         // Shift existing characters to make room
-        std::memmove(_buffer + idx + len, _buffer + idx, _length - idx);
-        std::memcpy(_buffer + idx, value.CStr(), len);
+        std::memmove(_buffer + static_cast<int>(index) + static_cast<int>(len),
+                     _buffer + static_cast<int>(index),
+                     static_cast<int>(_length - index));
+        std::memcpy(_buffer + static_cast<int>(index), value.CStr(), static_cast<int>(len));
         _length += len;
-        _buffer[_length] = '\0';
+        _buffer[static_cast<int>(_length)] = '\0';
     }
     return *this;
 }
@@ -1054,40 +1051,40 @@ StringBuilder& StringBuilder::Insert(Int32 index, const char* value) {
 }
 
 StringBuilder& StringBuilder::Insert(Int32 index, Char value) {
-    int idx = static_cast<int>(index);
-    if (idx < 0 || idx > _length) {
+    if (index < 0 || index > _length) {
         throw ArgumentOutOfRangeException("index");
     }
 
     EnsureCapacity(_length + 2);
-    std::memmove(_buffer + idx + 1, _buffer + idx, _length - idx);
-    _buffer[idx] = static_cast<char>(value);
-    _length++;
-    _buffer[_length] = '\0';
+    std::memmove(_buffer + static_cast<int>(index) + 1,
+                 _buffer + static_cast<int>(index),
+                 static_cast<int>(_length - index));
+    _buffer[static_cast<int>(index)] = static_cast<char>(value);
+    _length += 1;
+    _buffer[static_cast<int>(_length)] = '\0';
     return *this;
 }
 
 StringBuilder& StringBuilder::Remove(Int32 startIndex, Int32 length) {
-    int start = static_cast<int>(startIndex);
-    int len = static_cast<int>(length);
-
-    if (start < 0 || start >= _length) {
+    if (startIndex < 0 || startIndex >= _length) {
         throw ArgumentOutOfRangeException("startIndex");
     }
-    if (len < 0 || start + len > _length) {
+    if (length < 0 || startIndex + length > _length) {
         throw ArgumentOutOfRangeException("length");
     }
 
-    if (len > 0) {
-        std::memmove(_buffer + start, _buffer + start + len, _length - start - len);
-        _length -= len;
-        _buffer[_length] = '\0';
+    if (length > 0) {
+        std::memmove(_buffer + static_cast<int>(startIndex),
+                     _buffer + static_cast<int>(startIndex + length),
+                     static_cast<int>(_length - startIndex - length));
+        _length -= length;
+        _buffer[static_cast<int>(_length)] = '\0';
     }
     return *this;
 }
 
 StringBuilder& StringBuilder::Clear() {
-    _length = 0;
+    _length = Int32(0);
     if (_buffer) {
         _buffer[0] = '\0';
     }
@@ -1095,14 +1092,14 @@ StringBuilder& StringBuilder::Clear() {
 }
 
 void StringBuilder::Reserve(Int32 capacity) {
-    EnsureCapacity(static_cast<int>(capacity));
+    EnsureCapacity(capacity);
 }
 
 String StringBuilder::ToString() const {
     if (_length == 0) {
         return String::Empty;
     }
-    return String(_buffer, Int32(_length));
+    return String(_buffer, _length);
 }
 
 } // namespace System

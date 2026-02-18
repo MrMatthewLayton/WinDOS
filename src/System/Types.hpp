@@ -168,6 +168,30 @@ public: \
     bool operator<=(UnderlyingType other) const { return _value <= other; } \
     bool operator>=(UnderlyingType other) const { return _value >= other; } \
     \
+    /* Arithmetic with primitive type to avoid ambiguity */ \
+    ClassName operator+(UnderlyingType other) const { return _value + other; } \
+    ClassName operator-(UnderlyingType other) const { return _value - other; } \
+    ClassName operator*(UnderlyingType other) const { return _value * other; } \
+    ClassName operator/(UnderlyingType other) const { \
+        if (other == 0) throw InvalidOperationException("Division by zero."); \
+        return _value / other; \
+    } \
+    ClassName operator%(UnderlyingType other) const { \
+        if (other == 0) throw InvalidOperationException("Division by zero."); \
+        return _value % other; \
+    } \
+    ClassName& operator+=(UnderlyingType other) { _value += other; return *this; } \
+    ClassName& operator-=(UnderlyingType other) { _value -= other; return *this; } \
+    ClassName& operator*=(UnderlyingType other) { _value *= other; return *this; } \
+    ClassName& operator/=(UnderlyingType other) { \
+        if (other == 0) throw InvalidOperationException("Division by zero."); \
+        _value /= other; return *this; \
+    } \
+    ClassName& operator%=(UnderlyingType other) { \
+        if (other == 0) throw InvalidOperationException("Division by zero."); \
+        _value %= other; return *this; \
+    } \
+    \
     String ToString() const; \
     static ClassName Parse(const String& s); \
     static bool TryParse(const String& s, ClassName& result); \

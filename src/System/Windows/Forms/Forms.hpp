@@ -283,17 +283,17 @@ private:
     };
 
     Cell _cells[MAX_CELLS_Y][MAX_CELLS_X];
-    int _cellsX;
-    int _cellsY;
-    int _screenWidth;
-    int _screenHeight;
+    Int32 _cellsX;
+    Int32 _cellsY;
+    Int32 _screenWidth;
+    Int32 _screenHeight;
 
     // Get cell indices for a point
-    void GetCellIndex(int x, int y, int& cellX, int& cellY) const;
+    void GetCellIndex(Int32 x, Int32 y, Int32& cellX, Int32& cellY) const;
 
     // Get cell range for a rectangle
-    void GetCellRange(const Rectangle& bounds, int& minX, int& minY,
-                      int& maxX, int& maxY) const;
+    void GetCellRange(const Rectangle& bounds, Int32& minX, Int32& minY,
+                      Int32& maxX, Int32& maxY) const;
 
 public:
     SpatialGrid();
@@ -481,27 +481,27 @@ private:
     Color _backgroundColor;
     Window* _focusedWindow;
     Window* _dragWindow;
-    int _dragOffsetX;    // Internal state - stays primitive
-    int _dragOffsetY;
-    int _dragStartX;
-    int _dragStartY;
+    Int32 _dragOffsetX;
+    Int32 _dragOffsetY;
+    Int32 _dragStartX;
+    Int32 _dragStartY;
     Image _dragBitmap;        // Captured window image during drag
     Image _cursorImage;       // Cursor icon (24x24)
     Array<DesktopIcon> _icons;  // Desktop icons
-    bool _isDragging;
-    bool _running;
-    int _cursorX;
-    int _cursorY;
-    int _prevCursorX;
-    int _prevCursorY;
-    bool _cursorVisible;
-    bool _wasMouseDown;
+    bool _isDragging;         // Internal flag - stays primitive
+    bool _running;            // Internal flag - stays primitive
+    Int32 _cursorX;
+    Int32 _cursorY;
+    Int32 _prevCursorX;
+    Int32 _prevCursorY;
+    bool _cursorVisible;      // Internal flag - stays primitive
+    bool _wasMouseDown;       // Internal flag - stays primitive
     unsigned int _cursorSave[CURSOR_SIZE * CURSOR_SIZE];  // Pixels under cursor (32-bit ARGB)
-    bool _cursorSaved;
-    int _screenWidth;   // Cached from Display
-    int _screenHeight;
-    int _nextIconX;     // Next icon position
-    int _nextIconY;
+    bool _cursorSaved;        // Internal flag - stays primitive
+    Int32 _screenWidth;       // Cached from Display
+    Int32 _screenHeight;
+    Int32 _nextIconX;         // Next icon position
+    Int32 _nextIconY;
 
     // Spatial partitioning for fast hit testing
     SpatialGrid _spatialGrid;

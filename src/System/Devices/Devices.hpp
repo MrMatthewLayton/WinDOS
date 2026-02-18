@@ -27,27 +27,27 @@ private:
             unsigned int lfbAddr, unsigned int pitch);
 
     static Display _current;
-    static bool _vbeAvailable;
-    static bool _vbeChecked;
+    static Boolean _vbeAvailable;
+    static Boolean _vbeChecked;
     static void* _mappedLfb;
 
     // Palette storage for fade effects (VGA modes)
     static unsigned char _originalPalette[PALETTE_SIZE][3];
-    static bool _paletteStashed;
+    static Boolean _paletteStashed;
 
     static void StashPalette();
-    static void SetPaletteScale(float scale);
+    static void SetPaletteScale(Float32 scale);
 
     // VBE 3.0 gamma ramp support
     static const int GAMMA_TABLE_SIZE = 256 * 3;  // 256 entries per R/G/B channel
     static unsigned char _originalGamma[GAMMA_TABLE_SIZE];
-    static bool _gammaStashed;
-    static bool _gammaSupported;
-    static bool _gammaChecked;
+    static Boolean _gammaStashed;
+    static Boolean _gammaSupported;
+    static Boolean _gammaChecked;
 
-    static bool CheckGammaSupport();
+    static Boolean CheckGammaSupport();
     static void StashGamma();
-    static void SetGammaScale(float scale);
+    static void SetGammaScale(Float32 scale);
 
 public:
     Display(const Display& other);
@@ -113,7 +113,7 @@ class Mouse {
 private:
     Mouse();
 
-    static bool _initialized;
+    static Boolean _initialized;
 
 public:
     static Boolean Initialize();

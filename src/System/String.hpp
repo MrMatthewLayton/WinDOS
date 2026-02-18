@@ -17,9 +17,9 @@ template<typename T> class Array;
 class String {
 private:
     char* _data;
-    int _length;  // Internal storage stays as primitive for efficiency
+    Int32 _length;
 
-    void _copy(const char* src, int len);
+    void _copy(const char* src, Int32 len);
     void _free();
 
 public:
@@ -69,22 +69,24 @@ public:
     String Insert(Int32 startIndex, const String& value) const;
     String Remove(Int32 startIndex) const;
     String Remove(Int32 startIndex, Int32 count) const;
-    String PadLeft(Int32 totalWidth, char paddingChar = ' ') const;
-    String PadRight(Int32 totalWidth, char paddingChar = ' ') const;
+    String PadLeft(Int32 totalWidth) const;
+    String PadLeft(Int32 totalWidth, Char paddingChar) const;
+    String PadRight(Int32 totalWidth) const;
+    String PadRight(Int32 totalWidth, Char paddingChar) const;
 
     // Split
     Array<String> Split(Char delimiter) const;
     Array<String> Split(const char* delimiters) const;
 
     // Comparison operators
-    bool operator==(const String& other) const;
-    bool operator!=(const String& other) const;
-    bool operator<(const String& other) const;
-    bool operator>(const String& other) const;
-    bool operator<=(const String& other) const;
-    bool operator>=(const String& other) const;
-    bool operator==(const char* other) const;
-    bool operator!=(const char* other) const;
+    Boolean operator==(const String& other) const;
+    Boolean operator!=(const String& other) const;
+    Boolean operator<(const String& other) const;
+    Boolean operator>(const String& other) const;
+    Boolean operator<=(const String& other) const;
+    Boolean operator>=(const String& other) const;
+    Boolean operator==(const char* other) const;
+    Boolean operator!=(const char* other) const;
 
     // Concatenation
     String operator+(const String& other) const;
@@ -136,13 +138,13 @@ String operator+(const char* lhs, const String& rhs);
 class StringBuilder {
 private:
     char* _buffer;
-    int _length;      // Current string length
-    int _capacity;    // Buffer capacity (always > _length for null terminator)
+    Int32 _length;      // Current string length
+    Int32 _capacity;    // Buffer capacity (always > _length for null terminator)
 
-    static const int DEFAULT_CAPACITY = 16;
-    static const int GROWTH_FACTOR = 2;
+    static const Int32 DEFAULT_CAPACITY;
+    static const Int32 GROWTH_FACTOR;
 
-    void EnsureCapacity(int minCapacity);
+    void EnsureCapacity(Int32 minCapacity);
 
 public:
     // Constructors
@@ -169,7 +171,7 @@ public:
     StringBuilder& Append(Char value);
     StringBuilder& Append(char value);
     StringBuilder& Append(Int32 value);
-    StringBuilder& Append(bool value);
+    StringBuilder& Append(Boolean value);
     StringBuilder& AppendLine();
     StringBuilder& AppendLine(const String& value);
     StringBuilder& AppendLine(const char* value);

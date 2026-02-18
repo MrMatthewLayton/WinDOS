@@ -12,22 +12,22 @@ namespace System {
 MemoryPool::MemoryPool(Int32 blockSize, Int32 blockCount)
     : _memory(nullptr)
     , _freeList(nullptr)
-    , _blockSize(0)
-    , _blockCount(0)
-    , _freeCount(0) {
+    , _blockSize(Int32(0))
+    , _blockCount(Int32(0))
+    , _freeCount(Int32(0)) {
 
-    int size = static_cast<int>(blockSize);
-    int count = static_cast<int>(blockCount);
+    Int32 size = blockSize;
+    Int32 count = blockCount;
 
-    if (size < 1) {
+    if (size < Int32(1)) {
         throw ArgumentOutOfRangeException("blockSize", "Block size must be positive.");
     }
-    if (count < 1) {
+    if (count < Int32(1)) {
         throw ArgumentOutOfRangeException("blockCount", "Block count must be positive.");
     }
 
     // Ensure block size is at least large enough for a pointer (for free list)
-    const int minSize = static_cast<int>(sizeof(Block));
+    const Int32 minSize = Int32(static_cast<int>(sizeof(Block)));
     _blockSize = (size < minSize) ? minSize : size;
     _blockCount = count;
 
@@ -46,9 +46,9 @@ MemoryPool::~MemoryPool() {
     std::free(_memory);
     _memory = nullptr;
     _freeList = nullptr;
-    _blockSize = 0;
-    _blockCount = 0;
-    _freeCount = 0;
+    _blockSize = Int32(0);
+    _blockCount = Int32(0);
+    _freeCount = Int32(0);
 }
 
 MemoryPool::MemoryPool(MemoryPool&& other) noexcept
@@ -59,9 +59,9 @@ MemoryPool::MemoryPool(MemoryPool&& other) noexcept
     , _freeCount(other._freeCount) {
     other._memory = nullptr;
     other._freeList = nullptr;
-    other._blockSize = 0;
-    other._blockCount = 0;
-    other._freeCount = 0;
+    other._blockSize = Int32(0);
+    other._blockCount = Int32(0);
+    other._freeCount = Int32(0);
 }
 
 MemoryPool& MemoryPool::operator=(MemoryPool&& other) noexcept {
@@ -76,9 +76,9 @@ MemoryPool& MemoryPool::operator=(MemoryPool&& other) noexcept {
 
         other._memory = nullptr;
         other._freeList = nullptr;
-        other._blockSize = 0;
-        other._blockCount = 0;
-        other._freeCount = 0;
+        other._blockSize = Int32(0);
+        other._blockCount = Int32(0);
+        other._freeCount = Int32(0);
     }
     return *this;
 }
@@ -91,7 +91,7 @@ void* MemoryPool::Allocate() {
     // Pop from free list
     Block* block = _freeList;
     _freeList = block->next;
-    _freeCount--;
+    _freeCount -= Int32(1);
 
     return static_cast<void*>(block);
 }
@@ -103,7 +103,7 @@ void MemoryPool::Free(void* ptr) {
     Block* block = static_cast<Block*>(ptr);
     block->next = _freeList;
     _freeList = block;
-    _freeCount++;
+    _freeCount += Int32(1);
 }
 
 void MemoryPool::Reset() {
@@ -111,11 +111,11 @@ void MemoryPool::Reset() {
     _freeList = nullptr;
     unsigned char* current = _memory;
 
-    for (int i = 0; i < _blockCount; i++) {
+    for (Int32 i = Int32(0); i < _blockCount; i += Int32(1)) {
         Block* block = reinterpret_cast<Block*>(current);
         block->next = _freeList;
         _freeList = block;
-        current += _blockSize;
+        current += static_cast<int>(_blockSize);
     }
 
     _freeCount = _blockCount;
@@ -127,11 +127,11 @@ void MemoryPool::Reset() {
 
 // Static member initialization
 StringIntern::Entry* StringIntern::_table[TABLE_SIZE] = { nullptr };
-bool StringIntern::_initialized = false;
+Boolean StringIntern::_initialized = Boolean(false);
 
 void StringIntern::Initialize() {
-    if (_initialized) return;
-    _initialized = true;
+    if (static_cast<bool>(_initialized)) return;
+    _initialized = Boolean(true);
 
     // Pre-intern common strings
     Intern("");
@@ -145,12 +145,12 @@ void StringIntern::Initialize() {
     Intern("-1");
 }
 
-unsigned int StringIntern::Hash(const char* str, int length) {
+UInt32 StringIntern::Hash(const char* str, Int32 length) {
     // FNV-1a hash
-    unsigned int hash = 2166136261u;
-    for (int i = 0; i < length; i++) {
-        hash ^= static_cast<unsigned char>(str[i]);
-        hash *= 16777619u;
+    UInt32 hash = UInt32(2166136261u);
+    for (Int32 i = Int32(0); i < length; i += Int32(1)) {
+        hash ^= UInt32(static_cast<unsigned char>(str[static_cast<int>(i)]));
+        hash *= UInt32(16777619u);
     }
     return hash;
 }
@@ -165,18 +165,18 @@ const char* StringIntern::Intern(const char* str, Int32 length) {
 
     if (!str) return nullptr;
 
-    int len = static_cast<int>(length);
-    if (len < 0) len = 0;
+    Int32 len = length;
+    if (len < Int32(0)) len = Int32(0);
 
-    unsigned int hash = Hash(str, len);
-    int bucket = static_cast<int>(hash % TABLE_SIZE);
+    UInt32 hash = Hash(str, len);
+    Int32 bucket = Int32(static_cast<int>(static_cast<unsigned int>(hash) % TABLE_SIZE));
 
     // Search for existing entry
-    Entry* entry = _table[bucket];
+    Entry* entry = _table[static_cast<int>(bucket)];
     while (entry) {
-        if (entry->hash == hash &&
-            entry->length == len &&
-            (len == 0 || std::memcmp(entry->str, str, len) == 0)) {
+        if (entry->hash == static_cast<unsigned int>(hash) &&
+            entry->length == static_cast<int>(len) &&
+            (static_cast<int>(len) == 0 || std::memcmp(entry->str, str, static_cast<int>(len)) == 0)) {
             // Found existing interned string
             return entry->str;
         }
@@ -185,17 +185,17 @@ const char* StringIntern::Intern(const char* str, Int32 length) {
 
     // Not found - create new entry
     Entry* newEntry = new Entry();
-    newEntry->hash = hash;
-    newEntry->length = len;
-    newEntry->str = new char[len + 1];
-    if (len > 0) {
-        std::memcpy(newEntry->str, str, len);
+    newEntry->hash = static_cast<unsigned int>(hash);
+    newEntry->length = static_cast<int>(len);
+    newEntry->str = new char[static_cast<int>(len) + 1];
+    if (len > Int32(0)) {
+        std::memcpy(newEntry->str, str, static_cast<int>(len));
     }
-    newEntry->str[len] = '\0';
+    newEntry->str[static_cast<int>(len)] = '\0';
 
     // Insert at head of bucket
-    newEntry->next = _table[bucket];
-    _table[bucket] = newEntry;
+    newEntry->next = _table[static_cast<int>(bucket)];
+    _table[static_cast<int>(bucket)] = newEntry;
 
     return newEntry->str;
 }
@@ -209,20 +209,20 @@ Boolean StringIntern::IsInterned(const char* str) {
 
     if (!str) return Boolean(false);
 
-    int len = static_cast<int>(std::strlen(str));
-    unsigned int hash = Hash(str, len);
-    int bucket = static_cast<int>(hash % TABLE_SIZE);
+    Int32 len = Int32(static_cast<int>(std::strlen(str)));
+    UInt32 hash = Hash(str, len);
+    Int32 bucket = Int32(static_cast<int>(static_cast<unsigned int>(hash) % TABLE_SIZE));
 
-    Entry* entry = _table[bucket];
+    Entry* entry = _table[static_cast<int>(bucket)];
     while (entry) {
         // Check if this is the SAME pointer (interned strings share memory)
         if (entry->str == str) {
             return Boolean(true);
         }
         // Also check by value in case user is checking a different pointer
-        if (entry->hash == hash &&
-            entry->length == len &&
-            std::memcmp(entry->str, str, len) == 0) {
+        if (entry->hash == static_cast<unsigned int>(hash) &&
+            entry->length == static_cast<int>(len) &&
+            std::memcmp(entry->str, str, static_cast<int>(len)) == 0) {
             return Boolean(true);
         }
         entry = entry->next;
@@ -234,15 +234,15 @@ Boolean StringIntern::IsInterned(const char* str) {
 Int32 StringIntern::Count() {
     Initialize();
 
-    int count = 0;
-    for (int i = 0; i < TABLE_SIZE; i++) {
-        Entry* entry = _table[i];
+    Int32 count = Int32(0);
+    for (Int32 i = Int32(0); i < Int32(TABLE_SIZE); i += Int32(1)) {
+        Entry* entry = _table[static_cast<int>(i)];
         while (entry) {
-            count++;
+            count += Int32(1);
             entry = entry->next;
         }
     }
-    return Int32(count);
+    return count;
 }
 
 } // namespace System

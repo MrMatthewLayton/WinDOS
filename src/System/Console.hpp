@@ -1,7 +1,6 @@
 #ifndef SYSTEM_CONSOLE_HPP
 #define SYSTEM_CONSOLE_HPP
 
-#include "String.hpp"
 #include "Types.hpp"
 
 namespace System {
@@ -31,13 +30,13 @@ private:
     static ConsoleColor _backgroundColor;
 
     // Internal helper to write a single character with current colors
-    static void _writeChar(char c);
+    static void _writeChar(Char c);
 
     // Internal helper to handle newline (scrolling if needed)
     static void _handleNewline();
 
     // Get color attribute byte from foreground and background
-    static unsigned char _getColorAttribute();
+    static UInt8 _getColorAttribute();
 
 public:
     // ========================================================================
@@ -110,7 +109,7 @@ public:
     static Char ReadKey();
 
     // Read a single key, optionally suppressing display
-    static Char ReadKey(bool intercept);
+    static Char ReadKey(Boolean intercept);
 
     // Check if a key is available to read
     static Boolean KeyAvailable();

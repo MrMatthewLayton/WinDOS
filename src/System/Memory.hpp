@@ -35,9 +35,9 @@ private:
 
     unsigned char* _memory;   // Raw memory buffer
     Block* _freeList;         // Head of free block list
-    int _blockSize;           // Size of each block (>= sizeof(Block*))
-    int _blockCount;          // Total number of blocks
-    int _freeCount;           // Number of free blocks
+    Int32 _blockSize;         // Size of each block (>= sizeof(Block*))
+    Int32 _blockCount;        // Total number of blocks
+    Int32 _freeCount;         // Number of free blocks
 
 public:
     /**
@@ -82,11 +82,11 @@ public:
     void Reset();
 
     // Properties
-    Int32 BlockSize() const { return Int32(_blockSize); }
-    Int32 BlockCount() const { return Int32(_blockCount); }
-    Int32 FreeCount() const { return Int32(_freeCount); }
-    Int32 UsedCount() const { return Int32(_blockCount - _freeCount); }
-    Boolean IsEmpty() const { return Boolean(_freeCount == 0); }
+    Int32 BlockSize() const { return _blockSize; }
+    Int32 BlockCount() const { return _blockCount; }
+    Int32 FreeCount() const { return _freeCount; }
+    Int32 UsedCount() const { return _blockCount - _freeCount; }
+    Boolean IsEmpty() const { return Boolean(_freeCount == Int32(0)); }
     Boolean IsFull() const { return Boolean(_freeCount == _blockCount); }
 };
 
@@ -123,11 +123,11 @@ private:
         Entry() : str(nullptr), length(0), hash(0), next(nullptr) {}
     };
 
-    static const int TABLE_SIZE = 127;  // Prime number for better distribution
+    static const int TABLE_SIZE = 127;  // Prime number for better distribution (kept as int for array sizing)
     static Entry* _table[TABLE_SIZE];
-    static bool _initialized;
+    static Boolean _initialized;
 
-    static unsigned int Hash(const char* str, int length);
+    static UInt32 Hash(const char* str, Int32 length);
     static void Initialize();
 
 public:

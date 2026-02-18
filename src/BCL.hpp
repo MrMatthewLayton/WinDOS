@@ -8,9 +8,8 @@
 
 // Core System types
 #include "System/Exception.hpp"
-#include "System/String.hpp"
-#include "System/Array.hpp"
 #include "System/Types.hpp"
+#include "System/Array.hpp"
 #include "System/Math.hpp"
 #include "System/Memory.hpp"
 #include "System/Console.hpp"

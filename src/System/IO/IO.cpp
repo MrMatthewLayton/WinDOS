@@ -45,9 +45,10 @@ Array<UInt8> File::ReadAllBytes(const char* path) {
     }
 
     // Create array and copy data
-    Array<UInt8> result(static_cast<int>(fileSize));
-    for (long i = 0; i < fileSize; i++) {
-        result[static_cast<int>(i)] = UInt8(buffer[i]);
+    Int32 length = Int32(static_cast<int>(fileSize));
+    Array<UInt8> result(length);
+    for (Int32 i = Int32(0); i < length; i += 1) {
+        result[static_cast<int>(i)] = UInt8(buffer[static_cast<int>(i)]);
     }
 
     std::free(buffer);
