@@ -1049,7 +1049,206 @@ The forms demo displays a boot splash screen for 5 seconds before showing the de
 
 ---
 
+## PENDING: IO/Devices Reorganization
+
+### Status: APPROVED - Ready to Implement
+
+A reorganization of `Platform/DOS` and `System/Devices` has been planned. See `./merge-plan.md` for full details.
+
+### Problem
+
+The current structure is confusing:
+- `Platform/DOS/Graphics` vs `Platform/DOS/Video` vs `System/Devices/Display` - three names for related concepts
+- `Platform/DOS/Keyboard` vs `System/Devices/Keyboard` - same name, different layers
+- `Devices` separate from `IO`, but devices ARE I/O
+- Two-layer abstraction adds complexity without benefit (this is DOS-only, forever)
+
+### Current Structure (To Be Replaced)
+
+```
+src/
+├── Platform/DOS/           # Low-level BIOS/port I/O
+│   ├── Graphics.hpp/.cpp   # VGA/VBE modes
+│   ├── Video.hpp/.cpp      # Text cursor
+│   ├── Keyboard.hpp/.cpp   # INT 16h
+│   ├── Mouse.hpp/.cpp      # INT 33h
+│   └── System.hpp/.cpp     # INT 21h (Exit, etc.)
+└── System/
+    ├── Devices/Devices.hpp/.cpp  # Display, Mouse, Keyboard wrappers
+    └── IO/IO.hpp/.cpp            # File class only
+```
+
+### Target Structure
+
+```
+src/System/IO/
+├── Devices/
+│   ├── Display.hpp/.cpp    # Merge: Graphics + Video + Display
+│   ├── Keyboard.hpp/.cpp   # Merge: both Keyboard layers
+│   └── Mouse.hpp/.cpp      # Merge: both Mouse layers
+├── File.hpp/.cpp           # Rename from IO.hpp
+└── Environment.hpp/.cpp    # New: Exit(), GetCurrentDirectory(), etc.
+```
+
+### Key Design Decisions
+
+1. **Proper C++ encapsulation** - NO "Internal" namespaces (that's a code smell). Use:
+   - Private static methods for BIOS calls
+   - Anonymous namespaces in `.cpp` for internal structs/helpers
+
+2. **Single namespace** - `System::IO::Devices` for all device classes
+
+3. **System::Environment class** - New class for system interaction:
+   ```cpp
+   class Environment
+   {
+   public:
+       static void Exit(Int32 exitCode);
+       static String GetCommandLine();
+       static String GetEnvironmentVariable(const String& name);
+       static String GetCurrentDirectory();
+       static void SetCurrentDirectory(const String& path);
+       static String GetOSVersion();
+       static const char* NewLine();  // "\r\n" for DOS
+   };
+   ```
+
+### Class Design Pattern
+
+Each device class follows this pattern:
+
+```cpp
+// Header: Public API only
+namespace System::IO::Devices
+{
+    class Display
+    {
+    public:
+        static Display GetCurrent();
+        static void SetMode(DisplayMode mode);
+        static void FadeIn(Int32 milliseconds);
+        // ... other public methods
+
+    private:
+        // Low-level BIOS - truly hidden
+        static bool DetectVBE();
+        static bool SetVBEModeInternal(unsigned short mode);
+        static void SetVGAModeInternal(unsigned char mode);
+        // ... other private methods
+
+        // Private state
+        static Display _current;
+        static bool _vbeAvailable;
+    };
+}
+```
+
+```cpp
+// Implementation: Internal helpers in anonymous namespace
+namespace System::IO::Devices
+{
+    namespace
+    {
+        // File-local structs - invisible outside this .cpp
+        struct VbeInfoBlock { ... };
+        struct VbeModeInfoBlock { ... };
+
+        // File-local helpers
+        bool CallVBEBios(int function, __dpmi_regs* regs) { ... }
+    }
+
+    // Public and private method implementations
+    Display Display::GetCurrent() { ... }
+}
+```
+
+### Migration Phases
+
+1. **Create structure**: `mkdir -p src/System/IO/Devices`
+
+2. **Mouse.hpp/.cpp** (simplest, start here)
+   - Merge `Platform/DOS/Mouse` + `System/Devices::Mouse`
+   - Private BIOS methods, public wrapper API
+
+3. **Keyboard.hpp/.cpp**
+   - Merge `Platform/DOS/Keyboard` + `System/Devices::Keyboard`
+
+4. **Display.hpp/.cpp** (most complex)
+   - Merge `Platform/DOS/Graphics` + `Platform/DOS/Video` + `System/Devices::Display`
+   - VGA, VBE, text cursor, palette, gamma, LFB all in one class
+
+5. **Environment.hpp/.cpp**
+   - `Exit()`, `GetOSVersion()` from DOSSystem
+   - Add `GetCurrentDirectory()`, `GetEnvironmentVariable()`
+   - Inline `WriteString`/`ReadLine` into Console.cpp
+
+6. **Rename IO.hpp → File.hpp**
+
+7. **Update all includes** throughout codebase
+
+8. **Update Makefile** with new source paths
+
+9. **Delete old files**: `Platform/DOS/*`, `System/Devices/*`
+
+10. **Test**: Build all, run test suite, run forms_demo
+
+### Files to Create
+
+| File | Content |
+|------|---------|
+| `src/System/IO/Devices/Display.hpp` | Display class (public API) |
+| `src/System/IO/Devices/Display.cpp` | Display implementation |
+| `src/System/IO/Devices/Keyboard.hpp` | Keyboard + KeyboardStatus classes |
+| `src/System/IO/Devices/Keyboard.cpp` | Keyboard implementation |
+| `src/System/IO/Devices/Mouse.hpp` | Mouse + MouseStatus classes |
+| `src/System/IO/Devices/Mouse.cpp` | Mouse implementation |
+| `src/System/IO/Environment.hpp` | Environment class |
+| `src/System/IO/Environment.cpp` | Environment implementation |
+| `src/System/IO/File.hpp` | Renamed from IO.hpp |
+| `src/System/IO/File.cpp` | Renamed from IO.cpp |
+
+### Files to Delete (After Migration)
+
+- `src/Platform/DOS/*` (all files)
+- `src/Platform/Platform.hpp`
+- `src/System/Devices/*` (all files)
+- `src/System/IO/IO.hpp` and `IO.cpp` (renamed to File.hpp/.cpp)
+
+### Files to Update
+
+| File | Changes |
+|------|---------|
+| `src/System/Drawing/Drawing.cpp` | `#include "System/IO/Devices/Display.hpp"` |
+| `src/System/Windows/Forms/Forms.cpp` | Include all new device headers |
+| `src/System/Console.cpp` | Use new Keyboard, inline DOS writes |
+| `src/rtcorlib.hpp` | Update master includes |
+| `Makefile` | Update SOURCES list |
+
+### Namespace Changes
+
+| Old | New |
+|-----|-----|
+| `Platform::DOS::Graphics` | `System::IO::Devices::Display` (private methods) |
+| `Platform::DOS::Video` | `System::IO::Devices::Display` (private methods) |
+| `Platform::DOS::Keyboard` | `System::IO::Devices::Keyboard` (private methods) |
+| `Platform::DOS::Mouse` | `System::IO::Devices::Mouse` (private methods) |
+| `Platform::DOS::DOSSystem` | `System::IO::Environment` + Console.cpp |
+| `System::Devices::Display` | `System::IO::Devices::Display` |
+| `System::Devices::Mouse` | `System::IO::Devices::Mouse` |
+| `System::Devices::Keyboard` | `System::IO::Devices::Keyboard` |
+| `System::IO::File` | `System::IO::File` (unchanged, just renamed file) |
+
+### Reference
+
+See `./merge-plan.md` for:
+- Detailed class APIs with all methods
+- Full rationale for decisions
+- Estimated effort (~6.5 hours)
+
+---
+
 ## See Also
 
 - `WinDOS.md` - Full API documentation (MSDN-style)
+- `merge-plan.md` - IO/Devices reorganization plan
 - `tests/*.cpp` - Usage examples
