@@ -290,13 +290,55 @@ All HIGH and MEDIUM priority features have been ported from legacy code.
 
 ## Code Conventions
 
-- C++17 features (if constexpr, structured bindings, etc.)
+- C++17 features (if constexpr, structured bindings, nested namespaces)
+- Allman brace style (opening brace on its own line)
 - RAII for resource management
 - Copy/move semantics throughout
 - Bounds checking with exceptions
 - Static methods for hardware access facades
 - Virtual methods for control customization
 - **USE WRAPPER TYPES EVERYWHERE** - See "Wrapper Type System" section below
+- **DOXYGEN DOCUMENTATION** - All public APIs must have Doxygen comments
+
+## Documentation Standards
+
+All public classes, methods, and functions **MUST** have Doxygen documentation using the `///` format:
+
+```cpp
+/// @brief Computes the sum of two integers.
+/// @param a The first operand.
+/// @param b The second operand.
+/// @return The sum of a and b.
+/// @throws OverflowException If the result overflows Int32.
+Int32 Add(Int32 a, Int32 b);
+```
+
+### Required Tags
+
+| Tag | Usage |
+|-----|-------|
+| `@brief` | One-line description (required for all) |
+| `@param` | Document each parameter |
+| `@return` | Document return value (if non-void) |
+| `@throws` | Document exceptions that may be thrown |
+| `@note` | Important usage notes |
+| `@see` | Cross-references to related APIs |
+| `@example` | Usage examples for complex APIs |
+
+### Documentation Scope
+
+- **Classes**: Document purpose, ownership semantics, thread safety
+- **Constructors**: Document initialization behavior and parameters
+- **Methods**: Document behavior, parameters, return values, exceptions
+- **Properties/Getters**: Brief description of what is returned
+- **Constants**: Document meaning and valid usage
+
+### Style Guidelines
+
+- Use `[[nodiscard]]` for getters and methods whose return value should not be ignored
+- Keep `@brief` to one line; use additional paragraphs for details
+- Document preconditions and postconditions where relevant
+- Use `@code` / `@endcode` for inline code examples
 
 ## Testing
 
