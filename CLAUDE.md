@@ -173,8 +173,8 @@ String class remains immutable by design (like .NET), use StringBuilder for loop
 **Status:** FIXED - Added `System::Math` class with:
 - `CheckedAdd()`, `CheckedSubtract()`, `CheckedMultiply()` - throw `OverflowException`
 - `TryAdd()`, `TrySubtract()`, `TryMultiply()` - return success/failure
-- `CheckedCast()` for safe type conversions
 - String operations (Replace, operator+) now use checked arithmetic
+- Type conversions use `To*()` methods on integer types (e.g., `x.ToInt32()`)
 
 #### S2: File Path Injection (Low Risk in DOS)
 ```cpp
@@ -413,16 +413,51 @@ The codebase uses .NET-style wrapper types **everywhere**, not just in public AP
 |---------|-----------------|-------|
 | `Boolean` | `bool` | All boolean values |
 | `Char` | `char` | Single characters |
-| `Int8` / `SByte` | `signed char` | 8-bit signed integers |
-| `UInt8` / `Byte` | `unsigned char` | 8-bit unsigned, pixel data |
-| `Int16` / `Short` | `short` | 16-bit signed integers |
-| `UInt16` / `UShort` | `unsigned short` | 16-bit unsigned integers |
-| `Int32` / `Int` | `int` | **Primary integer type** |
-| `UInt32` / `UInt` | `unsigned int` | Unsigned 32-bit, colors |
-| `Int64` / `Long` | `long long` | 64-bit signed integers |
-| `UInt64` / `ULong` | `unsigned long long` | 64-bit unsigned integers |
+| `Int8` / `SByte` | `std::int8_t` | 8-bit signed integers |
+| `UInt8` / `Byte` | `std::uint8_t` | 8-bit unsigned, pixel data |
+| `Int16` / `Short` | `std::int16_t` | 16-bit signed integers |
+| `UInt16` / `UShort` | `std::uint16_t` | 16-bit unsigned integers |
+| `Int32` / `Int` | `std::int32_t` | **Primary integer type** |
+| `UInt32` / `UInt` | `std::uint32_t` | Unsigned 32-bit, colors |
+| `Int64` / `Long` | `std::int64_t` | 64-bit signed integers |
+| `UInt64` / `ULong` | `std::uint64_t` | 64-bit unsigned integers |
+| `UIntPtr` | `std::uintptr_t` | Pointer-sized unsigned (32-bit on DOS) |
 | `Float32` / `Single` | `float` | 32-bit floating point |
 | `Float64` / `Double` | `double` | 64-bit floating point |
+
+All integer types use fixed-width types from `<cstdint>` for guaranteed sizes.
+
+### Integer Type Constants
+
+All integer types have these static constants (as wrapper types, enabling method chaining):
+```cpp
+Int32::MinValue    // -2147483648 as Int32
+Int32::MaxValue    // 2147483647 as Int32
+Int32::Zero        // 0 as Int32
+
+// Method chaining works:
+Int32::MaxValue.ToInt64()  // Convert max value to Int64
+```
+
+### Type Conversion Methods
+
+All integer types have overflow-checked conversion methods:
+```cpp
+Int32 x = Int32(1000);
+Int64 big = x.ToInt64();      // Always safe (widening)
+Int8 small = x.ToInt8();      // Throws OverflowException (1000 > 127)
+UInt32 u = x.ToUInt32();      // Works (positive value)
+
+Int32 neg = Int32(-5);
+UInt32 fail = neg.ToUInt32(); // Throws OverflowException (negative)
+
+// Available methods on all integer types:
+// ToInt8(), ToUInt8(), ToInt16(), ToUInt16()
+// ToInt32(), ToUInt32(), ToInt64(), ToUInt64(), ToUIntPtr()
+
+// Generic template also available:
+auto result = x.To<Int64>();
+```
 
 ### Usage Rules
 
@@ -462,12 +497,12 @@ Some types must stay as primitives for compatibility:
 
 | Primitive | Reason |
 |-----------|--------|
-| `size_t` | Required by C stdlib (malloc, strlen, fread) |
+| `size_t` | Required by C stdlib (malloc, strlen, fread) - use `UIntPtr` wrapper when possible |
 | `long` | Required by ftell() return type |
 | `unsigned short` | VBE mode numbers (hardware interface) |
 | `const char*` | C string interop |
 | Pointers | Low-level memory management |
-| `int` for array sizing | C++ constexpr requirement |
+| `int` for array indexing | C++ array subscript requirement |
 | `unsigned char` in static data | Palette/pattern storage |
 
 ### Mixed-Type Operators

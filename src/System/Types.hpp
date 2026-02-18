@@ -10,13 +10,26 @@
 #define SYSTEM_TYPES_HPP
 
 #include "Exception.hpp"
+#include <cstdint>
 #include <limits>
+#include <type_traits>
 
 namespace System
 {
 
 // Forward declaration for ToString methods
 class String;
+
+// Forward declarations for integer type conversions
+class Int8;
+class UInt8;
+class Int16;
+class UInt16;
+class Int32;
+class UInt32;
+class Int64;
+class UInt64;
+class UIntPtr;
 
 // ============================================================================
 // Boolean
@@ -395,9 +408,11 @@ class ClassName \
 \
 public: \
     /** @brief Represents the smallest possible value of this type. */ \
-    static constexpr UnderlyingType MinValue = MinVal; \
+    static const ClassName MinValue; \
     /** @brief Represents the largest possible value of this type. */ \
-    static constexpr UnderlyingType MaxValue = MaxVal; \
+    static const ClassName MaxValue; \
+    /** @brief Represents a value of zero. */ \
+    static const ClassName Zero; \
     \
     /** @brief Initializes a new instance to zero. */ \
     ClassName() : _value(0) \
@@ -884,32 +899,109 @@ public: \
     { \
         return static_cast<int>(_value); \
     } \
+    \
+    /** @brief Converts this value to another integer type with overflow checking. */ \
+    /** @tparam TargetType The target integer type to convert to. */ \
+    /** @return The converted value. */ \
+    /** @throws OverflowException if the value cannot be represented in the target type. */ \
+    template<typename TargetType> \
+    TargetType To() const \
+    { \
+        using TargetUnder = decltype(+TargetType::MinValue); \
+        if constexpr (std::is_signed_v<UnderlyingType> && std::is_unsigned_v<TargetUnder>) \
+        { \
+            if (_value < 0) \
+                throw OverflowException("Cannot convert negative value to unsigned type."); \
+        } \
+        if constexpr (std::is_signed_v<UnderlyingType>) \
+        { \
+            long long minV = static_cast<long long>(TargetType::MinValue); \
+            long long maxV = static_cast<long long>(TargetType::MaxValue); \
+            if (static_cast<long long>(_value) < minV || static_cast<long long>(_value) > maxV) \
+                throw OverflowException("Value out of range for target type."); \
+        } \
+        else \
+        { \
+            unsigned long long maxV = static_cast<unsigned long long>(TargetType::MaxValue); \
+            if (static_cast<unsigned long long>(_value) > maxV) \
+                throw OverflowException("Value out of range for target type."); \
+        } \
+        return TargetType(static_cast<TargetUnder>(_value)); \
+    } \
+    \
+    /** @brief Converts to Int8 with overflow checking. */ \
+    Int8 ToInt8() const; \
+    /** @brief Converts to UInt8 with overflow checking. */ \
+    UInt8 ToUInt8() const; \
+    /** @brief Converts to Int16 with overflow checking. */ \
+    Int16 ToInt16() const; \
+    /** @brief Converts to UInt16 with overflow checking. */ \
+    UInt16 ToUInt16() const; \
+    /** @brief Converts to Int32 with overflow checking. */ \
+    Int32 ToInt32() const; \
+    /** @brief Converts to UInt32 with overflow checking. */ \
+    UInt32 ToUInt32() const; \
+    /** @brief Converts to Int64 with overflow checking. */ \
+    Int64 ToInt64() const; \
+    /** @brief Converts to UInt64 with overflow checking. */ \
+    UInt64 ToUInt64() const; \
+    /** @brief Converts to UIntPtr with overflow checking. */ \
+    UIntPtr ToUIntPtr() const; \
 };
 
 /// @brief Represents an 8-bit signed integer (-128 to 127).
-DEFINE_INTEGER_TYPE(Int8, signed char, -128, 127)
+DEFINE_INTEGER_TYPE(Int8, std::int8_t, -128, 127)
 
 /// @brief Represents an 8-bit unsigned integer (0 to 255).
-DEFINE_INTEGER_TYPE(UInt8, unsigned char, 0, 255)
+DEFINE_INTEGER_TYPE(UInt8, std::uint8_t, 0, 255)
 
 /// @brief Represents a 16-bit signed integer (-32,768 to 32,767).
-DEFINE_INTEGER_TYPE(Int16, short, -32768, 32767)
+DEFINE_INTEGER_TYPE(Int16, std::int16_t, -32768, 32767)
 
 /// @brief Represents a 16-bit unsigned integer (0 to 65,535).
-DEFINE_INTEGER_TYPE(UInt16, unsigned short, 0, 65535)
+DEFINE_INTEGER_TYPE(UInt16, std::uint16_t, 0, 65535)
 
 /// @brief Represents a 32-bit signed integer (-2,147,483,648 to 2,147,483,647).
-DEFINE_INTEGER_TYPE(Int32, int, (-2147483647 - 1), 2147483647)
+DEFINE_INTEGER_TYPE(Int32, std::int32_t, INT32_MIN, INT32_MAX)
 
 /// @brief Represents a 32-bit unsigned integer (0 to 4,294,967,295).
-DEFINE_INTEGER_TYPE(UInt32, unsigned int, 0, 4294967295U)
+DEFINE_INTEGER_TYPE(UInt32, std::uint32_t, 0, UINT32_MAX)
 
 /// @brief Represents a 64-bit signed integer.
-DEFINE_INTEGER_TYPE(Int64, long long, (-9223372036854775807LL - 1), 9223372036854775807LL)
+DEFINE_INTEGER_TYPE(Int64, std::int64_t, INT64_MIN, INT64_MAX)
 
 /// @brief Represents a 64-bit unsigned integer.
-DEFINE_INTEGER_TYPE(UInt64, unsigned long long, 0, 18446744073709551615ULL)
+DEFINE_INTEGER_TYPE(UInt64, std::uint64_t, 0, UINT64_MAX)
 
+/// @brief Represents a pointer-sized unsigned integer.
+DEFINE_INTEGER_TYPE(UIntPtr, std::uintptr_t, 0, UINTPTR_MAX)
+
+// ============================================================================
+// Integer Type Conversion Method Definitions
+// ============================================================================
+
+#define DEFINE_INTEGER_CONVERSIONS(SourceType) \
+inline Int8 SourceType::ToInt8() const { return To<Int8>(); } \
+inline UInt8 SourceType::ToUInt8() const { return To<UInt8>(); } \
+inline Int16 SourceType::ToInt16() const { return To<Int16>(); } \
+inline UInt16 SourceType::ToUInt16() const { return To<UInt16>(); } \
+inline Int32 SourceType::ToInt32() const { return To<Int32>(); } \
+inline UInt32 SourceType::ToUInt32() const { return To<UInt32>(); } \
+inline Int64 SourceType::ToInt64() const { return To<Int64>(); } \
+inline UInt64 SourceType::ToUInt64() const { return To<UInt64>(); } \
+inline UIntPtr SourceType::ToUIntPtr() const { return To<UIntPtr>(); }
+
+DEFINE_INTEGER_CONVERSIONS(Int8)
+DEFINE_INTEGER_CONVERSIONS(UInt8)
+DEFINE_INTEGER_CONVERSIONS(Int16)
+DEFINE_INTEGER_CONVERSIONS(UInt16)
+DEFINE_INTEGER_CONVERSIONS(Int32)
+DEFINE_INTEGER_CONVERSIONS(UInt32)
+DEFINE_INTEGER_CONVERSIONS(Int64)
+DEFINE_INTEGER_CONVERSIONS(UInt64)
+DEFINE_INTEGER_CONVERSIONS(UIntPtr)
+
+#undef DEFINE_INTEGER_CONVERSIONS
 #undef DEFINE_INTEGER_TYPE
 
 // ============================================================================

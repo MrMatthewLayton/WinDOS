@@ -14,6 +14,46 @@ namespace System
 const Boolean Boolean::True(true);
 const Boolean Boolean::False(false);
 
+// ============================================================================
+// Integer type constants (MinValue, MaxValue, Zero)
+// ============================================================================
+
+const Int8 Int8::MinValue(-128);
+const Int8 Int8::MaxValue(127);
+const Int8 Int8::Zero(0);
+
+const UInt8 UInt8::MinValue(0);
+const UInt8 UInt8::MaxValue(255);
+const UInt8 UInt8::Zero(0);
+
+const Int16 Int16::MinValue(-32768);
+const Int16 Int16::MaxValue(32767);
+const Int16 Int16::Zero(0);
+
+const UInt16 UInt16::MinValue(0);
+const UInt16 UInt16::MaxValue(65535);
+const UInt16 UInt16::Zero(0);
+
+const Int32 Int32::MinValue(INT32_MIN);
+const Int32 Int32::MaxValue(INT32_MAX);
+const Int32 Int32::Zero(0);
+
+const UInt32 UInt32::MinValue(0);
+const UInt32 UInt32::MaxValue(UINT32_MAX);
+const UInt32 UInt32::Zero(0);
+
+const Int64 Int64::MinValue(INT64_MIN);
+const Int64 Int64::MaxValue(INT64_MAX);
+const Int64 Int64::Zero(0);
+
+const UInt64 UInt64::MinValue(0);
+const UInt64 UInt64::MaxValue(UINT64_MAX);
+const UInt64 UInt64::Zero(0);
+
+const UIntPtr UIntPtr::MinValue(0);
+const UIntPtr UIntPtr::MaxValue(UINTPTR_MAX);
+const UIntPtr UIntPtr::Zero(0);
+
 String Boolean::ToString() const
 {
     return _value ? String("True") : String("False");
@@ -511,6 +551,36 @@ bool UInt64::TryParse(const String& s, UInt64& result)
     if (TryParseUInt<unsigned long long>(s, val, MaxValue))
     {
         result = val;
+        return true;
+    }
+    return false;
+}
+
+// ============================================================================
+// UIntPtr implementation
+// ============================================================================
+
+String UIntPtr::ToString() const
+{
+    return UIntToString(_value);
+}
+
+UIntPtr UIntPtr::Parse(const String& s)
+{
+    UIntPtr result;
+    if (!TryParse(s, result))
+    {
+        throw FormatException("Input string was not in a correct format.");
+    }
+    return result;
+}
+
+bool UIntPtr::TryParse(const String& s, UIntPtr& result)
+{
+    unsigned long long val;
+    if (TryParseUInt<unsigned long long>(s, val, MaxValue))
+    {
+        result = static_cast<std::uintptr_t>(val);
         return true;
     }
     return false;
