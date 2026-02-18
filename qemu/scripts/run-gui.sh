@@ -23,17 +23,12 @@ fi
 if [ ! -f "$IMAGE" ] || [ "$BUILD_DIR/forms.exe" -nt "$IMAGE" ]; then
     echo "Creating GUI disk image..."
 
-    # Create a 1.44MB floppy disk image
-    dd if=/dev/zero of="$IMAGE" bs=512 count=2880 2>/dev/null
+    # Copy working FreeDOS boot disk and remove installer files
+    cp "$FREEDOS_DIR/144m/x86BOOT.img" "$IMAGE"
+    mdel -i "$IMAGE" ::FDAUTO.BAT ::SETUP.BAT ::FDCONFIG.SYS 2>/dev/null || true
+    mdeltree -i "$IMAGE" ::FREEDOS 2>/dev/null || true
 
-    # Format as FAT12
-    mformat -i "$IMAGE" -f 1440 -v WINDOSGUI ::
-
-    # Extract and copy FreeDOS kernel
-    mcopy -i "$FREEDOS_DIR/144m/x86BOOT.img" ::KERNEL.SYS /tmp/
-    mcopy -i "$IMAGE" /tmp/KERNEL.SYS ::
-
-    # Extract and copy COMMAND.COM
+    # Extract and copy COMMAND.COM to root
     mcopy -i "$FREEDOS_DIR/144m/x86BOOT.img" ::FREEDOS/BIN/COMMAND.COM /tmp/
     mcopy -i "$IMAGE" /tmp/COMMAND.COM ::
 
@@ -69,29 +64,26 @@ if [ ! -f "$IMAGE" ] || [ "$BUILD_DIR/forms.exe" -nt "$IMAGE" ]; then
         mcopy -i "$IMAGE" "$PROJECT_DIR/assets/fonts/ttf/tahomabd.ttf" ::TAHOMABD.TTF 2>/dev/null || true
     fi
 
-    # Create CONFIG.SYS
-    cat > /tmp/config.sys << 'EOF'
+    # Create FDCONFIG.SYS (FreeDOS configuration file)
+    cat > /tmp/fdconfig.sys << 'EOF'
 DOS=HIGH,UMB
 FILES=40
 BUFFERS=20
-SHELL=COMMAND.COM /E:1024 /P
+SHELL=A:\COMMAND.COM /E:1024 /P
 EOF
-    mcopy -i "$IMAGE" /tmp/config.sys ::CONFIG.SYS
+    sed -i '' 's/$/\r/' /tmp/fdconfig.sys 2>/dev/null || true
+    mcopy -i "$IMAGE" /tmp/fdconfig.sys ::FDCONFIG.SYS
 
-    # Create AUTOEXEC.BAT for GUI
-    cat > /tmp/autoexec.bat << 'EOF'
+    # Create FDAUTO.BAT for GUI (FreeDOS autoexec file)
+    cat > /tmp/fdauto.bat << 'EOF'
 @ECHO OFF
 ECHO Loading mouse driver...
-CTMOUSE.EXE
+CTMOUSE
 ECHO Starting WinDOS GUI Demo...
-CWSDPMI.EXE
-forms.exe
+forms
 EOF
-    sed -i '' 's/$/\r/' /tmp/autoexec.bat 2>/dev/null || true
-    mcopy -i "$IMAGE" /tmp/autoexec.bat ::AUTOEXEC.BAT
-
-    # Install boot sector
-    dd if="$FREEDOS_DIR/144m/x86BOOT.img" of="$IMAGE" bs=512 count=1 conv=notrunc 2>/dev/null
+    sed -i '' 's/$/\r/' /tmp/fdauto.bat 2>/dev/null || true
+    mcopy -i "$IMAGE" /tmp/fdauto.bat ::FDAUTO.BAT
 
     echo "GUI disk image created."
     mdir -i "$IMAGE" ::
