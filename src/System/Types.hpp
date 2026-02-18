@@ -420,8 +420,8 @@ public: \
     } \
     \
     /** @brief Initializes a new instance with the specified value. */ \
-    /** @param v The value to wrap. */ \
-    ClassName(UnderlyingType v) : _value(v) \
+    /** @param value The value to wrap. */ \
+    ClassName(UnderlyingType value) : _value(value) \
     { \
     } \
     \

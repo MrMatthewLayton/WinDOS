@@ -2744,7 +2744,7 @@ Int32 Font::GetCharWidth(Char c) const {
 }
 
 Drawing::Size Font::MeasureString(const String& text) const {
-    return MeasureString(text.CStr());
+    return MeasureString(text.GetRawString());
 }
 
 Drawing::Size Font::MeasureString(const char* text) const {
@@ -3575,7 +3575,7 @@ void Graphics::Invalidate(Boolean flushFrameBuffer)
 
 void Graphics::DrawString(const String& text, const Font& font, const Color& color, Int32 x, Int32 y)
 {
-    DrawString(text.CStr(), font, color, x, y);
+    DrawString(text.GetRawString(), font, color, x, y);
 }
 
 void Graphics::DrawString(const char* text, const Font& font, const Color& color, Int32 x, Int32 y)

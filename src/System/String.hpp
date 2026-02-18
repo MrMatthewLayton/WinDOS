@@ -102,7 +102,7 @@ public:
 
     /// @brief Gets a pointer to the underlying null-terminated character array.
     /// @return A pointer to the null-terminated C string representation.
-    const char* CStr() const;
+    const char* GetRawString() const;
 
     // Substring
 

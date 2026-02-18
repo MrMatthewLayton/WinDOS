@@ -58,6 +58,7 @@ namespace System::IO::Devices
         static Boolean isAvailable;
 
         Mouse() = delete; // Static class NOLINT(*-use-equals-delete)
+
     public:
         /// @brief Initializes the mouse driver and resets the mouse state.
         ///

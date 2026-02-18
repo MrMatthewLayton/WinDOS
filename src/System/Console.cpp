@@ -114,7 +114,7 @@ void Console::_handleNewline()
 
 void Console::Write(const String& value)
 {
-    const char* str = value.CStr();
+    const char* str = value.GetRawString();
     while (*str)
     {
         _writeChar(*str++);

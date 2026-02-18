@@ -224,7 +224,7 @@ const char* StringIntern::Intern(const char* str, Int32 length)
 
 const char* StringIntern::Intern(const String& str)
 {
-    return Intern(str.CStr(), str.Length());
+    return Intern(str.GetRawString(), str.Length());
 }
 
 Boolean StringIntern::IsInterned(const char* str)

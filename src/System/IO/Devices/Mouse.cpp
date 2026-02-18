@@ -12,7 +12,7 @@ namespace System::IO::Devices
         __dpmi_regs regs;
         regs.x.ax = 0x0000;
         __dpmi_int(0x33, &regs);
-        const bool result = regs.x.ax != 0;
+        const Boolean result = regs.x.ax != 0;
 
         return isInitialized = isAvailable = result;
     }

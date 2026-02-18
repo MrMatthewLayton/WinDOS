@@ -149,7 +149,7 @@ Char String::operator[](Int32 index) const
     return Char(_data[static_cast<int>(index)]);
 }
 
-const char* String::CStr() const
+const char* String::GetRawString() const
 {
     return _data ? _data : "";
 }
@@ -1050,7 +1050,7 @@ StringBuilder::StringBuilder(const String& value)
     EnsureCapacity(len + DEFAULT_CAPACITY);
     if (len > 0)
     {
-        std::memcpy(_buffer, value.CStr(), static_cast<int>(len));
+        std::memcpy(_buffer, value.GetRawString(), static_cast<int>(len));
         _length = len;
         _buffer[static_cast<int>(_length)] = '\0';
     }
@@ -1149,7 +1149,7 @@ StringBuilder& StringBuilder::Append(const String& value)
     if (len > 0)
     {
         EnsureCapacity(_length + len + 1);
-        std::memcpy(_buffer + static_cast<int>(_length), value.CStr(), static_cast<int>(len));
+        std::memcpy(_buffer + static_cast<int>(_length), value.GetRawString(), static_cast<int>(len));
         _length += len;
         _buffer[static_cast<int>(_length)] = '\0';
     }
@@ -1265,7 +1265,7 @@ StringBuilder& StringBuilder::Insert(Int32 index, const String& value)
         std::memmove(_buffer + static_cast<int>(index) + static_cast<int>(len),
                      _buffer + static_cast<int>(index),
                      static_cast<int>(_length - index));
-        std::memcpy(_buffer + static_cast<int>(index), value.CStr(), static_cast<int>(len));
+        std::memcpy(_buffer + static_cast<int>(index), value.GetRawString(), static_cast<int>(len));
         _length += len;
         _buffer[static_cast<int>(_length)] = '\0';
     }

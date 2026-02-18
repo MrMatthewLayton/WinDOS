@@ -178,7 +178,7 @@ bool TryParseInt(const String& s, T& result, T minVal, T maxVal)
         return false;
     }
 
-    const char* str = s.CStr();
+    const char* str = s.GetRawString();
     int i = 0;
     bool negative = false;
 
@@ -253,7 +253,7 @@ bool TryParseUInt(const String& s, T& result, T maxVal)
         return false;
     }
 
-    const char* str = s.CStr();
+    const char* str = s.GetRawString();
     int i = 0;
 
     // Skip leading whitespace
@@ -644,7 +644,7 @@ bool Float32::TryParse(const String& s, Float32& result)
     }
 
     String trimmed = s.Trim();
-    const char* str = trimmed.CStr();
+    const char* str = trimmed.GetRawString();
     char* endptr;
 
     float value = std::strtof(str, &endptr);
@@ -729,7 +729,7 @@ bool Float64::TryParse(const String& s, Float64& result)
     }
 
     String trimmed = s.Trim();
-    const char* str = trimmed.CStr();
+    const char* str = trimmed.GetRawString();
     char* endptr;
 
     double value = std::strtod(str, &endptr);
