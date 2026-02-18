@@ -6,7 +6,7 @@
 #include "../src/System/Devices/Devices.hpp"
 
 using namespace System;
-using namespace System::Devices;
+using namespace System::IO::Devices;
 
 void TestMouseStatus() {
     Test::PrintHeader("MouseStatus");

@@ -16,12 +16,10 @@ LIB_DIR = $(BUILD_DIR)/lib
 BIN_DIR = $(BUILD_DIR)/bin
 
 # Source files
-PLATFORM_SRCS = \
-    $(SRC_DIR)/Platform/DOS/Video.cpp \
-    $(SRC_DIR)/Platform/DOS/Keyboard.cpp \
-    $(SRC_DIR)/Platform/DOS/System.cpp \
-    $(SRC_DIR)/Platform/DOS/Graphics.cpp \
-    $(SRC_DIR)/Platform/DOS/Mouse.cpp
+SYSTEM_IO_DEVICE_SRCS = \
+    $(SRC_DIR)/System/IO/Devices/Display.cpp \
+    $(SRC_DIR)/System/IO/Devices/Keyboard.cpp \
+    $(SRC_DIR)/System/IO/Devices/Mouse.cpp
 
 SYSTEM_SRCS = \
     $(SRC_DIR)/System/Exception.cpp \
@@ -29,19 +27,19 @@ SYSTEM_SRCS = \
     $(SRC_DIR)/System/Types.cpp \
     $(SRC_DIR)/System/Memory.cpp \
     $(SRC_DIR)/System/Console.cpp \
-    $(SRC_DIR)/System/IO/IO.cpp \
+    $(SRC_DIR)/System/IO/File.cpp \
+    $(SRC_DIR)/System/IO/Environment.cpp \
     $(SRC_DIR)/System/Drawing/Drawing.cpp \
-    $(SRC_DIR)/System/Devices/Devices.cpp \
     $(SRC_DIR)/System/Windows/Forms/Forms.cpp \
     $(SRC_DIR)/ThirdParty/stb_truetype_impl.cpp \
     $(SRC_DIR)/ThirdParty/stb_image_impl.cpp
 
-RTCORLIB_SRCS = $(PLATFORM_SRCS) $(SYSTEM_SRCS)
+RTCORLIB_SRCS = $(SYSTEM_IO_DEVICE_SRCS) $(SYSTEM_SRCS)
 
 # Object files
-PLATFORM_OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(PLATFORM_SRCS))
+SYSTEM_IO_DEVICE_OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SYSTEM_IO_DEVICE_SRCS))
 SYSTEM_OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SYSTEM_SRCS))
-RTCORLIB_OBJS = $(PLATFORM_OBJS) $(SYSTEM_OBJS)
+RTCORLIB_OBJS = $(SYSTEM_IO_DEVICE_OBJS) $(SYSTEM_OBJS)
 
 # Library
 RTCORLIB_LIB = $(LIB_DIR)/librtcorlib.a
@@ -74,11 +72,10 @@ all: directories $(RTCORLIB_LIB)
 
 # Create directories
 directories:
-	@mkdir -p $(OBJ_DIR)/Platform/DOS
 	@mkdir -p $(OBJ_DIR)/System
 	@mkdir -p $(OBJ_DIR)/System/IO
+	@mkdir -p $(OBJ_DIR)/System/IO/Devices
 	@mkdir -p $(OBJ_DIR)/System/Drawing
-	@mkdir -p $(OBJ_DIR)/System/Devices
 	@mkdir -p $(OBJ_DIR)/System/Windows/Forms
 	@mkdir -p $(OBJ_DIR)/ThirdParty
 	@mkdir -p $(LIB_DIR)
@@ -89,28 +86,23 @@ $(RTCORLIB_LIB): $(RTCORLIB_OBJS)
 	$(AR) rcs $@ $^
 	@echo "Built rtcorlib library: $@"
 
-# Compile Platform source files
-$(OBJ_DIR)/Platform/DOS/%.o: $(SRC_DIR)/Platform/DOS/%.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
 # Compile System source files (root level)
 $(OBJ_DIR)/System/%.o: $(SRC_DIR)/System/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Compile System/IO source files
+# Compile System/IO source files (root level: File.cpp, Environment.cpp)
 $(OBJ_DIR)/System/IO/%.o: $(SRC_DIR)/System/IO/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Compile System/IO/Devices source files
+$(OBJ_DIR)/System/IO/Devices/%.o: $(SRC_DIR)/System/IO/Devices/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Compile System/Drawing source files
 $(OBJ_DIR)/System/Drawing/%.o: $(SRC_DIR)/System/Drawing/%.cpp
-	@mkdir -p $(dir $@)
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-# Compile System/Devices source files
-$(OBJ_DIR)/System/Devices/%.o: $(SRC_DIR)/System/Devices/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 

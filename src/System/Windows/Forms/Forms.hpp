@@ -8,7 +8,9 @@
 /// This framework uses a .NET-style API design and runs in DOS protected mode.
 
 #include "../../Drawing/Drawing.hpp"
-#include "../../Devices/Devices.hpp"
+#include "../../IO/Devices/Display.hpp"
+#include "../../IO/Devices/Mouse.hpp"
+#include "../../IO/Devices/Keyboard.hpp"
 #include "../../Array.hpp"
 #include "../../String.hpp"
 
@@ -16,7 +18,7 @@ namespace System::Windows::Forms
 {
 
 using namespace System::Drawing;
-using namespace System::Devices;
+using namespace System::IO::Devices;
 
 // Forward declarations
 class Control;

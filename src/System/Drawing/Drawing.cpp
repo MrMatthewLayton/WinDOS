@@ -1,7 +1,7 @@
 #include "Drawing.hpp"
 #include "../Exception.hpp"
-#include "../IO/IO.hpp"
-#include "../../Platform/DOS/Graphics.hpp"
+#include "../IO/File.hpp"
+#include "../IO/Devices/Display.hpp"
 #include "../../ThirdParty/stb_truetype.h"
 #include "../../ThirdParty/stb_image.h"
 #include <cstdlib>
@@ -2965,13 +2965,13 @@ static void PlanarBufferWriterFast(const Image& img, const Rectangle& region)
 
     for (Int32 plane = Int32(0); static_cast<int>(plane) < 4; plane += 1)
     {
-        Platform::DOS::Graphics::SelectPlane(static_cast<int>(plane));
+        System::IO::Devices::Display::SelectPlane(static_cast<int>(plane));
 
         // Copy row by row to handle stride difference
         for (Int32 row = Int32(0); static_cast<int>(row) < static_cast<int>(regionHeight); row += 1)
         {
             Int32 vgaOffset = Int32(static_cast<int>(startOffset) + static_cast<int>(row) * static_cast<int>(screenWidthBytes));
-            Platform::DOS::Graphics::CopyToVGA(
+            System::IO::Devices::Display::CopyToVGA(
                 planes + static_cast<int>(plane) * static_cast<int>(regionPlaneSize) + static_cast<int>(row) * static_cast<int>(regionWidthBytes),
                 static_cast<int>(vgaOffset),
                 static_cast<int>(regionWidthBytes)
@@ -2980,8 +2980,8 @@ static void PlanarBufferWriterFast(const Image& img, const Rectangle& region)
     }
 
     // Reset to all planes enabled
-    Platform::DOS::Graphics::OutPort(0x3C4, 0x02);
-    Platform::DOS::Graphics::OutPort(0x3C5, 0x0F);
+    System::IO::Devices::Display::OutPort(0x3C4, 0x02);
+    System::IO::Devices::Display::OutPort(0x3C5, 0x0F);
 
     std::free(planes);
 }
@@ -3018,7 +3018,7 @@ static void LinearBufferWriter(const GraphicsBuffer& buffer)
         }
     }
 
-    Platform::DOS::Graphics::CopyToVGA(vgaBuffer, 0, static_cast<int>(width) * static_cast<int>(height));
+    System::IO::Devices::Display::CopyToVGA(vgaBuffer, 0, static_cast<int>(width) * static_cast<int>(height));
     std::free(vgaBuffer);
 }
 
@@ -3027,7 +3027,7 @@ static void LinearBufferWriter(const GraphicsBuffer& buffer)
 // Handles both 24bpp and 32bpp display modes
 static void Linear32BufferWriter(const GraphicsBuffer& buffer)
 {
-    Int32 selector = Int32(Platform::DOS::Graphics::GetLfbSelector());
+    Int32 selector = Int32(System::IO::Devices::Display::GetLfbSelector());
     if (static_cast<int>(selector) <= 0) return;
 
     UInt32 pitch = UInt32(static_cast<unsigned int>(buffer.LfbPitch()));

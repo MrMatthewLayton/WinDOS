@@ -7,7 +7,7 @@
 
 using namespace System;
 using namespace System::Drawing;
-using namespace System::Devices;
+using namespace System::IO::Devices;
 
 int main() {
     printf("=== VBE rtcorlib Test ===\n\n");

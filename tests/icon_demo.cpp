@@ -9,7 +9,7 @@
 
 using namespace System;
 using namespace System::Drawing;
-using namespace System::Devices;
+using namespace System::IO::Devices;
 using namespace System::Windows::Forms;
 
 // Icon grid control - displays icons in a grid pattern
