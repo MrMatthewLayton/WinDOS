@@ -27,8 +27,8 @@ SYSTEM_SRCS = \
     $(SRC_DIR)/System/Types.cpp \
     $(SRC_DIR)/System/Memory.cpp \
     $(SRC_DIR)/System/Console.cpp \
+    $(SRC_DIR)/System/Environment.cpp \
     $(SRC_DIR)/System/IO/File.cpp \
-    $(SRC_DIR)/System/IO/Environment.cpp \
     $(SRC_DIR)/System/Drawing/Drawing.cpp \
     $(SRC_DIR)/System/Windows/Forms/Forms.cpp \
     $(SRC_DIR)/ThirdParty/stb_truetype_impl.cpp \
@@ -91,7 +91,7 @@ $(OBJ_DIR)/System/%.o: $(SRC_DIR)/System/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Compile System/IO source files (root level: File.cpp, Environment.cpp)
+# Compile System/IO source files (root level: File.cpp)
 $(OBJ_DIR)/System/IO/%.o: $(SRC_DIR)/System/IO/%.cpp
 	@mkdir -p $(dir $@)
 	$(CXX) $(CXXFLAGS) -c $< -o $@

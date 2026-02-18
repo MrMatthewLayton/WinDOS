@@ -7,25 +7,8 @@ namespace System::IO::Devices
 {
 
 /******************************************************************************/
-/*    Keyboard private BIOS methods                                           */
+/*    Keyboard private BIOS methods - kept for PeekKey() use                  */
 /******************************************************************************/
-
-unsigned short Keyboard::BiosReadKey()
-{
-    __dpmi_regs regs;
-    regs.h.ah = 0x00;       // Read character
-    __dpmi_int(0x16, &regs);
-    return regs.x.ax;       // AH = scan code, AL = ASCII
-}
-
-bool Keyboard::BiosIsKeyAvailable()
-{
-    __dpmi_regs regs;
-    regs.h.ah = 0x01;       // Check for key
-    __dpmi_int(0x16, &regs);
-    // Zero flag is set if no key available
-    return !(regs.x.flags & 0x40);
-}
 
 unsigned short Keyboard::BiosPeekKey()
 {
@@ -37,14 +20,6 @@ unsigned short Keyboard::BiosPeekKey()
         return 0;           // No key available
     }
     return regs.x.ax;       // AH = scan code, AL = ASCII
-}
-
-unsigned char Keyboard::BiosGetShiftFlags()
-{
-    __dpmi_regs regs;
-    regs.h.ah = 0x02;  // Get shift flags
-    __dpmi_int(0x16, &regs);
-    return regs.h.al;
 }
 
 /******************************************************************************/
@@ -63,7 +38,12 @@ Char Keyboard::ReadKey()
 
 void Keyboard::ReadKey(UInt8& scanCode, Char& character)
 {
-    unsigned short key = BiosReadKey();
+    // INT 16h, AH=00h - Read character
+    __dpmi_regs regs;
+    regs.h.ah = 0x00;       // Read character
+    __dpmi_int(0x16, &regs);
+    unsigned short key = regs.x.ax;  // AH = scan code, AL = ASCII
+
     scanCode = UInt8((key >> 8) & 0xFF);   // High byte: scan code
     character = Char(key & 0xFF);          // Low byte: ASCII
 }
@@ -91,7 +71,11 @@ Boolean Keyboard::PeekKey(UInt8& scanCode, Char& character)
 
 KeyboardStatus Keyboard::GetStatus()
 {
-    unsigned char flags = BiosGetShiftFlags();
+    // INT 16h, AH=02h - Get shift flags
+    __dpmi_regs regs;
+    regs.h.ah = 0x02;  // Get shift flags
+    __dpmi_int(0x16, &regs);
+    unsigned char flags = regs.h.al;
 
     KeyboardStatus status;
     status.shiftPressed = Boolean((flags & 0x03) != 0);  // Left or right shift

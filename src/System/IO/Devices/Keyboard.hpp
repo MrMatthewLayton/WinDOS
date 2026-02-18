@@ -65,11 +65,8 @@ class Keyboard
 {
     Keyboard() = delete;  // Static class
 
-    // Low-level BIOS calls - truly private
-    static unsigned short BiosReadKey();
-    static bool BiosIsKeyAvailable();
+    // Low-level BIOS calls - kept for PeekKey() use
     static unsigned short BiosPeekKey();
-    static unsigned char BiosGetShiftFlags();
 
 public:
     /// @brief Checks if a key is available in the keyboard buffer.

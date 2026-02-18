@@ -10,6 +10,7 @@
 #include "System/Math.hpp"
 #include "System/Memory.hpp"
 #include "System/Console.hpp"
+#include "System/Environment.hpp"
 
 // I/O and Devices
 #include "System/IO/IO.hpp"

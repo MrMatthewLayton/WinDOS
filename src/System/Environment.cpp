@@ -1,12 +1,12 @@
 #include "Environment.hpp"
-#include "../String.hpp"
+#include "String.hpp"
 #include <dos.h>
 #include <dpmi.h>
 #include <cstdlib>
 #include <unistd.h>
 #include <cstring>
 
-namespace System::IO
+namespace System
 {
 
 /******************************************************************************/
@@ -108,4 +108,4 @@ String Environment::GetOSVersion()
     return sb.ToString();
 }
 
-} // namespace System::IO
+} // namespace System

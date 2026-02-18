@@ -173,14 +173,6 @@ void Display::BiosSetVideoMode(unsigned char mode)
     __dpmi_int(0x10, &regs);
 }
 
-unsigned char Display::BiosGetVideoMode()
-{
-    __dpmi_regs regs;
-    regs.h.ah = 0x0F;
-    __dpmi_int(0x10, &regs);
-    return regs.h.al;
-}
-
 void Display::BiosWaitForVSync()
 {
     // Wait until not in vertical retrace
@@ -407,11 +399,6 @@ void Display::BiosCleanupVBE(void* surface)
     vbeSurface->selector = 0;
     vbeSurface->linearAddr = 0;
     g_lfbSelector = 0;
-}
-
-int Display::BiosGetLfbSelector()
-{
-    return g_lfbSelector;
 }
 
 /******************************************************************************/
@@ -1060,7 +1047,8 @@ UInt8 Display::InPort(UInt16 port)
 
 Int32 Display::GetLfbSelector()
 {
-    return Int32(BiosGetLfbSelector());
+    // Return the global LFB selector allocated by BiosSetVBEMode
+    return Int32(g_lfbSelector);
 }
 
 /******************************************************************************/

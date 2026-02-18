@@ -1,10 +1,10 @@
-#ifndef SYSTEM_IO_ENVIRONMENT_HPP
-#define SYSTEM_IO_ENVIRONMENT_HPP
+#ifndef SYSTEM_ENVIRONMENT_HPP
+#define SYSTEM_ENVIRONMENT_HPP
 
-#include "../Types.hpp"
-#include "../String.hpp"
+#include "Types.hpp"
+#include "String.hpp"
 
-namespace System::IO
+namespace System
 {
 
 /// @brief Provides information about and access to the current environment.
@@ -76,6 +76,6 @@ public:
     }
 };
 
-} // namespace System::IO
+} // namespace System
 
-#endif // SYSTEM_IO_ENVIRONMENT_HPP
+#endif // SYSTEM_ENVIRONMENT_HPP

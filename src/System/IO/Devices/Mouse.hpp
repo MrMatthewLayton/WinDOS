@@ -69,15 +69,9 @@ class Mouse
     static Boolean _initialized;
     static Boolean _available;
 
-    // Low-level BIOS calls - truly private
-    static bool BiosInitialize();
-    static void BiosShowCursor();
-    static void BiosHideCursor();
-    static void BiosGetState(int& x, int& y, int& buttons);
-    static void BiosSetPosition(int x, int y);
+    // Low-level BIOS calls - kept for SetBounds() use
     static void BiosSetHorizontalBounds(int min, int max);
     static void BiosSetVerticalBounds(int min, int max);
-    static void BiosSetSensitivity(int horizontalMickeys, int verticalMickeys);
 
 public:
     /// @brief Initializes the mouse driver and resets the mouse state.

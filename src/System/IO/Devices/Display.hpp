@@ -65,7 +65,6 @@ class Display
 
     // Low-level BIOS/hardware operations - truly private
     static void BiosSetVideoMode(unsigned char mode);
-    static unsigned char BiosGetVideoMode();
     static void BiosWaitForVSync();
     static void BiosSelectPlane(int plane);
     static void BiosCopyToVGA(const void* data, unsigned int offset, unsigned int length);
@@ -75,7 +74,6 @@ class Display
     static bool BiosGetVBEModeInfo(unsigned short mode, void* modeInfo);
     static bool BiosSetVBEMode(unsigned short mode, void* vbeSurface);
     static void BiosCleanupVBE(void* vbeSurface);
-    static int BiosGetLfbSelector();
     static bool BiosIsGammaSupported();
     static bool BiosSetGammaTable(const unsigned char* gammaTable);
     static bool BiosGetGammaTable(unsigned char* gammaTable);
