@@ -30,7 +30,6 @@ namespace System
 template<typename T>
 class Array
 {
-private:
     T* _data;
     int _length;
 

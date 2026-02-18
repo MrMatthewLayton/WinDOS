@@ -29,7 +29,6 @@ class String;
 /// from the primitive bool type.
 class Boolean
 {
-private:
     bool _value;
 
 public:
@@ -162,7 +161,6 @@ public:
 /// and conversion methods. It is implicitly convertible to and from primitive char.
 class Char
 {
-private:
     char _value;
 
 public:
@@ -393,8 +391,8 @@ public:
 /** It is implicitly convertible to and from the underlying primitive type. */ \
 class ClassName \
 { \
-private: \
     UnderlyingType _value; \
+\
 public: \
     /** @brief Represents the smallest possible value of this type. */ \
     static constexpr UnderlyingType MinValue = MinVal; \
@@ -942,8 +940,8 @@ DEFINE_INTEGER_TYPE(UInt64, unsigned long long, 0, 18446744073709551615ULL)
 /** It is implicitly convertible to and from the underlying primitive type. */ \
 class ClassName \
 { \
-private: \
     UnderlyingType _value; \
+\
 public: \
     /** @brief Represents the smallest possible value of this type (most negative). */ \
     static constexpr UnderlyingType MinValue = std::numeric_limits<UnderlyingType>::lowest(); \

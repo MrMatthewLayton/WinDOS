@@ -37,7 +37,6 @@ namespace System
 /// @endcode
 class MemoryPool
 {
-private:
     /// @brief Internal free-list node structure.
     struct Block
     {
@@ -171,7 +170,6 @@ public:
 /// @endcode
 class StringIntern
 {
-private:
     /// @brief Hash table entry for storing interned strings.
     struct Entry
     {

@@ -929,7 +929,6 @@ struct DesktopIcon
 /// @note Desktop does not have a parent and is typically created on the stack.
 class Desktop : public Control
 {
-private:
     static const int CURSOR_SIZE = 24;     ///< Cursor size (24x24 pixels)
     static const int ICON_SIZE = 32;       ///< Desktop icon size
     static const int ICON_SPACING_X = 75;  ///< Horizontal icon spacing
@@ -1146,7 +1145,6 @@ public:
 /// The client area excludes the title bar and frame borders.
 class Window : public Control
 {
-private:
     static const int TITLE_BAR_HEIGHT = 20;  ///< Title bar height in pixels
     static const int FRAME_WIDTH = 3;        ///< Frame border width in pixels
     bool _isFocused;                         ///< True if window has focus
@@ -1265,7 +1263,6 @@ public:
 /// to manage window focus.
 class TaskBar : public Control
 {
-private:
     static const int WINDOW_BUTTON_WIDTH = 120;    ///< Width of window buttons
     static const int WINDOW_BUTTON_HEIGHT = 20;    ///< Height of window buttons
     static const int WINDOW_BUTTON_SPACING = 2;    ///< Space between buttons
@@ -1371,7 +1368,6 @@ public:
 /// Use SetOnClick to register a click event handler.
 class Button : public Control
 {
-private:
     bool _isToggled;              ///< Persistent pressed state
     bool _isMouseDown;            ///< Temporary state during click
     bool _wasMouseDown;           ///< Previous mouse state for click detection
@@ -1492,7 +1488,6 @@ public:
 /// drawn at its natural size; no scaling is performed.
 class Picture : public Control
 {
-private:
     Image _image;  ///< The image to display
 
 public:
@@ -1568,7 +1563,6 @@ public:
 /// the 32-bit graphics pipeline.
 class SpectrumControl : public Control
 {
-private:
     Color _baseColor;     ///< The middle color of the gradient
     Image _gradient;      ///< Cached pre-computed gradient image
 
@@ -1627,7 +1621,6 @@ public:
 /// Clicking the button focuses the associated window via the Desktop.
 class TaskBarButton : public Button
 {
-private:
     Window* _window;  ///< Reference to associated window (not owned)
 
     /// @brief Click handler that focuses the associated window.
@@ -1674,7 +1667,6 @@ public:
 /// Fires click event when clicked.
 class MenuItem : public Control
 {
-private:
     static const int ICON_SIZE = 16;      ///< Icon display size (16x16)
     static const int ITEM_HEIGHT = 24;    ///< Item height in pixels
     static const int ICON_MARGIN = 4;     ///< Margin around icon
@@ -1734,7 +1726,6 @@ public:
 /// outside the menu area.
 class StartMenu : public Control
 {
-private:
     static const int MENU_WIDTH = 160;       ///< Total menu width
     static const int SIDEBAR_WIDTH = 24;     ///< Blue sidebar width
     static const int ITEM_COUNT = 12;        ///< Number of menu items

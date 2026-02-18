@@ -52,7 +52,6 @@ enum class ConsoleColor : unsigned char
 /// @endcode
 class Console
 {
-private:
     static ConsoleColor _foregroundColor;
     static ConsoleColor _backgroundColor;
 

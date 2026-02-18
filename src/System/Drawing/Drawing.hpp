@@ -174,7 +174,6 @@ class Image;
 /// @endcode
 class Color
 {
-private:
     unsigned int _value;  ///< ARGB format: 0xAARRGGBB
 
 public:
@@ -710,7 +709,6 @@ public:
 /// @endcode
 class Image
 {
-private:
     unsigned int* _data;  ///< ARGB pixels (4 bytes per pixel)
     int _width;           ///< Width in pixels
     int _height;          ///< Height in pixels
@@ -1186,7 +1184,6 @@ enum class BufferMode
 /// @endcode
 class HatchStyle
 {
-private:
     unsigned char _pattern[8];  ///< 8x8 pattern bitmap (1 row per byte)
 
     /// @brief Constructs a hatch style from 8 pattern bytes.
@@ -1376,7 +1373,6 @@ enum class StringAlignment : unsigned char
 /// @endcode
 class Font
 {
-private:
     /// @brief Forward declaration of internal font data structure.
     struct FontData;
     FontData* _data;  ///< Pointer to internal font data
@@ -1550,7 +1546,6 @@ typedef void (*BufferWriter)(const GraphicsBuffer& buffer);
 /// @endcode
 class GraphicsBuffer
 {
-private:
     BufferWriter _writer;       ///< Function to flush buffer to display
     Rectangle _bounds;          ///< Buffer dimensions
     Image _image;               ///< 32-bit ARGB image buffer
@@ -1700,7 +1695,6 @@ public:
 /// @endcode
 class Graphics
 {
-private:
     GraphicsBuffer* _buffer;  ///< Associated buffer
     Rectangle _bounds;        ///< Drawing area bounds
     bool _ownsBuffer;         ///< True if this Graphics owns the buffer

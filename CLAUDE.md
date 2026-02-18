@@ -299,6 +299,27 @@ All HIGH and MEDIUM priority features have been ported from legacy code.
 - Virtual methods for control customization
 - **USE WRAPPER TYPES EVERYWHERE** - See "Wrapper Type System" section below
 - **DOXYGEN DOCUMENTATION** - All public APIs must have Doxygen comments
+- **NO REDUNDANT ACCESS SPECIFIERS** - Classes default to `private`, so omit initial `private:`
+  ```cpp
+  // Correct - no redundant private:
+  class Foo
+  {
+      int _value;  // private by default
+
+  public:
+      int GetValue() const;
+  };
+
+  // Incorrect - redundant private:
+  class Foo
+  {
+  private:        // <-- unnecessary, class defaults to private
+      int _value;
+
+  public:
+      int GetValue() const;
+  };
+  ```
 
 ## Documentation Standards
 

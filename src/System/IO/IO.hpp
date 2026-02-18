@@ -27,7 +27,6 @@ namespace System::IO
 /// @endcode
 class File
 {
-private:
     /// @brief Deleted constructor to prevent instantiation.
     ///
     /// File is a static utility class and should not be instantiated.

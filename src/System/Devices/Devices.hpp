@@ -29,7 +29,6 @@ namespace System::Devices
 /// @see GraphicsBuffer for drawing operations
 class Display
 {
-private:
     static const int PALETTE_SIZE = 256;
     static const int FRAME_MS = 1000 / 60;  // ~16ms per frame at 60fps
 

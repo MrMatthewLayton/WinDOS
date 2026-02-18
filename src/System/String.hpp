@@ -28,7 +28,6 @@ template<typename T> class Array;
 /// @note This class mirrors the .NET System.String API.
 class String
 {
-private:
     char* _data;
     Int32 _length;
 
