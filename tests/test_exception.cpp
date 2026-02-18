@@ -180,8 +180,8 @@ void TestThrowCatch() {
     Test::PrintSummary();
 }
 
-void TestExceptionInBCL() {
-    Test::PrintHeader("Exceptions from BCL");
+void TestExceptionInRtcorlib() {
+    Test::PrintHeader("Exceptions from rtcorlib");
 
     // Array bounds
     bool caught = false;
@@ -244,7 +244,7 @@ void TestExceptionInBCL() {
 int main() {
     Console::Clear();
     Console::SetForegroundColor(ConsoleColor::Cyan);
-    Console::WriteLine("BCL Exception Test Suite");
+    Console::WriteLine("rtcorlib Exception Test Suite");
     Console::WriteLine("========================");
     Console::ResetColor();
 
@@ -258,7 +258,7 @@ int main() {
     TestFormatException();
     TestOverflowException();
     TestThrowCatch();
-    TestExceptionInBCL();
+    TestExceptionInRtcorlib();
 
     Console::WriteLine();
     Console::SetForegroundColor(ConsoleColor::White);

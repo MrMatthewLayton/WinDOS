@@ -3,18 +3,21 @@
 
 // Forward declare the types we need (they're defined in Types.hpp)
 // This avoids circular include issues while allowing String.hpp to be included standalone
-namespace System {
+namespace System
+{
     class Int32;
     class Boolean;
     class Char;
 }
 
-namespace System {
+namespace System
+{
 
 // Forward declarations
 template<typename T> class Array;
 
-class String {
+class String
+{
 private:
     char* _data;
     Int32 _length;
@@ -130,12 +133,14 @@ String operator+(const char* lhs, const String& rhs);
  *
  * Example:
  *   StringBuilder sb;
- *   for (int i = 0; i < 100; i++) {
+ *   for (int i = 0; i < 100; i++)
+ *   {
  *       sb.Append("Line ").Append(i).AppendLine();
  *   }
  *   String result = sb.ToString();
  */
-class StringBuilder {
+class StringBuilder
+{
 private:
     char* _buffer;
     Int32 _length;      // Current string length

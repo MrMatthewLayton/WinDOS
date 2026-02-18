@@ -277,7 +277,7 @@ void TestImmutability() {
 int main() {
     Console::Clear();
     Console::SetForegroundColor(ConsoleColor::Cyan);
-    Console::WriteLine("BCL String Test Suite");
+    Console::WriteLine("rtcorlib String Test Suite");
     Console::WriteLine("=====================");
     Console::ResetColor();
 

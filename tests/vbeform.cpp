@@ -1,5 +1,5 @@
 // Minimal VBE Forms test - isolate crash in forms_demo
-#include "../src/BCL.hpp"
+#include "../src/rtcorlib.hpp"
 #include <cstdio>
 #include <conio.h>
 

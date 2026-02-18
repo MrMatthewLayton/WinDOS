@@ -1,9 +1,11 @@
 #ifndef PLATFORM_DOS_MOUSE_HPP
 #define PLATFORM_DOS_MOUSE_HPP
 
-namespace Platform { namespace DOS {
+namespace Platform::DOS
+{
 
-struct MouseState {
+struct MouseState
+{
     int x;
     int y;
     bool leftButton;
@@ -11,7 +13,8 @@ struct MouseState {
     bool middleButton;
 };
 
-class Mouse {
+class Mouse
+{
 public:
     // Initialize mouse driver, returns true if mouse is available
     static bool Initialize();
@@ -35,6 +38,6 @@ public:
     static void SetSensitivity(int horizontalMickeys, int verticalMickeys);
 };
 
-}} // namespace Platform::DOS
+} // namespace Platform::DOS
 
 #endif // PLATFORM_DOS_MOUSE_HPP

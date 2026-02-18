@@ -1,9 +1,11 @@
 #ifndef PLATFORM_DOS_KEYBOARD_HPP
 #define PLATFORM_DOS_KEYBOARD_HPP
 
-namespace Platform { namespace DOS {
+namespace Platform::DOS
+{
 
-class Keyboard {
+class Keyboard
+{
 public:
     // Blocking read - wait for keypress and return ASCII code
     static char ReadChar();
@@ -18,6 +20,6 @@ public:
     static unsigned short PeekKey();
 };
 
-}} // namespace Platform::DOS
+} // namespace Platform::DOS
 
 #endif // PLATFORM_DOS_KEYBOARD_HPP

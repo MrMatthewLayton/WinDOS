@@ -1,7 +1,7 @@
-#ifndef BCL_HPP
-#define BCL_HPP
+#ifndef RTCORLIB_HPP
+#define RTCORLIB_HPP
 
-// Master include file for the BCL library
+// Master include file for the runtime core library
 
 // Platform layer
 #include "Platform/Platform.hpp"
@@ -24,4 +24,4 @@
 // Windows Forms
 #include "System/Windows/Forms/Forms.hpp"
 
-#endif // BCL_HPP
+#endif // RTCORLIB_HPP

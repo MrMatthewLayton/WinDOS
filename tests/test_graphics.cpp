@@ -1,4 +1,4 @@
-// Graphics test suite for BCL
+// Graphics test suite for rtcorlib
 // Tests Point, Size, Rectangle, Color, Image, and basic Graphics operations
 
 #include "test_framework.hpp"
@@ -245,7 +245,7 @@ void TestGraphics() {
 int main() {
     Console::Clear();
     Console::SetForegroundColor(ConsoleColor::Cyan);
-    Console::WriteLine("BCL Graphics Test Suite");
+    Console::WriteLine("rtcorlib Graphics Test Suite");
     Console::WriteLine("=======================");
     Console::ResetColor();
     Console::WriteLine();

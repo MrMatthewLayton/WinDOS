@@ -1,9 +1,11 @@
 #ifndef PLATFORM_DOS_VIDEO_HPP
 #define PLATFORM_DOS_VIDEO_HPP
 
-namespace Platform { namespace DOS {
+namespace Platform::DOS
+{
 
-class Video {
+class Video
+{
 public:
     // Set cursor position (0-based row and column)
     static void SetCursorPosition(int row, int col);
@@ -30,6 +32,6 @@ public:
     static void ClearScreen(unsigned char attr);
 };
 
-}} // namespace Platform::DOS
+} // namespace Platform::DOS
 
 #endif // PLATFORM_DOS_VIDEO_HPP

@@ -3,13 +3,15 @@
 
 #include "../Types.hpp"
 
-namespace System { namespace Devices {
+namespace System::Devices
+{
 
 /******************************************************************************/
 /*    System::Devices::Display                                                */
 /******************************************************************************/
 
-class Display {
+class Display
+{
 private:
     static const int PALETTE_SIZE = 256;
     static const int FRAME_MS = 1000 / 60;  // ~16ms per frame at 60fps
@@ -53,14 +55,45 @@ public:
     Display(const Display& other);
     Display& operator=(const Display& other);
 
-    UInt8 Mode() const { return UInt8(_mode); }
-    UInt8 BitsPerPixel() const { return UInt8(_bitsPerPixel); }
-    UInt16 Width() const { return UInt16(_width); }
-    UInt16 Height() const { return UInt16(_height); }
-    UInt16 VbeMode() const { return UInt16(_vbeMode); }
-    UInt32 LfbPhysAddress() const { return UInt32(_lfbPhysAddr); }
-    UInt32 LfbPitch() const { return UInt32(_lfbPitch); }
-    Boolean IsVbeMode() const { return Boolean(_vbeMode != 0); }
+    UInt8 Mode() const
+    {
+        return UInt8(_mode);
+    }
+
+    UInt8 BitsPerPixel() const
+    {
+        return UInt8(_bitsPerPixel);
+    }
+
+    UInt16 Width() const
+    {
+        return UInt16(_width);
+    }
+
+    UInt16 Height() const
+    {
+        return UInt16(_height);
+    }
+
+    UInt16 VbeMode() const
+    {
+        return UInt16(_vbeMode);
+    }
+
+    UInt32 LfbPhysAddress() const
+    {
+        return UInt32(_lfbPhysAddr);
+    }
+
+    UInt32 LfbPitch() const
+    {
+        return UInt32(_lfbPitch);
+    }
+
+    Boolean IsVbeMode() const
+    {
+        return Boolean(_vbeMode != 0);
+    }
 
     static Display GetCurrent();
     static void SetMode(const Display& display);
@@ -76,7 +109,11 @@ public:
     static Boolean IsVbeAvailable();
     static Boolean IsGammaSupported();  // VBE 3.0+ gamma ramp available
     static Display DetectVbeMode(UInt16 width, UInt16 height, UInt8 bpp);
-    static void* GetMappedLfb() { return _mappedLfb; }
+
+    static void* GetMappedLfb()
+    {
+        return _mappedLfb;
+    }
 
     // Common display modes
     static const Display TextMode;           // Mode 0x03: 80x25 text
@@ -91,7 +128,8 @@ public:
 /*    System::Devices::MouseStatus                                            */
 /******************************************************************************/
 
-class MouseStatus {
+class MouseStatus
+{
 public:
     Int32 x;
     Int32 y;
@@ -100,16 +138,22 @@ public:
     Boolean middleButton;
 
     MouseStatus()
-        : x(0), y(0), leftButton(false), rightButton(false), middleButton(false) {}
+        : x(0), y(0), leftButton(false), rightButton(false), middleButton(false)
+    {
+    }
+
     MouseStatus(Int32 x, Int32 y, Boolean left, Boolean right, Boolean middle)
-        : x(x), y(y), leftButton(left), rightButton(right), middleButton(middle) {}
+        : x(x), y(y), leftButton(left), rightButton(right), middleButton(middle)
+    {
+    }
 };
 
 /******************************************************************************/
 /*    System::Devices::Mouse                                                  */
 /******************************************************************************/
 
-class Mouse {
+class Mouse
+{
 private:
     Mouse();
 
@@ -141,7 +185,8 @@ public:
 /*    System::Devices::KeyboardStatus                                         */
 /******************************************************************************/
 
-class KeyboardStatus {
+class KeyboardStatus
+{
 public:
     Boolean shiftPressed;
     Boolean ctrlPressed;
@@ -152,14 +197,17 @@ public:
 
     KeyboardStatus()
         : shiftPressed(false), ctrlPressed(false), altPressed(false)
-        , capsLock(false), numLock(false), scrollLock(false) {}
+        , capsLock(false), numLock(false), scrollLock(false)
+    {
+    }
 };
 
 /******************************************************************************/
 /*    System::Devices::Keyboard                                               */
 /******************************************************************************/
 
-class Keyboard {
+class Keyboard
+{
 private:
     Keyboard();
 
@@ -170,6 +218,6 @@ public:
     static KeyboardStatus GetStatus();
 };
 
-}} // namespace System::Devices
+} // namespace System::Devices
 
 #endif // SYSTEM_DEVICES_HPP

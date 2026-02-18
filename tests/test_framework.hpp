@@ -1,7 +1,7 @@
 #ifndef TEST_FRAMEWORK_HPP
 #define TEST_FRAMEWORK_HPP
 
-#include "../src/BCL.hpp"
+#include "../src/rtcorlib.hpp"
 
 // Simple test framework for DOS environment
 

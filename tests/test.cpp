@@ -1,11 +1,11 @@
-// Comprehensive Test Suite for BCL (Base Class Library)
+// Comprehensive Test Suite for rtcorlib (Retro Technology Core Library)
 // Runs ALL tests and produces a comprehensive summary
 //
 // Build: make test
 // Run:   build/bin/test.exe
 
 #include "test_framework.hpp"
-#include "../src/BCL.hpp"
+#include "../src/rtcorlib.hpp"
 #include <cstring>
 
 using namespace System;
@@ -528,7 +528,7 @@ int main() {
     Console::Clear();
     Console::SetForegroundColor(ConsoleColor::Cyan);
     Console::WriteLine("================================================================================");
-    Console::WriteLine("                    BCL COMPREHENSIVE TEST SUITE");
+    Console::WriteLine("                rtcorlib COMPREHENSIVE TEST SUITE");
     Console::WriteLine("================================================================================");
     Console::ResetColor();
     Console::WriteLine();

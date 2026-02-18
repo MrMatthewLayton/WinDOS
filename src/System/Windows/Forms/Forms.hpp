@@ -6,7 +6,8 @@
 #include "../../Array.hpp"
 #include "../../String.hpp"
 
-namespace System { namespace Windows { namespace Forms {
+namespace System::Windows::Forms
+{
 
 using namespace System::Drawing;
 using namespace System::Devices;
@@ -33,7 +34,8 @@ typedef void (*ClickEventHandler)(Button* sender, void* userData);
 /******************************************************************************/
 
 // Type identification for safe casting (similar to .NET GetType())
-enum class ControlType {
+enum class ControlType
+{
     Control,        // Base control
     Desktop,        // Desktop surface
     Window,         // Top-level window
@@ -54,7 +56,8 @@ enum class ControlType {
  * Direction for laying out child controls in a flex container.
  * Similar to CSS flex-direction.
  */
-enum class FlexDirection : unsigned char {
+enum class FlexDirection : unsigned char
+{
     Row,            // Horizontal layout (left to right)
     Column          // Vertical layout (top to bottom)
 };
@@ -63,7 +66,8 @@ enum class FlexDirection : unsigned char {
  * Alignment of children along the main axis.
  * Similar to CSS justify-content.
  */
-enum class JustifyContent : unsigned char {
+enum class JustifyContent : unsigned char
+{
     Start,          // Pack items at start of main axis
     Center,         // Center items along main axis
     End,            // Pack items at end of main axis
@@ -75,7 +79,8 @@ enum class JustifyContent : unsigned char {
  * Alignment of children along the cross axis.
  * Similar to CSS align-items.
  */
-enum class AlignItems : unsigned char {
+enum class AlignItems : unsigned char
+{
     Start,          // Align to start of cross axis
     Center,         // Center along cross axis
     End,            // Align to end of cross axis
@@ -85,7 +90,8 @@ enum class AlignItems : unsigned char {
 /**
  * How a control's size is determined.
  */
-enum class SizeMode : unsigned char {
+enum class SizeMode : unsigned char
+{
     Auto,           // Size based on content/children
     Fixed,          // Size is explicitly set
     Fill            // Fill available space in parent
@@ -99,7 +105,8 @@ enum class SizeMode : unsigned char {
  * Layout configuration for a control.
  * Embedded in each Control to configure flexbox-like layout behavior.
  */
-struct LayoutProperties {
+struct LayoutProperties
+{
     // Container properties (when this control has children)
     FlexDirection direction;        // Layout direction for children
     JustifyContent justifyContent;  // Main axis alignment
@@ -147,48 +154,119 @@ struct LayoutProperties {
         , paddingBottom(0)
         , paddingLeft(0)
         , participatesInLayout(true)
-        , needsLayout(true) {}
+        , needsLayout(true)
+    {
+    }
 
     // Convenience setters for fluent API
-    LayoutProperties& SetDirection(FlexDirection dir) { direction = dir; return *this; }
-    LayoutProperties& SetJustifyContent(JustifyContent jc) { justifyContent = jc; return *this; }
-    LayoutProperties& SetAlignItems(AlignItems ai) { alignItems = ai; return *this; }
-    LayoutProperties& SetGap(Int32 g) { gap = g; return *this; }
-    LayoutProperties& SetFlexGrow(Int32 fg) { flexGrow = fg; return *this; }
-    LayoutProperties& SetFlexShrink(Int32 fs) { flexShrink = fs; return *this; }
-    LayoutProperties& SetWidthMode(SizeMode mode) { widthMode = mode; return *this; }
-    LayoutProperties& SetHeightMode(SizeMode mode) { heightMode = mode; return *this; }
-    LayoutProperties& SetMinSize(Int32 w, Int32 h) { minWidth = w; minHeight = h; return *this; }
-    LayoutProperties& SetMaxSize(Int32 w, Int32 h) { maxWidth = w; maxHeight = h; return *this; }
-    LayoutProperties& SetMargin(Int32 all) {
+    LayoutProperties& SetDirection(FlexDirection dir)
+    {
+        direction = dir;
+        return *this;
+    }
+
+    LayoutProperties& SetJustifyContent(JustifyContent jc)
+    {
+        justifyContent = jc;
+        return *this;
+    }
+
+    LayoutProperties& SetAlignItems(AlignItems ai)
+    {
+        alignItems = ai;
+        return *this;
+    }
+
+    LayoutProperties& SetGap(Int32 g)
+    {
+        gap = g;
+        return *this;
+    }
+
+    LayoutProperties& SetFlexGrow(Int32 fg)
+    {
+        flexGrow = fg;
+        return *this;
+    }
+
+    LayoutProperties& SetFlexShrink(Int32 fs)
+    {
+        flexShrink = fs;
+        return *this;
+    }
+
+    LayoutProperties& SetWidthMode(SizeMode mode)
+    {
+        widthMode = mode;
+        return *this;
+    }
+
+    LayoutProperties& SetHeightMode(SizeMode mode)
+    {
+        heightMode = mode;
+        return *this;
+    }
+
+    LayoutProperties& SetMinSize(Int32 w, Int32 h)
+    {
+        minWidth = w;
+        minHeight = h;
+        return *this;
+    }
+
+    LayoutProperties& SetMaxSize(Int32 w, Int32 h)
+    {
+        maxWidth = w;
+        maxHeight = h;
+        return *this;
+    }
+
+    LayoutProperties& SetMargin(Int32 all)
+    {
         marginTop = marginRight = marginBottom = marginLeft = all;
         return *this;
     }
-    LayoutProperties& SetMargin(Int32 vertical, Int32 horizontal) {
+
+    LayoutProperties& SetMargin(Int32 vertical, Int32 horizontal)
+    {
         marginTop = marginBottom = vertical;
         marginRight = marginLeft = horizontal;
         return *this;
     }
-    LayoutProperties& SetMargin(Int32 top, Int32 right, Int32 bottom, Int32 left) {
-        marginTop = top; marginRight = right;
-        marginBottom = bottom; marginLeft = left;
+
+    LayoutProperties& SetMargin(Int32 top, Int32 right, Int32 bottom, Int32 left)
+    {
+        marginTop = top;
+        marginRight = right;
+        marginBottom = bottom;
+        marginLeft = left;
         return *this;
     }
-    LayoutProperties& SetPadding(Int32 all) {
+
+    LayoutProperties& SetPadding(Int32 all)
+    {
         paddingTop = paddingRight = paddingBottom = paddingLeft = all;
         return *this;
     }
-    LayoutProperties& SetPadding(Int32 vertical, Int32 horizontal) {
+
+    LayoutProperties& SetPadding(Int32 vertical, Int32 horizontal)
+    {
         paddingTop = paddingBottom = vertical;
         paddingRight = paddingLeft = horizontal;
         return *this;
     }
-    LayoutProperties& SetPadding(Int32 top, Int32 right, Int32 bottom, Int32 left) {
-        paddingTop = top; paddingRight = right;
-        paddingBottom = bottom; paddingLeft = left;
+
+    LayoutProperties& SetPadding(Int32 top, Int32 right, Int32 bottom, Int32 left)
+    {
+        paddingTop = top;
+        paddingRight = right;
+        paddingBottom = bottom;
+        paddingLeft = left;
         return *this;
     }
-    LayoutProperties& SetParticipatesInLayout(bool participates) {
+
+    LayoutProperties& SetParticipatesInLayout(bool participates)
+    {
         participatesInLayout = participates;
         return *this;
     }
@@ -202,57 +280,81 @@ struct LayoutProperties {
  * Result of measuring a control's preferred size.
  * Used during the Measure pass of layout.
  */
-struct MeasureResult {
+struct MeasureResult
+{
     Int32 preferredWidth;   // Preferred width based on content
     Int32 preferredHeight;  // Preferred height based on content
 
-    MeasureResult() : preferredWidth(0), preferredHeight(0) {}
-    MeasureResult(Int32 w, Int32 h) : preferredWidth(w), preferredHeight(h) {}
+    MeasureResult() : preferredWidth(0), preferredHeight(0)
+    {
+    }
+
+    MeasureResult(Int32 w, Int32 h) : preferredWidth(w), preferredHeight(h)
+    {
+    }
 };
 
 /******************************************************************************/
 /*    System::Windows::Forms::PaintEventArgs                                  */
 /******************************************************************************/
 
-class PaintEventArgs {
+class PaintEventArgs
+{
 public:
     Graphics* graphics;
     Rectangle bounds;
 
-    PaintEventArgs() : graphics(nullptr), bounds() {}
-    PaintEventArgs(Graphics* g, const Rectangle& b) : graphics(g), bounds(b) {}
+    PaintEventArgs() : graphics(nullptr), bounds()
+    {
+    }
+
+    PaintEventArgs(Graphics* g, const Rectangle& b) : graphics(g), bounds(b)
+    {
+    }
 };
 
 /******************************************************************************/
 /*    System::Windows::Forms::MouseEventArgs                                  */
 /******************************************************************************/
 
-class MouseEventArgs {
+class MouseEventArgs
+{
 public:
     Int32 x;
     Int32 y;
     Boolean leftButton;
     Boolean rightButton;
 
-    MouseEventArgs() : x(0), y(0), leftButton(false), rightButton(false) {}
+    MouseEventArgs() : x(0), y(0), leftButton(false), rightButton(false)
+    {
+    }
+
     MouseEventArgs(Int32 x, Int32 y, Boolean left, Boolean right)
-        : x(x), y(y), leftButton(left), rightButton(right) {}
+        : x(x), y(y), leftButton(left), rightButton(right)
+    {
+    }
 };
 
 /******************************************************************************/
 /*    System::Windows::Forms::KeyboardEventArgs                               */
 /******************************************************************************/
 
-class KeyboardEventArgs {
+class KeyboardEventArgs
+{
 public:
     Char key;
     Boolean alt;
     Boolean ctrl;
     Boolean shift;
 
-    KeyboardEventArgs() : key('\0'), alt(false), ctrl(false), shift(false) {}
+    KeyboardEventArgs() : key('\0'), alt(false), ctrl(false), shift(false)
+    {
+    }
+
     KeyboardEventArgs(Char k, Boolean a, Boolean c, Boolean s)
-        : key(k), alt(a), ctrl(c), shift(s) {}
+        : key(k), alt(a), ctrl(c), shift(s)
+    {
+    }
 };
 
 /******************************************************************************/
@@ -264,7 +366,8 @@ public:
  * Divides the screen into fixed-size cells and tracks which controls
  * overlap each cell for fast point-to-control queries.
  */
-class SpatialGrid {
+class SpatialGrid
+{
 public:
     static const int CELL_SIZE = 64;           // Pixels per cell
     static const int MAX_CELLS_X = 16;         // Up to 1024px wide
@@ -272,11 +375,15 @@ public:
     static const int MAX_CONTROLS_PER_CELL = 16;
 
 private:
-    struct Cell {
+    struct Cell
+    {
         Control* controls[MAX_CONTROLS_PER_CELL];
         int count;
-        Cell() : count(0) {
-            for (int i = 0; i < MAX_CONTROLS_PER_CELL; i++) {
+
+        Cell() : count(0)
+        {
+            for (int i = 0; i < MAX_CONTROLS_PER_CELL; i++)
+            {
                 controls[i] = nullptr;
             }
         }
@@ -349,7 +456,8 @@ public:
  *   // OR
  *   newParent->AddChild(child);  // Transfer to new parent
  */
-class Control {
+class Control
+{
 protected:
     Array<Control*> _children;
     Control* _parent;
@@ -371,10 +479,26 @@ public:
     virtual ~Control();
 
     // Properties
-    Control* Parent() const { return _parent; }
-    const Rectangle& Bounds() const { return _bounds; }
-    const Rectangle& ClientBounds() const { return _clientBounds; }
-    Int32 ChildCount() const { return Int32(_children.Length()); }
+    Control* Parent() const
+    {
+        return _parent;
+    }
+
+    const Rectangle& Bounds() const
+    {
+        return _bounds;
+    }
+
+    const Rectangle& ClientBounds() const
+    {
+        return _clientBounds;
+    }
+
+    Int32 ChildCount() const
+    {
+        return Int32(_children.Length());
+    }
+
     Control* GetChild(Int32 index) const;
 
     // Get absolute screen coordinates
@@ -412,29 +536,89 @@ public:
     Boolean HitTest(Int32 x, Int32 y) const;
 
     // Type identification (similar to .NET GetType())
-    virtual ControlType GetControlType() const { return ControlType::Control; }
+    virtual ControlType GetControlType() const
+    {
+        return ControlType::Control;
+    }
 
     // Safe type casting (similar to .NET 'as' operator)
     // Returns nullptr if the control is not of the requested type
-    virtual Window* AsWindow() { return nullptr; }
-    virtual const Window* AsWindow() const { return nullptr; }
-    virtual Button* AsButton() { return nullptr; }
-    virtual const Button* AsButton() const { return nullptr; }
-    virtual TaskBar* AsTaskBar() { return nullptr; }
-    virtual const TaskBar* AsTaskBar() const { return nullptr; }
-    virtual Picture* AsPicture() { return nullptr; }
-    virtual const Picture* AsPicture() const { return nullptr; }
+    virtual Window* AsWindow()
+    {
+        return nullptr;
+    }
+
+    virtual const Window* AsWindow() const
+    {
+        return nullptr;
+    }
+
+    virtual Button* AsButton()
+    {
+        return nullptr;
+    }
+
+    virtual const Button* AsButton() const
+    {
+        return nullptr;
+    }
+
+    virtual TaskBar* AsTaskBar()
+    {
+        return nullptr;
+    }
+
+    virtual const TaskBar* AsTaskBar() const
+    {
+        return nullptr;
+    }
+
+    virtual Picture* AsPicture()
+    {
+        return nullptr;
+    }
+
+    virtual const Picture* AsPicture() const
+    {
+        return nullptr;
+    }
 
     // Type checking (similar to .NET 'is' operator)
-    Boolean IsWindow() const { return GetControlType() == ControlType::Window; }
-    Boolean IsButton() const { return GetControlType() == ControlType::Button; }
-    Boolean IsTaskBar() const { return GetControlType() == ControlType::TaskBar; }
-    Boolean IsPicture() const { return GetControlType() == ControlType::Picture; }
-    Boolean IsDesktop() const { return GetControlType() == ControlType::Desktop; }
+    Boolean IsWindow() const
+    {
+        return GetControlType() == ControlType::Window;
+    }
+
+    Boolean IsButton() const
+    {
+        return GetControlType() == ControlType::Button;
+    }
+
+    Boolean IsTaskBar() const
+    {
+        return GetControlType() == ControlType::TaskBar;
+    }
+
+    Boolean IsPicture() const
+    {
+        return GetControlType() == ControlType::Picture;
+    }
+
+    Boolean IsDesktop() const
+    {
+        return GetControlType() == ControlType::Desktop;
+    }
 
     // Layout system
-    LayoutProperties& Layout() { return _layout; }
-    const LayoutProperties& Layout() const { return _layout; }
+    LayoutProperties& Layout()
+    {
+        return _layout;
+    }
+
+    const LayoutProperties& Layout() const
+    {
+        return _layout;
+    }
 
     // Two-pass layout algorithm
     virtual MeasureResult Measure(Int32 availableWidth, Int32 availableHeight);
@@ -456,20 +640,27 @@ public:
  * Represents an icon displayed on the desktop.
  * Icons are displayed in a grid pattern with optional labels.
  */
-struct DesktopIcon {
+struct DesktopIcon
+{
     Image image;      // 32x32 icon image
     int x;            // X position on desktop
     int y;            // Y position on desktop
 
-    DesktopIcon() : image(), x(0), y(0) {}
-    DesktopIcon(const Image& img, int px, int py) : image(img), x(px), y(py) {}
+    DesktopIcon() : image(), x(0), y(0)
+    {
+    }
+
+    DesktopIcon(const Image& img, int px, int py) : image(img), x(px), y(py)
+    {
+    }
 };
 
 /******************************************************************************/
 /*    System::Windows::Forms::Desktop                                         */
 /******************************************************************************/
 
-class Desktop : public Control {
+class Desktop : public Control
+{
 private:
     static const int CURSOR_SIZE = 24;  // Cursor size (24x24 icon)
     static const int ICON_SIZE = 32;    // Desktop icon size
@@ -524,11 +715,27 @@ public:
     virtual ~Desktop();
 
     // Properties
-    Window* FocusedWindow() const { return _focusedWindow; }
+    Window* FocusedWindow() const
+    {
+        return _focusedWindow;
+    }
+
     void SetFocusedWindow(Window* window);
-    Int32 ScreenWidth() const { return Int32(_screenWidth); }
-    Int32 ScreenHeight() const { return Int32(_screenHeight); }
-    Int32 IconCount() const { return Int32(_icons.Length()); }
+
+    Int32 ScreenWidth() const
+    {
+        return Int32(_screenWidth);
+    }
+
+    Int32 ScreenHeight() const
+    {
+        return Int32(_screenHeight);
+    }
+
+    Int32 IconCount() const
+    {
+        return Int32(_icons.Length());
+    }
 
     // Cursor
     void SetCursor(const Image& cursorImage);
@@ -541,10 +748,25 @@ public:
     void AddIconFromLibrary(const char* path, const char* iconName);
 
     // TaskBar and StartMenu integration
-    void SetTaskBar(TaskBar* taskBar) { _taskBar = taskBar; }
-    TaskBar* GetTaskBar() const { return _taskBar; }
-    void SetStartMenu(StartMenu* menu) { _startMenu = menu; }
-    StartMenu* GetStartMenu() const { return _startMenu; }
+    void SetTaskBar(TaskBar* taskBar)
+    {
+        _taskBar = taskBar;
+    }
+
+    TaskBar* GetTaskBar() const
+    {
+        return _taskBar;
+    }
+
+    void SetStartMenu(StartMenu* menu)
+    {
+        _startMenu = menu;
+    }
+
+    StartMenu* GetStartMenu() const
+    {
+        return _startMenu;
+    }
 
     // Override child management to update spatial grid and taskbar
     virtual void AddChild(Control* child) override;
@@ -560,14 +782,18 @@ public:
     void Stop();
 
     // Type identification
-    virtual ControlType GetControlType() const override { return ControlType::Desktop; }
+    virtual ControlType GetControlType() const override
+    {
+        return ControlType::Desktop;
+    }
 };
 
 /******************************************************************************/
 /*    System::Windows::Forms::Window                                          */
 /******************************************************************************/
 
-class Window : public Control {
+class Window : public Control
+{
 private:
     static const int TITLE_BAR_HEIGHT = 20;  // Internal constant - stays primitive
     static const int FRAME_WIDTH = 3;
@@ -583,32 +809,72 @@ public:
     virtual ~Window();
 
     // Title property
-    const String& Title() const { return _title; }
-    void SetTitle(const String& title) { _title = title; Invalidate(); }
-    void SetTitle(const char* title) { _title = String(title); Invalidate(); }
+    const String& Title() const
+    {
+        return _title;
+    }
+
+    void SetTitle(const String& title)
+    {
+        _title = title;
+        Invalidate();
+    }
+
+    void SetTitle(const char* title)
+    {
+        _title = String(title);
+        Invalidate();
+    }
 
     // Font property
-    const Font& GetFont() const { return _font; }
-    void SetFont(const Font& font) { _font = font; Invalidate(); }
+    const Font& GetFont() const
+    {
+        return _font;
+    }
 
-    Boolean IsFocused() const { return Boolean(_isFocused); }
-    void SetFocused(Boolean focused) { _isFocused = static_cast<bool>(focused); }
+    void SetFont(const Font& font)
+    {
+        _font = font;
+        Invalidate();
+    }
+
+    Boolean IsFocused() const
+    {
+        return Boolean(_isFocused);
+    }
+
+    void SetFocused(Boolean focused)
+    {
+        _isFocused = static_cast<bool>(focused);
+    }
 
     // Override paint
     virtual void OnPaint(PaintEventArgs& e) override;
     virtual void OnMouse(MouseEventArgs& e) override;
 
     // Type identification
-    virtual ControlType GetControlType() const override { return ControlType::Window; }
-    virtual Window* AsWindow() override { return this; }
-    virtual const Window* AsWindow() const override { return this; }
+    virtual ControlType GetControlType() const override
+    {
+        return ControlType::Window;
+    }
+
+    virtual Window* AsWindow() override
+    {
+        return this;
+    }
+
+    virtual const Window* AsWindow() const override
+    {
+        return this;
+    }
 };
 
 /******************************************************************************/
 /*    System::Windows::Forms::TaskBar                                         */
 /******************************************************************************/
 
-class TaskBar : public Control {
+class TaskBar : public Control
+{
 private:
     static const int WINDOW_BUTTON_WIDTH = 120;
     static const int WINDOW_BUTTON_HEIGHT = 20;
@@ -629,11 +895,21 @@ public:
     // Override paint
     virtual void OnPaint(PaintEventArgs& e) override;
 
-    Button* StartButton() const { return _startButton; }
+    Button* StartButton() const
+    {
+        return _startButton;
+    }
 
     // Desktop back-reference (set by Desktop::SetTaskBar)
-    void SetDesktop(Desktop* desktop) { _desktop = desktop; }
-    Desktop* GetDesktop() const { return _desktop; }
+    void SetDesktop(Desktop* desktop)
+    {
+        _desktop = desktop;
+    }
+
+    Desktop* GetDesktop() const
+    {
+        return _desktop;
+    }
 
     // Window button management
     void AddWindowButton(Window* window);
@@ -642,16 +918,28 @@ public:
     TaskBarButton* FindButtonForWindow(Window* window) const;
 
     // Type identification
-    virtual ControlType GetControlType() const override { return ControlType::TaskBar; }
-    virtual TaskBar* AsTaskBar() override { return this; }
-    virtual const TaskBar* AsTaskBar() const override { return this; }
+    virtual ControlType GetControlType() const override
+    {
+        return ControlType::TaskBar;
+    }
+
+    virtual TaskBar* AsTaskBar() override
+    {
+        return this;
+    }
+
+    virtual const TaskBar* AsTaskBar() const override
+    {
+        return this;
+    }
 };
 
 /******************************************************************************/
 /*    System::Windows::Forms::Button                                          */
 /******************************************************************************/
 
-class Button : public Control {
+class Button : public Control
+{
 private:
     bool _isToggled;           // Persistent pressed state (e.g., active window, menu open)
     bool _isMouseDown;         // Temporary state during mouse click
@@ -666,19 +954,47 @@ public:
     virtual ~Button();
 
     // Text property
-    const String& Text() const { return _text; }
-    void SetText(const String& text) { _text = text; Invalidate(); }
-    void SetText(const char* text) { _text = String(text); Invalidate(); }
+    const String& Text() const
+    {
+        return _text;
+    }
+
+    void SetText(const String& text)
+    {
+        _text = text;
+        Invalidate();
+    }
+
+    void SetText(const char* text)
+    {
+        _text = String(text);
+        Invalidate();
+    }
 
     // Font property
-    const Font& GetFont() const { return _font; }
-    void SetFont(const Font& font) { _font = font; Invalidate(); }
+    const Font& GetFont() const
+    {
+        return _font;
+    }
+
+    void SetFont(const Font& font)
+    {
+        _font = font;
+        Invalidate();
+    }
 
     // Visual pressed state is toggled OR mouse down
-    Boolean IsPressed() const { return Boolean(_isToggled || _isMouseDown); }
+    Boolean IsPressed() const
+    {
+        return Boolean(_isToggled || _isMouseDown);
+    }
 
     // Set persistent pressed state (for TaskBarButton to show active window)
-    void SetPressed(Boolean pressed) { _isToggled = static_cast<bool>(pressed); Invalidate(); }
+    void SetPressed(Boolean pressed)
+    {
+        _isToggled = static_cast<bool>(pressed);
+        Invalidate();
+    }
 
     // Click event handler
     void SetOnClick(ClickEventHandler handler, void* userData = nullptr);
@@ -691,16 +1007,28 @@ public:
     virtual MeasureResult GetPreferredSize() const override;
 
     // Type identification
-    virtual ControlType GetControlType() const override { return ControlType::Button; }
-    virtual Button* AsButton() override { return this; }
-    virtual const Button* AsButton() const override { return this; }
+    virtual ControlType GetControlType() const override
+    {
+        return ControlType::Button;
+    }
+
+    virtual Button* AsButton() override
+    {
+        return this;
+    }
+
+    virtual const Button* AsButton() const override
+    {
+        return this;
+    }
 };
 
 /******************************************************************************/
 /*    System::Windows::Forms::Picture                                         */
 /******************************************************************************/
 
-class Picture : public Control {
+class Picture : public Control
+{
 private:
     Image _image;
 
@@ -710,7 +1038,11 @@ public:
     virtual ~Picture();
 
     void SetImage(const Image& image);
-    const Image& GetImage() const { return _image; }
+
+    const Image& GetImage() const
+    {
+        return _image;
+    }
 
     // Override paint
     virtual void OnPaint(PaintEventArgs& e) override;
@@ -719,9 +1051,20 @@ public:
     virtual MeasureResult GetPreferredSize() const override;
 
     // Type identification
-    virtual ControlType GetControlType() const override { return ControlType::Picture; }
-    virtual Picture* AsPicture() override { return this; }
-    virtual const Picture* AsPicture() const override { return this; }
+    virtual ControlType GetControlType() const override
+    {
+        return ControlType::Picture;
+    }
+
+    virtual Picture* AsPicture() override
+    {
+        return this;
+    }
+
+    virtual const Picture* AsPicture() const override
+    {
+        return this;
+    }
 };
 
 /******************************************************************************/
@@ -737,7 +1080,8 @@ public:
  * This control demonstrates 32-bit color rendering with smooth gradients.
  * The gradient is pre-computed and cached as an Image for efficient drawing.
  */
-class SpectrumControl : public Control {
+class SpectrumControl : public Control
+{
 private:
     Color _baseColor;
     Image _gradient;  // Cached gradient image
@@ -750,7 +1094,11 @@ public:
     virtual ~SpectrumControl();
 
     // Properties
-    Color GetBaseColor() const { return _baseColor; }
+    Color GetBaseColor() const
+    {
+        return _baseColor;
+    }
+
     void SetBaseColor(const Color& color);
 
     // Get the interpolated color at a given Y position (0 = top, height-1 = bottom)
@@ -760,7 +1108,10 @@ public:
     virtual void OnPaint(PaintEventArgs& e) override;
 
     // Type identification
-    virtual ControlType GetControlType() const override { return ControlType::Spectrum; }
+    virtual ControlType GetControlType() const override
+    {
+        return ControlType::Spectrum;
+    }
 };
 
 /******************************************************************************/
@@ -772,7 +1123,8 @@ public:
  * Shows as pressed/sunken when the associated window is focused.
  * When pressed, displays a checkerboard hatch pattern (Windows 95 style).
  */
-class TaskBarButton : public Button {
+class TaskBarButton : public Button
+{
 private:
     Window* _window;  // Reference to window (not owned)
 
@@ -782,13 +1134,19 @@ public:
     TaskBarButton(Control* parent, const Rectangle& bounds, Window* window);
     virtual ~TaskBarButton();
 
-    Window* GetWindow() const { return _window; }
+    Window* GetWindow() const
+    {
+        return _window;
+    }
 
     // Override paint to use hatch pattern when pressed
     virtual void OnPaint(PaintEventArgs& e) override;
 
     // Type identification
-    virtual ControlType GetControlType() const override { return ControlType::TaskBarButton; }
+    virtual ControlType GetControlType() const override
+    {
+        return ControlType::TaskBarButton;
+    }
 };
 
 /******************************************************************************/
@@ -799,7 +1157,8 @@ public:
  * A menu item that displays an icon and text.
  * Highlights on hover and fires click event when clicked.
  */
-class MenuItem : public Control {
+class MenuItem : public Control
+{
 private:
     static const int ICON_SIZE = 16;
     static const int ITEM_HEIGHT = 24;
@@ -823,7 +1182,10 @@ public:
     virtual void OnMouse(MouseEventArgs& e) override;
 
     // Type identification
-    virtual ControlType GetControlType() const override { return ControlType::MenuItem; }
+    virtual ControlType GetControlType() const override
+    {
+        return ControlType::MenuItem;
+    }
 };
 
 /******************************************************************************/
@@ -835,7 +1197,8 @@ public:
  * Displays a blue sidebar on the left with "Windows 95" text (rotated)
  * and 12 menu items with icons loaded from sysicons.icl.
  */
-class StartMenu : public Control {
+class StartMenu : public Control
+{
 private:
     static const int MENU_WIDTH = 160;
     static const int SIDEBAR_WIDTH = 24;
@@ -852,7 +1215,11 @@ public:
     StartMenu(Desktop* desktop);
     virtual ~StartMenu();
 
-    Boolean IsVisible() const { return Boolean(_isVisible); }
+    Boolean IsVisible() const
+    {
+        return Boolean(_isVisible);
+    }
+
     void Show();
     void Hide();
     void Toggle();
@@ -862,9 +1229,12 @@ public:
     virtual void OnMouse(MouseEventArgs& e) override;
 
     // Type identification
-    virtual ControlType GetControlType() const override { return ControlType::StartMenu; }
+    virtual ControlType GetControlType() const override
+    {
+        return ControlType::StartMenu;
+    }
 };
 
-}}} // namespace System::Windows::Forms
+} // namespace System::Windows::Forms
 
 #endif // SYSTEM_WINDOWS_FORMS_HPP

@@ -1,4 +1,4 @@
-// Forms tests for BCL
+// Forms tests for rtcorlib
 // Tests Control, Window, Button, Picture, TaskBar, and event argument classes
 // Note: Full GUI testing requires graphics mode; these test the API structure
 
@@ -314,7 +314,7 @@ void TestControlInvalidation() {
 int main() {
     Console::Clear();
     Console::SetForegroundColor(ConsoleColor::Cyan);
-    Console::WriteLine("BCL Windows Forms Test Suite");
+    Console::WriteLine("rtcorlib Windows Forms Test Suite");
     Console::WriteLine("============================");
     Console::ResetColor();
     Console::WriteLine();

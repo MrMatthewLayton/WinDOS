@@ -1,7 +1,8 @@
 #ifndef PLATFORM_DOS_GRAPHICS_HPP
 #define PLATFORM_DOS_GRAPHICS_HPP
 
-namespace Platform { namespace DOS {
+namespace Platform::DOS
+{
 
 /******************************************************************************/
 /*    VBE 2.0+ Structures (packed for BIOS compatibility)                     */
@@ -10,7 +11,8 @@ namespace Platform { namespace DOS {
 #pragma pack(push, 1)
 
 // VBE Controller Info Block (returned by INT 10h AX=4F00h)
-struct VbeInfoBlock {
+struct VbeInfoBlock
+{
     char     signature[4];      // "VESA" or "VBE2"
     unsigned short version;     // VBE version (e.g., 0x0200 = 2.0)
     unsigned int   oemString;   // Far pointer to OEM string
@@ -27,7 +29,8 @@ struct VbeInfoBlock {
 };
 
 // VBE Mode Info Block (returned by INT 10h AX=4F01h)
-struct VbeModeInfoBlock {
+struct VbeModeInfoBlock
+{
     // Mandatory for all VBE versions
     unsigned short modeAttributes;
     unsigned char  winAAttributes;
@@ -120,7 +123,8 @@ const int VBE_GAMMA_TABLE_SIZE = 256 * 3;
 /******************************************************************************/
 
 // VBE framebuffer surface info
-struct VbeSurface {
+struct VbeSurface
+{
     int selector;              // LDT selector for LFB access
     unsigned long linearAddr;  // Linear address of mapped LFB
     unsigned long size;        // Size of mapped region
@@ -131,7 +135,8 @@ struct VbeSurface {
     bool valid;
 };
 
-class Graphics {
+class Graphics
+{
 public:
     // Set VGA video mode
     static void SetVideoMode(unsigned char mode);
@@ -175,6 +180,6 @@ public:
     static bool GetGammaTable(unsigned char* gammaTable);
 };
 
-}} // namespace Platform::DOS
+} // namespace Platform::DOS
 
 #endif // PLATFORM_DOS_GRAPHICS_HPP

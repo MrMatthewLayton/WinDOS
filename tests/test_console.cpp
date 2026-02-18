@@ -218,7 +218,7 @@ void TestColoredBox() {
             } else if (col == 0 || col == 19) {
                 Console::Write("|");
             } else if (row == 2 && col >= 4 && col < 16) {
-                const char* text = " BCL Test! ";
+                const char* text = " rtcorlib! ";
                 int idx = col - 4;
                 if (idx < 11) {
                     Console::Write(text[idx]);
@@ -266,7 +266,7 @@ void TestSpecialCharacters() {
 int main() {
     Console::Clear();
     Console::SetForegroundColor(ConsoleColor::Cyan);
-    Console::WriteLine("BCL Console Test Suite");
+    Console::WriteLine("rtcorlib Console Test Suite");
     Console::WriteLine("======================");
     Console::ResetColor();
     Console::WriteLine();

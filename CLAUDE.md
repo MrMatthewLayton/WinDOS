@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**WinDOS** is a .NET-style Base Class Library (BCL) for DOS, implementing a Windows 95-inspired graphical user interface system that runs in DOS protected mode via DJGPP.
+**WinDOS** is a .NET-style core library (rtcorlib - Retro Technology Core Library) for DOS, implementing a Windows 95-inspired graphical user interface system that runs in DOS protected mode via DJGPP.
 
 ## What We're Building
 
@@ -19,7 +19,7 @@ The goal is to create a nostalgic yet functional DOS GUI system using modern C++
 CXX = ~/djgpp/bin/i586-pc-msdosdjgpp-g++
 
 # Build commands
-make              # Build BCL library (libbcl.a)
+make              # Build rtcorlib library (librtcorlib.a)
 make test         # Build comprehensive test suite (test.exe)
 make tests        # Build all test executables
 make demo         # Build graphics demo
@@ -28,7 +28,7 @@ make clean        # Clean build artifacts
 ```
 
 **Output:**
-- Library: `build/lib/libbcl.a`
+- Library: `build/lib/librtcorlib.a`
 - Tests: `build/bin/test.exe` (comprehensive), `build/bin/test_*.exe` (individual)
 - Demos: `build/bin/gfxdemo.exe`, `build/bin/forms.exe`
 
@@ -37,7 +37,7 @@ make clean        # Clean build artifacts
 ```
 windos/
 ├── src/                        # Source code (organized by namespace)
-│   ├── BCL.hpp                 # Master include file
+│   ├── rtcorlib.hpp            # Master include file
 │   ├── Platform/               # Low-level DOS abstractions
 │   │   ├── Platform.hpp
 │   │   └── DOS/
@@ -100,15 +100,15 @@ windos/
 - Move semantics implemented correctly
 - Well-structured exception hierarchy
 - Comprehensive test coverage
-- **[FIXED] Wrapper types (Int32, Boolean, Char) used consistently in public APIs**
-- **[FIXED] Comparison operators support both wrapper and primitive types to avoid ambiguity**
+- **[FIXED] Wrapper types (Int32, Boolean, Char) used consistently EVERYWHERE**
+- **[FIXED] Mixed-type operators for arithmetic and comparison (Int32 + int, etc.)**
 
 ### Issues
 
 #### Resolved: Type Consistency
-~~The codebase inconsistently uses primitives instead of wrapper types in public APIs.~~
+~~The codebase inconsistently uses primitives instead of wrapper types.~~
 
-**Status:** FIXED - All public APIs now use wrapper types. Added comparison operators for primitive types to resolve operator ambiguity (e.g., `Int32 == 0` now works without explicit casts).
+**Status:** FIXED - Wrapper types are now used throughout the entire codebase, not just public APIs. Added mixed-type arithmetic and comparison operators to Types.hpp (e.g., `Int32 + int`, `Int32 == 0` work without explicit casts). See "Wrapper Type System" section for details.
 
 ---
 
@@ -296,7 +296,7 @@ All HIGH and MEDIUM priority features have been ported from legacy code.
 - Bounds checking with exceptions
 - Static methods for hardware access facades
 - Virtual methods for control customization
-- **USE WRAPPER TYPES** (`Int32`, `Boolean`, `String`) not primitives in public APIs
+- **USE WRAPPER TYPES EVERYWHERE** - See "Wrapper Type System" section below
 
 ## Testing
 
@@ -335,6 +335,104 @@ ASSERT_THROWS(expression, ExceptionType, "message");
    - Never manually delete children that have a parent
    - `RemoveChild()` releases ownership - caller must then delete or re-parent
    - See `WinDOS.md` Control class documentation for full details
+
+---
+
+## Wrapper Type System (Complete)
+
+### Overview
+
+The codebase uses .NET-style wrapper types **everywhere**, not just in public APIs. This provides type safety, zero-cost abstractions (with optimization), and consistency with .NET conventions.
+
+### Wrapper Types Available
+
+| Wrapper | Underlying Type | Usage |
+|---------|-----------------|-------|
+| `Boolean` | `bool` | All boolean values |
+| `Char` | `char` | Single characters |
+| `Int8` / `SByte` | `signed char` | 8-bit signed integers |
+| `UInt8` / `Byte` | `unsigned char` | 8-bit unsigned, pixel data |
+| `Int16` / `Short` | `short` | 16-bit signed integers |
+| `UInt16` / `UShort` | `unsigned short` | 16-bit unsigned integers |
+| `Int32` / `Int` | `int` | **Primary integer type** |
+| `UInt32` / `UInt` | `unsigned int` | Unsigned 32-bit, colors |
+| `Int64` / `Long` | `long long` | 64-bit signed integers |
+| `UInt64` / `ULong` | `unsigned long long` | 64-bit unsigned integers |
+| `Float32` / `Single` | `float` | 32-bit floating point |
+| `Float64` / `Double` | `double` | 64-bit floating point |
+
+### Usage Rules
+
+1. **Use wrapper types for all variables**:
+   ```cpp
+   // Correct
+   Int32 count = Int32(0);
+   for (Int32 i = Int32(0); i < limit; i += 1) { ... }
+
+   // Incorrect
+   int count = 0;
+   for (int i = 0; i < limit; i++) { ... }
+   ```
+
+2. **Use `static_cast<int>()` for array indexing**:
+   ```cpp
+   Int32 index = Int32(5);
+   array[static_cast<int>(index)] = value;  // Array indexing needs int
+   ```
+
+3. **Use `static_cast` at platform boundaries**:
+   ```cpp
+   // Platform functions take int& references
+   Int32 row, col;
+   { int r, c; Platform::DOS::Video::GetCursorPosition(r, c); row = Int32(r); col = Int32(c); }
+   ```
+
+4. **Loop increment pattern**:
+   ```cpp
+   // Use += 1 instead of ++ for clarity with wrapper types
+   for (Int32 i = Int32(0); i < limit; i += 1) { ... }
+   ```
+
+### Types That REMAIN Primitives
+
+Some types must stay as primitives for compatibility:
+
+| Primitive | Reason |
+|-----------|--------|
+| `size_t` | Required by C stdlib (malloc, strlen, fread) |
+| `long` | Required by ftell() return type |
+| `unsigned short` | VBE mode numbers (hardware interface) |
+| `const char*` | C string interop |
+| Pointers | Low-level memory management |
+| `int` for array sizing | C++ constexpr requirement |
+| `unsigned char` in static data | Palette/pattern storage |
+
+### Mixed-Type Operators
+
+Types.hpp includes operators for mixed-type arithmetic to avoid ambiguity:
+```cpp
+// These all work without explicit casts:
+Int32 x = Int32(5);
+Int32 y = x + 1;      // Int32 + int → Int32
+Int32 z = x * 2;      // Int32 * int → Int32
+Boolean b = x > 0;    // Int32 > int → Boolean
+```
+
+### Zero Overhead
+
+With compiler optimizations enabled (`-O2`), wrapper types compile to identical machine code as primitives. The wrapper disappears entirely - `Int32 a + Int32 b` generates the same assembly as `int a + int b`.
+
+### Files Updated
+
+All source files use wrapper types internally:
+- `String.hpp/.cpp` - `Int32 _length`, all methods
+- `StringBuilder` - `Int32 _length`, `_capacity`
+- `Console.hpp/.cpp` - All internals
+- `Memory.hpp/.cpp` - Pool sizes, hash values
+- `IO.cpp` - Loop counters, lengths
+- `Drawing.cpp` - Coordinates, pixel operations
+- `Devices.cpp` - Display operations
+- `Forms.cpp` - All control classes
 
 ---
 
@@ -429,14 +527,14 @@ movedata(_my_ds(), srcOffset, selector, dstOffset, rowBytes);
 | `src/System/Windows/Forms/Forms.cpp` | SpectrumControl implementation |
 | `tests/forms_demo.cpp` | VBE mode usage |
 | `tests/vbetest.cpp` | Standalone VBE diagnostic tool |
-| `tests/vbebcl.cpp` | VBE test using BCL library |
+| `tests/vbebcl.cpp` | VBE test using rtcorlib library |
 | `tests/vbeform.cpp` | Minimal VBE forms test |
 
 ### Test Programs
 
 ```bash
 make vbe_debug   # Standalone VBE step-by-step test (vbetest.exe)
-make vbe_bcl     # VBE test with BCL graphics (vbebcl.exe)
+make vbe_rtcorlib # VBE test with rtcorlib graphics (vbebcl.exe)
 make vbe_form    # Minimal VBE forms test (vbeform.exe)
 make forms_demo  # Full forms demo with VBE (forms.exe)
 ```

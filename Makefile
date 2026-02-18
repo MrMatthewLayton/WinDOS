@@ -1,4 +1,4 @@
-# BCL (Base Class Library) for DOS - Makefile
+# rtcorlib (Retro Technology Core Library) for DOS - Makefile
 # For use with DJGPP cross-compiler
 
 # Compiler settings
@@ -36,15 +36,15 @@ SYSTEM_SRCS = \
     $(SRC_DIR)/ThirdParty/stb_truetype_impl.cpp \
     $(SRC_DIR)/ThirdParty/stb_image_impl.cpp
 
-BCL_SRCS = $(PLATFORM_SRCS) $(SYSTEM_SRCS)
+RTCORLIB_SRCS = $(PLATFORM_SRCS) $(SYSTEM_SRCS)
 
 # Object files
 PLATFORM_OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(PLATFORM_SRCS))
 SYSTEM_OBJS = $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SYSTEM_SRCS))
-BCL_OBJS = $(PLATFORM_OBJS) $(SYSTEM_OBJS)
+RTCORLIB_OBJS = $(PLATFORM_OBJS) $(SYSTEM_OBJS)
 
 # Library
-BCL_LIB = $(LIB_DIR)/libbcl.a
+RTCORLIB_LIB = $(LIB_DIR)/librtcorlib.a
 
 # Test executables
 TEST_TYPES = $(BIN_DIR)/test_types.exe
@@ -70,7 +70,7 @@ DEMO_HATCH = $(BIN_DIR)/hatch.exe
 TESTS = $(TEST_TYPES) $(TEST_STRING) $(TEST_ARRAY) $(TEST_EXCEPTION) $(TEST_CONSOLE) $(RUN_ALL_TESTS) $(TEST_GRAPHICS) $(TEST_DEVICES) $(TEST_FORMS) $(TEST_DRAWING_EXT) $(TEST_COMPREHENSIVE) $(TEST_ICON) $(TEST_LAYOUT)
 
 # Default target
-all: directories $(BCL_LIB)
+all: directories $(RTCORLIB_LIB)
 
 # Create directories
 directories:
@@ -84,10 +84,10 @@ directories:
 	@mkdir -p $(LIB_DIR)
 	@mkdir -p $(BIN_DIR)
 
-# Build the BCL library
-$(BCL_LIB): $(BCL_OBJS)
+# Build the rtcorlib library
+$(RTCORLIB_LIB): $(RTCORLIB_OBJS)
 	$(AR) rcs $@ $^
-	@echo "Built BCL library: $@"
+	@echo "Built rtcorlib library: $@"
 
 # Compile Platform source files
 $(OBJ_DIR)/Platform/DOS/%.o: $(SRC_DIR)/Platform/DOS/%.cpp
@@ -125,99 +125,99 @@ $(OBJ_DIR)/ThirdParty/%.o: $(SRC_DIR)/ThirdParty/%.cpp
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Build all tests
-tests: directories $(BCL_LIB) $(TESTS)
+tests: directories $(RTCORLIB_LIB) $(TESTS)
 	@echo "All tests built successfully!"
 
 # Individual test executables
-$(TEST_TYPES): $(TEST_DIR)/test_types.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(TEST_TYPES): $(TEST_DIR)/test_types.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-$(TEST_STRING): $(TEST_DIR)/test_string.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(TEST_STRING): $(TEST_DIR)/test_string.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-$(TEST_ARRAY): $(TEST_DIR)/test_array.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(TEST_ARRAY): $(TEST_DIR)/test_array.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-$(TEST_EXCEPTION): $(TEST_DIR)/test_exception.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(TEST_EXCEPTION): $(TEST_DIR)/test_exception.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-$(TEST_CONSOLE): $(TEST_DIR)/test_console.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(TEST_CONSOLE): $(TEST_DIR)/test_console.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-$(RUN_ALL_TESTS): $(TEST_DIR)/run_all_tests.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(RUN_ALL_TESTS): $(TEST_DIR)/run_all_tests.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-$(TEST_GRAPHICS): $(TEST_DIR)/test_graphics.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(TEST_GRAPHICS): $(TEST_DIR)/test_graphics.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-$(TEST_DEVICES): $(TEST_DIR)/test_devices.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(TEST_DEVICES): $(TEST_DIR)/test_devices.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-$(TEST_FORMS): $(TEST_DIR)/test_forms.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(TEST_FORMS): $(TEST_DIR)/test_forms.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-$(TEST_DRAWING_EXT): $(TEST_DIR)/test_drawing_extended.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(TEST_DRAWING_EXT): $(TEST_DIR)/test_drawing_extended.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-$(TEST_COMPREHENSIVE): $(TEST_DIR)/test.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(TEST_COMPREHENSIVE): $(TEST_DIR)/test.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-$(TEST_ICON): $(TEST_DIR)/test_icon.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(TEST_ICON): $(TEST_DIR)/test_icon.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-$(TEST_LAYOUT): $(TEST_DIR)/test_layout.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(TEST_LAYOUT): $(TEST_DIR)/test_layout.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
 # Comprehensive test target (builds and names as test.exe)
-test: directories $(BCL_LIB) $(TEST_COMPREHENSIVE)
+test: directories $(RTCORLIB_LIB) $(TEST_COMPREHENSIVE)
 	@echo "Comprehensive test suite built: $(TEST_COMPREHENSIVE)"
 
 # Graphics demo
-demo: directories $(BCL_LIB) $(DEMO_GFX)
+demo: directories $(RTCORLIB_LIB) $(DEMO_GFX)
 	@echo "Graphics demo built!"
 
-$(DEMO_GFX): $(TEST_DIR)/gfx_demo.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(DEMO_GFX): $(TEST_DIR)/gfx_demo.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
 # Forms demo
-forms_demo: directories $(BCL_LIB) $(DEMO_FORMS)
+forms_demo: directories $(RTCORLIB_LIB) $(DEMO_FORMS)
 	@echo "Forms demo built!"
 
-$(DEMO_FORMS): $(TEST_DIR)/forms_demo.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(DEMO_FORMS): $(TEST_DIR)/forms_demo.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
 # Icon demo
-icon_demo: directories $(BCL_LIB) $(DEMO_ICONS)
+icon_demo: directories $(RTCORLIB_LIB) $(DEMO_ICONS)
 	@echo "Icon demo built!"
 
-$(DEMO_ICONS): $(TEST_DIR)/icon_demo.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(DEMO_ICONS): $(TEST_DIR)/icon_demo.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
 # Hatch pattern demo
-hatch_demo: directories $(BCL_LIB) $(DEMO_HATCH)
+hatch_demo: directories $(RTCORLIB_LIB) $(DEMO_HATCH)
 	@echo "Hatch demo built!"
 
-$(DEMO_HATCH): $(TEST_DIR)/hatch_demo.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(DEMO_HATCH): $(TEST_DIR)/hatch_demo.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
-# VBE debug test (standalone, doesn't need BCL)
+# VBE debug test (standalone, doesn't need rtcorlib)
 vbe_debug: directories $(BIN_DIR)/vbetest.exe
 	@echo "VBE debug test built!"
 
@@ -225,20 +225,20 @@ $(BIN_DIR)/vbetest.exe: $(TEST_DIR)/vbetest.cpp
 	$(CXX) $(CXXFLAGS) $< -o $@
 	@echo "Built: $@"
 
-# VBE BCL test (uses BCL library)
-vbe_bcl: directories $(BCL_LIB) $(BIN_DIR)/vbebcl.exe
-	@echo "VBE BCL test built!"
+# VBE rtcorlib test (uses rtcorlib library)
+vbe_rtcorlib: directories $(RTCORLIB_LIB) $(BIN_DIR)/vbebcl.exe
+	@echo "VBE rtcorlib test built!"
 
-$(BIN_DIR)/vbebcl.exe: $(TEST_DIR)/vbebcl.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(BIN_DIR)/vbebcl.exe: $(TEST_DIR)/vbebcl.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
 # VBE Forms test (minimal forms with VBE)
-vbe_form: directories $(BCL_LIB) $(BIN_DIR)/vbeform.exe
+vbe_form: directories $(RTCORLIB_LIB) $(BIN_DIR)/vbeform.exe
 	@echo "VBE Forms test built!"
 
-$(BIN_DIR)/vbeform.exe: $(TEST_DIR)/vbeform.cpp $(BCL_LIB)
-	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lbcl -o $@
+$(BIN_DIR)/vbeform.exe: $(TEST_DIR)/vbeform.cpp $(RTCORLIB_LIB)
+	$(CXX) $(CXXFLAGS) $< -L$(LIB_DIR) -lrtcorlib -o $@
 	@echo "Built: $@"
 
 # Clean build artifacts
@@ -251,8 +251,8 @@ rebuild: clean all
 
 # Show help
 help:
-	@echo "BCL Makefile targets:"
-	@echo "  all        - Build BCL library (default)"
+	@echo "rtcorlib Makefile targets:"
+	@echo "  all        - Build rtcorlib library (default)"
 	@echo "  test       - Build comprehensive test suite (test.exe)"
 	@echo "  tests      - Build all test executables"
 	@echo "  demo       - Build graphics demo"
@@ -273,7 +273,7 @@ help:
 	@echo "  $(TEST_DRAWING_EXT)"
 	@echo ""
 	@echo "Output:"
-	@echo "  Library: $(BCL_LIB)"
+	@echo "  Library: $(RTCORLIB_LIB)"
 	@echo "  Tests:   $(BIN_DIR)/*.exe"
 
-.PHONY: all directories test tests demo forms_demo icon_demo vbe_debug clean rebuild help
+.PHONY: all directories test tests demo forms_demo icon_demo vbe_debug vbe_rtcorlib clean rebuild help

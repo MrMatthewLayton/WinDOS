@@ -2,28 +2,33 @@
 #include <dos.h>
 #include <dpmi.h>
 
-namespace Platform { namespace DOS {
+namespace Platform::DOS
+{
 
-bool Mouse::Initialize() {
+bool Mouse::Initialize()
+{
     __dpmi_regs regs;
     regs.x.ax = 0x0000;  // Initialize mouse
     __dpmi_int(0x33, &regs);
     return regs.x.ax != 0;
 }
 
-void Mouse::ShowCursor() {
+void Mouse::ShowCursor()
+{
     __dpmi_regs regs;
     regs.x.ax = 0x0001;  // Show cursor
     __dpmi_int(0x33, &regs);
 }
 
-void Mouse::HideCursor() {
+void Mouse::HideCursor()
+{
     __dpmi_regs regs;
     regs.x.ax = 0x0002;  // Hide cursor
     __dpmi_int(0x33, &regs);
 }
 
-MouseState Mouse::GetState() {
+MouseState Mouse::GetState()
+{
     __dpmi_regs regs;
     regs.x.ax = 0x0003;  // Get position and button status
     __dpmi_int(0x33, &regs);
@@ -37,7 +42,8 @@ MouseState Mouse::GetState() {
     return state;
 }
 
-void Mouse::SetPosition(int x, int y) {
+void Mouse::SetPosition(int x, int y)
+{
     __dpmi_regs regs;
     regs.x.ax = 0x0004;  // Set position
     regs.x.cx = x;
@@ -45,7 +51,8 @@ void Mouse::SetPosition(int x, int y) {
     __dpmi_int(0x33, &regs);
 }
 
-void Mouse::SetHorizontalBounds(int min, int max) {
+void Mouse::SetHorizontalBounds(int min, int max)
+{
     __dpmi_regs regs;
     regs.x.ax = 0x0007;  // Set horizontal bounds
     regs.x.cx = min;
@@ -53,7 +60,8 @@ void Mouse::SetHorizontalBounds(int min, int max) {
     __dpmi_int(0x33, &regs);
 }
 
-void Mouse::SetVerticalBounds(int min, int max) {
+void Mouse::SetVerticalBounds(int min, int max)
+{
     __dpmi_regs regs;
     regs.x.ax = 0x0008;  // Set vertical bounds
     regs.x.cx = min;
@@ -61,7 +69,8 @@ void Mouse::SetVerticalBounds(int min, int max) {
     __dpmi_int(0x33, &regs);
 }
 
-void Mouse::SetSensitivity(int horizontalMickeys, int verticalMickeys) {
+void Mouse::SetSensitivity(int horizontalMickeys, int verticalMickeys)
+{
     __dpmi_regs regs;
     regs.x.ax = 0x000F;  // Set mickey/pixel ratio
     regs.x.cx = horizontalMickeys;  // Horizontal mickeys per 8 pixels
@@ -69,4 +78,4 @@ void Mouse::SetSensitivity(int horizontalMickeys, int verticalMickeys) {
     __dpmi_int(0x33, &regs);
 }
 
-}} // namespace Platform::DOS
+} // namespace Platform::DOS

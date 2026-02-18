@@ -1,8 +1,8 @@
-# WinDOS - Base Class Library for DOS
+# WinDOS - Retro Technology Core Library for DOS
 
 ## Introduction
 
-WinDOS is a .NET-inspired Base Class Library (BCL) that brings modern programming paradigms to DOS. It provides a comprehensive API for building graphical applications with a Windows 95-style user interface, all running in DOS protected mode.
+WinDOS is a .NET-inspired core library (rtcorlib - Retro Technology Core Library) that brings modern programming paradigms to DOS. It provides a comprehensive API for building graphical applications with a Windows 95-style user interface, all running in DOS protected mode.
 
 ### Features
 
@@ -25,7 +25,7 @@ WinDOS is a .NET-inspired Base Class Library (BCL) that brings modern programmin
 ### Quick Start
 
 ```cpp
-#include "bcl/BCL.hpp"
+#include "rtcorlib.hpp"
 
 using namespace System;
 using namespace System::Drawing;
@@ -3157,7 +3157,7 @@ namespace Platform::DOS {
 
 ```cpp
 // main.cpp - Complete WinDOS Application
-#include "bcl/BCL.hpp"
+#include "rtcorlib.hpp"
 
 using namespace System;
 using namespace System::Drawing;

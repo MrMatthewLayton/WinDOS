@@ -1,7 +1,7 @@
 // Forms Demo - Windows 95 style WIMP system demo
 // Tests Desktop, Window, TaskBar, Button, StartMenu, and layout system
 
-#include "../src/BCL.hpp"
+#include "../src/rtcorlib.hpp"
 
 using namespace System;
 using namespace System::Drawing;

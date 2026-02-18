@@ -5,7 +5,8 @@
 #include "../Array.hpp"
 #include "../Exception.hpp"
 
-namespace System { namespace Drawing {
+namespace System::Drawing
+{
 
 /******************************************************************************/
 /*    BMP File Structures (packed for binary compatibility)                   */
@@ -13,19 +14,32 @@ namespace System { namespace Drawing {
 
 #pragma pack(push, 1)
 
-struct BitmapFileHeader {
+struct BitmapFileHeader
+{
     unsigned short type;        // 'BM' = 0x4D42
     unsigned int   size;        // File size
     unsigned short reserved1;
     unsigned short reserved2;
     unsigned int   offset;      // Offset to pixel data
 
-    UInt16 Type() const { return UInt16(type); }
-    UInt32 Size() const { return UInt32(size); }
-    UInt32 Offset() const { return UInt32(offset); }
+    UInt16 Type() const
+    {
+        return UInt16(type);
+    }
+
+    UInt32 Size() const
+    {
+        return UInt32(size);
+    }
+
+    UInt32 Offset() const
+    {
+        return UInt32(offset);
+    }
 };
 
-struct BitmapInfoHeader {
+struct BitmapInfoHeader
+{
     unsigned int   headerSize;
     int            width;
     int            height;
@@ -38,14 +52,45 @@ struct BitmapInfoHeader {
     unsigned int   usedColors;
     unsigned int   importantColors;
 
-    UInt32 HeaderSize() const { return UInt32(headerSize); }
-    Int32  Width() const { return Int32(width); }
-    Int32  Height() const { return Int32(height); }
-    UInt16 Planes() const { return UInt16(planes); }
-    UInt16 BitCount() const { return UInt16(bitCount); }
-    UInt32 Compression() const { return UInt32(compression); }
-    UInt32 ImageSize() const { return UInt32(imageSize); }
-    UInt32 UsedColors() const { return UInt32(usedColors); }
+    UInt32 HeaderSize() const
+    {
+        return UInt32(headerSize);
+    }
+
+    Int32 Width() const
+    {
+        return Int32(width);
+    }
+
+    Int32 Height() const
+    {
+        return Int32(height);
+    }
+
+    UInt16 Planes() const
+    {
+        return UInt16(planes);
+    }
+
+    UInt16 BitCount() const
+    {
+        return UInt16(bitCount);
+    }
+
+    UInt32 Compression() const
+    {
+        return UInt32(compression);
+    }
+
+    UInt32 ImageSize() const
+    {
+        return UInt32(imageSize);
+    }
+
+    UInt32 UsedColors() const
+    {
+        return UInt32(usedColors);
+    }
 };
 
 #pragma pack(pop)
@@ -63,42 +108,87 @@ class Image;
 /*    colors are dithered at render time.                                     */
 /******************************************************************************/
 
-class Color {
+class Color
+{
 private:
     unsigned int _value;  // ARGB format: 0xAARRGGBB
 
 public:
     // Constructors
-    Color() : _value(0xFF000000) {}  // Opaque black
-    Color(unsigned int argb) : _value(argb) {}
+    Color() : _value(0xFF000000)
+    {
+    }  // Opaque black
+
+    Color(unsigned int argb) : _value(argb)
+    {
+    }
+
     Color(UInt8 r, UInt8 g, UInt8 b)
         : _value(0xFF000000 |
                  (static_cast<unsigned int>(static_cast<unsigned char>(r)) << 16) |
                  (static_cast<unsigned int>(static_cast<unsigned char>(g)) << 8) |
-                 static_cast<unsigned int>(static_cast<unsigned char>(b))) {}
+                 static_cast<unsigned int>(static_cast<unsigned char>(b)))
+    {
+    }
+
     Color(UInt8 a, UInt8 r, UInt8 g, UInt8 b)
         : _value((static_cast<unsigned int>(static_cast<unsigned char>(a)) << 24) |
                  (static_cast<unsigned int>(static_cast<unsigned char>(r)) << 16) |
                  (static_cast<unsigned int>(static_cast<unsigned char>(g)) << 8) |
-                 static_cast<unsigned int>(static_cast<unsigned char>(b))) {}
-    Color(const Color& other) : _value(other._value) {}
+                 static_cast<unsigned int>(static_cast<unsigned char>(b)))
+    {
+    }
 
-    Color& operator=(const Color& other) {
+    Color(const Color& other) : _value(other._value)
+    {
+    }
+
+    Color& operator=(const Color& other)
+    {
         _value = other._value;
         return *this;
     }
 
     // Component accessors
-    UInt8 A() const { return UInt8((_value >> 24) & 0xFF); }
-    UInt8 R() const { return UInt8((_value >> 16) & 0xFF); }
-    UInt8 G() const { return UInt8((_value >> 8) & 0xFF); }
-    UInt8 B() const { return UInt8(_value & 0xFF); }
+    UInt8 A() const
+    {
+        return UInt8((_value >> 24) & 0xFF);
+    }
 
-    UInt32 ToArgb() const { return UInt32(_value); }
-    operator unsigned int() const { return _value; }
+    UInt8 R() const
+    {
+        return UInt8((_value >> 16) & 0xFF);
+    }
 
-    Boolean operator==(const Color& other) const { return Boolean(_value == other._value); }
-    Boolean operator!=(const Color& other) const { return Boolean(_value != other._value); }
+    UInt8 G() const
+    {
+        return UInt8((_value >> 8) & 0xFF);
+    }
+
+    UInt8 B() const
+    {
+        return UInt8(_value & 0xFF);
+    }
+
+    UInt32 ToArgb() const
+    {
+        return UInt32(_value);
+    }
+
+    operator unsigned int() const
+    {
+        return _value;
+    }
+
+    Boolean operator==(const Color& other) const
+    {
+        return Boolean(_value == other._value);
+    }
+
+    Boolean operator!=(const Color& other) const
+    {
+        return Boolean(_value != other._value);
+    }
 
     // Linear interpolation between two colors
     static Color Lerp(const Color& c1, const Color& c2, Float32 t);
@@ -139,31 +229,44 @@ typedef Color Color32;
 /*    System::Drawing::Point                                                  */
 /******************************************************************************/
 
-class Point {
+class Point
+{
 public:
     Int32 x;
     Int32 y;
 
-    Point() : x(0), y(0) {}
-    Point(Int32 x, Int32 y) : x(x), y(y) {}
-    Point(const Point& other) : x(other.x), y(other.y) {}
+    Point() : x(0), y(0)
+    {
+    }
 
-    Point& operator=(const Point& other) {
+    Point(Int32 x, Int32 y) : x(x), y(y)
+    {
+    }
+
+    Point(const Point& other) : x(other.x), y(other.y)
+    {
+    }
+
+    Point& operator=(const Point& other)
+    {
         x = other.x;
         y = other.y;
         return *this;
     }
 
-    Boolean operator==(const Point& other) const {
+    Boolean operator==(const Point& other) const
+    {
         return Boolean(static_cast<int>(x) == static_cast<int>(other.x) &&
                        static_cast<int>(y) == static_cast<int>(other.y));
     }
 
-    Boolean operator!=(const Point& other) const {
+    Boolean operator!=(const Point& other) const
+    {
         return !(*this == other);
     }
 
-    Point Offset(Int32 dx, Int32 dy) const {
+    Point Offset(Int32 dx, Int32 dy) const
+    {
         return Point(Int32(static_cast<int>(x) + static_cast<int>(dx)),
                      Int32(static_cast<int>(y) + static_cast<int>(dy)));
     }
@@ -175,31 +278,44 @@ public:
 /*    System::Drawing::Size                                                   */
 /******************************************************************************/
 
-class Size {
+class Size
+{
 public:
     Int32 width;
     Int32 height;
 
-    Size() : width(0), height(0) {}
-    Size(Int32 width, Int32 height) : width(width), height(height) {}
-    Size(const Size& other) : width(other.width), height(other.height) {}
+    Size() : width(0), height(0)
+    {
+    }
 
-    Size& operator=(const Size& other) {
+    Size(Int32 width, Int32 height) : width(width), height(height)
+    {
+    }
+
+    Size(const Size& other) : width(other.width), height(other.height)
+    {
+    }
+
+    Size& operator=(const Size& other)
+    {
         width = other.width;
         height = other.height;
         return *this;
     }
 
-    Boolean operator==(const Size& other) const {
+    Boolean operator==(const Size& other) const
+    {
         return Boolean(static_cast<int>(width) == static_cast<int>(other.width) &&
                        static_cast<int>(height) == static_cast<int>(other.height));
     }
 
-    Boolean operator!=(const Size& other) const {
+    Boolean operator!=(const Size& other) const
+    {
         return !(*this == other);
     }
 
-    Boolean IsEmpty() const {
+    Boolean IsEmpty() const
+    {
         return Boolean(static_cast<int>(width) == 0 || static_cast<int>(height) == 0);
     }
 
@@ -216,22 +332,35 @@ public:
 /*    System::Drawing::Rectangle                                              */
 /******************************************************************************/
 
-class Rectangle {
+class Rectangle
+{
 public:
     Int32 x;
     Int32 y;
     Int32 width;
     Int32 height;
 
-    Rectangle() : x(0), y(0), width(0), height(0) {}
-    Rectangle(Int32 x, Int32 y, Int32 width, Int32 height)
-        : x(x), y(y), width(width), height(height) {}
-    Rectangle(const Point& location, const Size& size)
-        : x(location.x), y(location.y), width(size.width), height(size.height) {}
-    Rectangle(const Rectangle& other)
-        : x(other.x), y(other.y), width(other.width), height(other.height) {}
+    Rectangle() : x(0), y(0), width(0), height(0)
+    {
+    }
 
-    Rectangle& operator=(const Rectangle& other) {
+    Rectangle(Int32 x, Int32 y, Int32 width, Int32 height)
+        : x(x), y(y), width(width), height(height)
+    {
+    }
+
+    Rectangle(const Point& location, const Size& size)
+        : x(location.x), y(location.y), width(size.width), height(size.height)
+    {
+    }
+
+    Rectangle(const Rectangle& other)
+        : x(other.x), y(other.y), width(other.width), height(other.height)
+    {
+    }
+
+    Rectangle& operator=(const Rectangle& other)
+    {
         x = other.x;
         y = other.y;
         width = other.width;
@@ -239,15 +368,38 @@ public:
         return *this;
     }
 
-    Point Location() const { return Point(x, y); }
-    Size GetSize() const { return Size(width, height); }
+    Point Location() const
+    {
+        return Point(x, y);
+    }
 
-    Int32 Left() const { return x; }
-    Int32 Top() const { return y; }
-    Int32 Right() const { return Int32(static_cast<int>(x) + static_cast<int>(width)); }
-    Int32 Bottom() const { return Int32(static_cast<int>(y) + static_cast<int>(height)); }
+    Size GetSize() const
+    {
+        return Size(width, height);
+    }
 
-    Boolean Contains(Int32 px, Int32 py) const {
+    Int32 Left() const
+    {
+        return x;
+    }
+
+    Int32 Top() const
+    {
+        return y;
+    }
+
+    Int32 Right() const
+    {
+        return Int32(static_cast<int>(x) + static_cast<int>(width));
+    }
+
+    Int32 Bottom() const
+    {
+        return Int32(static_cast<int>(y) + static_cast<int>(height));
+    }
+
+    Boolean Contains(Int32 px, Int32 py) const
+    {
         int pxi = static_cast<int>(px);
         int pyi = static_cast<int>(py);
         int xi = static_cast<int>(x);
@@ -257,17 +409,20 @@ public:
         return Boolean(pxi >= xi && pxi < xi + wi && pyi >= yi && pyi < yi + hi);
     }
 
-    Boolean Contains(const Point& pt) const {
+    Boolean Contains(const Point& pt) const
+    {
         return Contains(pt.x, pt.y);
     }
 
-    Rectangle Offset(Int32 dx, Int32 dy) const {
+    Rectangle Offset(Int32 dx, Int32 dy) const
+    {
         return Rectangle(Int32(static_cast<int>(x) + static_cast<int>(dx)),
                          Int32(static_cast<int>(y) + static_cast<int>(dy)),
                          width, height);
     }
 
-    Rectangle Inflate(Int32 dx, Int32 dy) const {
+    Rectangle Inflate(Int32 dx, Int32 dy) const
+    {
         int dxi = static_cast<int>(dx);
         int dyi = static_cast<int>(dy);
         return Rectangle(Int32(static_cast<int>(x) - dxi),
@@ -286,7 +441,8 @@ public:
 /*    For low-color display modes, images are dithered at render time.        */
 /******************************************************************************/
 
-class Image {
+class Image
+{
 private:
     unsigned int* _data;  // ARGB pixels (4 bytes per pixel)
     int _width;
@@ -307,14 +463,40 @@ public:
     Image& operator=(const Image& other);
     Image& operator=(Image&& other) noexcept;
 
-    Int32 Width() const { return Int32(_width); }
-    Int32 Height() const { return Int32(_height); }
-    Size GetSize() const { return Size(Int32(_width), Int32(_height)); }
-    Int32 Length() const { return Int32(_width * _height); }
-    Int32 ByteLength() const { return Int32(_width * _height * 4); }
+    Int32 Width() const
+    {
+        return Int32(_width);
+    }
 
-    unsigned int* Data() { return _data; }
-    const unsigned int* Data() const { return _data; }
+    Int32 Height() const
+    {
+        return Int32(_height);
+    }
+
+    Size GetSize() const
+    {
+        return Size(Int32(_width), Int32(_height));
+    }
+
+    Int32 Length() const
+    {
+        return Int32(_width * _height);
+    }
+
+    Int32 ByteLength() const
+    {
+        return Int32(_width * _height * 4);
+    }
+
+    unsigned int* Data()
+    {
+        return _data;
+    }
+
+    const unsigned int* Data() const
+    {
+        return _data;
+    }
 
     Color GetPixel(Int32 x, Int32 y) const;
     void SetPixel(Int32 x, Int32 y, const Color& color);
@@ -379,7 +561,8 @@ typedef Image Image32;
 /*    Image::FromIconLibrary(path, name, size) or SystemIcons::Load(name).    */
 /******************************************************************************/
 
-class SystemIcons {
+class SystemIcons
+{
 public:
     // System icon library path
     static constexpr const char* LibraryPath = "sysicons.icl";
@@ -518,7 +701,8 @@ public:
     static constexpr const char* UiScrollUp     = "ui-scroll-up";
 
     // Helper to load icon by name
-    static Image Load(const char* iconName, const Size& size) {
+    static Image Load(const char* iconName, const Size& size)
+    {
         return Image::FromIconLibrary(LibraryPath, iconName, size);
     }
 };
@@ -527,7 +711,8 @@ public:
 /*    System::Drawing::BufferMode                                             */
 /******************************************************************************/
 
-enum class BufferMode {
+enum class BufferMode
+{
     Single,
     Double
 };
@@ -540,26 +725,32 @@ enum class BufferMode {
 /*    are drawn in the background color.                                      */
 /******************************************************************************/
 
-class HatchStyle {
+class HatchStyle
+{
 private:
     unsigned char _pattern[8];
 
     HatchStyle(const unsigned char p0, const unsigned char p1,
                const unsigned char p2, const unsigned char p3,
                const unsigned char p4, const unsigned char p5,
-               const unsigned char p6, const unsigned char p7) {
+               const unsigned char p6, const unsigned char p7)
+    {
         _pattern[0] = p0; _pattern[1] = p1; _pattern[2] = p2; _pattern[3] = p3;
         _pattern[4] = p4; _pattern[5] = p5; _pattern[6] = p6; _pattern[7] = p7;
     }
 
 public:
     // Get bit at position (x % 8, y % 8) - returns true for foreground
-    bool GetBit(int x, int y) const {
+    bool GetBit(int x, int y) const
+    {
         return (_pattern[y & 7] >> (7 - (x & 7))) & 1;
     }
 
     // Access pattern bytes directly
-    const unsigned char* Pattern() const { return _pattern; }
+    const unsigned char* Pattern() const
+    {
+        return _pattern;
+    }
 
     // Solid patterns
     static const HatchStyle Solid;           // All foreground
@@ -614,7 +805,8 @@ public:
 /*    System::Drawing::BorderStyle                                            */
 /******************************************************************************/
 
-enum class BorderStyle {
+enum class BorderStyle
+{
     None,
     Flat,
     Raised,
@@ -630,7 +822,8 @@ enum class BorderStyle {
 /*    Flags that specify style information applied to text. Can be combined.  */
 /******************************************************************************/
 
-enum class FontStyle : unsigned char {
+enum class FontStyle : unsigned char
+{
     Regular   = 0x00,
     Bold      = 0x01,
     Italic    = 0x02,
@@ -639,15 +832,18 @@ enum class FontStyle : unsigned char {
 };
 
 // Bitwise operators for FontStyle
-inline FontStyle operator|(FontStyle a, FontStyle b) {
+inline FontStyle operator|(FontStyle a, FontStyle b)
+{
     return static_cast<FontStyle>(static_cast<unsigned char>(a) | static_cast<unsigned char>(b));
 }
 
-inline FontStyle operator&(FontStyle a, FontStyle b) {
+inline FontStyle operator&(FontStyle a, FontStyle b)
+{
     return static_cast<FontStyle>(static_cast<unsigned char>(a) & static_cast<unsigned char>(b));
 }
 
-inline bool operator!(FontStyle a) {
+inline bool operator!(FontStyle a)
+{
     return static_cast<unsigned char>(a) == 0;
 }
 
@@ -657,7 +853,8 @@ inline bool operator!(FontStyle a) {
 /*    Specifies the alignment of text within a rectangle.                     */
 /******************************************************************************/
 
-enum class StringAlignment : unsigned char {
+enum class StringAlignment : unsigned char
+{
     Near,    // Left (horizontal) or Top (vertical)
     Center,  // Center aligned
     Far      // Right (horizontal) or Bottom (vertical)
@@ -671,7 +868,8 @@ enum class StringAlignment : unsigned char {
 /*    for built-in fonts.                                                     */
 /******************************************************************************/
 
-class Font {
+class Font
+{
 private:
     // Forward declaration of internal font data
     struct FontData;
@@ -736,7 +934,8 @@ typedef void (*BufferWriter)(const GraphicsBuffer& buffer);
 /*    For low-color display modes, content is dithered when flushed.          */
 /******************************************************************************/
 
-class GraphicsBuffer {
+class GraphicsBuffer
+{
 private:
     BufferWriter _writer;
     Rectangle _bounds;
@@ -754,13 +953,40 @@ private:
 public:
     ~GraphicsBuffer();
 
-    const Rectangle& Bounds() const { return _bounds; }
-    Image& GetImage() { return _image; }
-    const Image& GetImage() const { return _image; }
-    UInt32 LfbPitch() const { return UInt32(_lfbPitch); }
-    UInt8 Bpp() const { return UInt8(_bpp); }
-    UInt8 VideoMode() const { return UInt8(_videoMode); }
-    Boolean IsVbeMode() const { return Boolean(_videoMode == 0); }
+    const Rectangle& Bounds() const
+    {
+        return _bounds;
+    }
+
+    Image& GetImage()
+    {
+        return _image;
+    }
+
+    const Image& GetImage() const
+    {
+        return _image;
+    }
+
+    UInt32 LfbPitch() const
+    {
+        return UInt32(_lfbPitch);
+    }
+
+    UInt8 Bpp() const
+    {
+        return UInt8(_bpp);
+    }
+
+    UInt8 VideoMode() const
+    {
+        return UInt8(_videoMode);
+    }
+
+    Boolean IsVbeMode() const
+    {
+        return Boolean(_videoMode == 0);
+    }
 
     void Invalidate();
 
@@ -773,7 +999,11 @@ public:
     static void FlushFrameBuffer();
     static GraphicsBuffer* GetFrameBuffer();
     static GraphicsBuffer* Create(BufferMode mode, const Rectangle& bounds);
-    static void* GetLFBAddress() { return _lfbAddress; }
+
+    static void* GetLFBAddress()
+    {
+        return _lfbAddress;
+    }
 };
 
 /******************************************************************************/
@@ -782,7 +1012,8 @@ public:
 /*    Graphics drawing context. All drawing operations use 32-bit colors.     */
 /******************************************************************************/
 
-class Graphics {
+class Graphics
+{
 private:
     GraphicsBuffer* _buffer;
     Rectangle _bounds;
@@ -793,7 +1024,10 @@ public:
     Graphics(BufferMode mode, Int32 x, Int32 y, Int32 width, Int32 height);
     ~Graphics();
 
-    const Rectangle& Bounds() const { return _bounds; }
+    const Rectangle& Bounds() const
+    {
+        return _bounds;
+    }
 
     void Clear(const Color& color);
 
@@ -831,6 +1065,6 @@ public:
     void Invalidate(Boolean flushFrameBuffer = Boolean(false));
 };
 
-}} // namespace System::Drawing
+} // namespace System::Drawing
 
 #endif // SYSTEM_DRAWING_HPP

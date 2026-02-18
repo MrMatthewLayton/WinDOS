@@ -5,7 +5,7 @@
  * and displays them in a grid pattern on the desktop.
  */
 
-#include "BCL.hpp"
+#include "../src/rtcorlib.hpp"
 
 using namespace System;
 using namespace System::Drawing;

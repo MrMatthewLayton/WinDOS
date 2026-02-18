@@ -1,4 +1,4 @@
-// Device tests for BCL
+// Device tests for rtcorlib
 // Tests MouseStatus, KeyboardStatus structures and Display class
 // Note: Hardware-dependent methods (Initialize, ReadKey, etc.) require actual hardware
 
@@ -127,7 +127,7 @@ void TestDisplayEquality() {
 int main() {
     Console::Clear();
     Console::SetForegroundColor(ConsoleColor::Cyan);
-    Console::WriteLine("BCL Devices Test Suite");
+    Console::WriteLine("rtcorlib Devices Test Suite");
     Console::WriteLine("======================");
     Console::ResetColor();
     Console::WriteLine();

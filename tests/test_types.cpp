@@ -268,7 +268,7 @@ void TestSmallIntegers() {
 int main() {
     Console::Clear();
     Console::SetForegroundColor(ConsoleColor::Cyan);
-    Console::WriteLine("BCL Types Test Suite");
+    Console::WriteLine("rtcorlib Types Test Suite");
     Console::WriteLine("====================");
     Console::ResetColor();
 

@@ -5,7 +5,8 @@
 #include "String.hpp"
 #include <cstddef>
 
-namespace System {
+namespace System
+{
 
 /******************************************************************************/
 /*    System::MemoryPool                                                       */
@@ -27,9 +28,11 @@ namespace System {
  *   obj->~MyObject();                        // Manual destructor
  *   pool.Free(ptr);                          // Return to pool
  */
-class MemoryPool {
+class MemoryPool
+{
 private:
-    struct Block {
+    struct Block
+    {
         Block* next;
     };
 
@@ -82,12 +85,35 @@ public:
     void Reset();
 
     // Properties
-    Int32 BlockSize() const { return _blockSize; }
-    Int32 BlockCount() const { return _blockCount; }
-    Int32 FreeCount() const { return _freeCount; }
-    Int32 UsedCount() const { return _blockCount - _freeCount; }
-    Boolean IsEmpty() const { return Boolean(_freeCount == Int32(0)); }
-    Boolean IsFull() const { return Boolean(_freeCount == _blockCount); }
+    Int32 BlockSize() const
+    {
+        return _blockSize;
+    }
+
+    Int32 BlockCount() const
+    {
+        return _blockCount;
+    }
+
+    Int32 FreeCount() const
+    {
+        return _freeCount;
+    }
+
+    Int32 UsedCount() const
+    {
+        return _blockCount - _freeCount;
+    }
+
+    Boolean IsEmpty() const
+    {
+        return Boolean(_freeCount == Int32(0));
+    }
+
+    Boolean IsFull() const
+    {
+        return Boolean(_freeCount == _blockCount);
+    }
 };
 
 /******************************************************************************/
@@ -111,16 +137,20 @@ public:
  * Note: Interned strings live for the duration of the program.
  *       Do not intern dynamically generated strings in loops.
  */
-class StringIntern {
+class StringIntern
+{
 private:
     // Simple hash table entry
-    struct Entry {
+    struct Entry
+    {
         char* str;
         int length;
         unsigned int hash;
         Entry* next;
 
-        Entry() : str(nullptr), length(0), hash(0), next(nullptr) {}
+        Entry() : str(nullptr), length(0), hash(0), next(nullptr)
+        {
+        }
     };
 
     static const int TABLE_SIZE = 127;  // Prime number for better distribution (kept as int for array sizing)
@@ -169,11 +199,35 @@ public:
     static Int32 Count();
 
     // Pre-interned common strings (for fast access)
-    static const char* True()  { Initialize(); return Intern("True"); }
-    static const char* False() { Initialize(); return Intern("False"); }
-    static const char* Empty() { Initialize(); return Intern(""); }
-    static const char* Null()  { Initialize(); return Intern("null"); }
-    static const char* NewLine() { Initialize(); return Intern("\n"); }
+    static const char* True()
+    {
+        Initialize();
+        return Intern("True");
+    }
+
+    static const char* False()
+    {
+        Initialize();
+        return Intern("False");
+    }
+
+    static const char* Empty()
+    {
+        Initialize();
+        return Intern("");
+    }
+
+    static const char* Null()
+    {
+        Initialize();
+        return Intern("null");
+    }
+
+    static const char* NewLine()
+    {
+        Initialize();
+        return Intern("\n");
+    }
 
 private:
     StringIntern() = delete;  // Static class

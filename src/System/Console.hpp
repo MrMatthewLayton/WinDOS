@@ -3,9 +3,11 @@
 
 #include "Types.hpp"
 
-namespace System {
+namespace System
+{
 
-enum class ConsoleColor : unsigned char {
+enum class ConsoleColor : unsigned char
+{
     Black = 0,
     DarkBlue = 1,
     DarkGreen = 2,
@@ -24,7 +26,8 @@ enum class ConsoleColor : unsigned char {
     White = 15
 };
 
-class Console {
+class Console
+{
 private:
     static ConsoleColor _foregroundColor;
     static ConsoleColor _backgroundColor;

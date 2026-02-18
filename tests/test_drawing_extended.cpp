@@ -1,4 +1,4 @@
-// Extended Drawing tests for BCL
+// Extended Drawing tests for rtcorlib
 // Tests additional Drawing features not covered in test_graphics.cpp
 
 #include "test_framework.hpp"
@@ -356,7 +356,7 @@ void TestColorLerp() {
 int main() {
     Console::Clear();
     Console::SetForegroundColor(ConsoleColor::Cyan);
-    Console::WriteLine("BCL Extended Drawing Test Suite");
+    Console::WriteLine("rtcorlib Extended Drawing Test Suite");
     Console::WriteLine("================================");
     Console::ResetColor();
     Console::WriteLine();

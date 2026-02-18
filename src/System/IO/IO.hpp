@@ -5,7 +5,8 @@
 #include "../Types.hpp"
 #include "../Exception.hpp"
 
-namespace System { namespace IO {
+namespace System::IO
+{
 
 /******************************************************************************/
 /*    System::IO::File                                                        */
@@ -17,7 +18,8 @@ namespace System { namespace IO {
  * This class provides a simple interface for reading files, similar to
  * the .NET System.IO.File class.
  */
-class File {
+class File
+{
 private:
     File() = delete;  // Static class, no instances
 
@@ -50,6 +52,6 @@ public:
     static Int64 GetSize(const char* path);
 };
 
-}} // namespace System::IO
+} // namespace System::IO
 
 #endif // SYSTEM_IO_HPP

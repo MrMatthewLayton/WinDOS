@@ -253,7 +253,7 @@ void TestDataPointer() {
 int main() {
     Console::Clear();
     Console::SetForegroundColor(ConsoleColor::Cyan);
-    Console::WriteLine("BCL Array Test Suite");
+    Console::WriteLine("rtcorlib Array Test Suite");
     Console::WriteLine("====================");
     Console::ResetColor();
 

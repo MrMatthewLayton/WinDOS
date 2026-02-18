@@ -1,9 +1,11 @@
 #ifndef PLATFORM_DOS_SYSTEM_HPP
 #define PLATFORM_DOS_SYSTEM_HPP
 
-namespace Platform { namespace DOS {
+namespace Platform::DOS
+{
 
-class DOSSystem {
+class DOSSystem
+{
 public:
     // Write a null-terminated string to stdout
     static void WriteString(const char* s);
@@ -24,6 +26,6 @@ public:
     static void GetVersion(int& major, int& minor);
 };
 
-}} // namespace Platform::DOS
+} // namespace Platform::DOS
 
 #endif // PLATFORM_DOS_SYSTEM_HPP

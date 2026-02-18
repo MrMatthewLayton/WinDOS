@@ -1,6 +1,6 @@
 // Native test for Memory classes (runs on host system, not DOS)
 // This validates MemoryPool and StringIntern logic
-// Self-contained implementation to avoid BCL dependencies
+// Self-contained implementation to avoid rtcorlib dependencies
 
 #include <iostream>
 #include <cstring>

@@ -1,7 +1,7 @@
 // This file provides a simple menu to run individual test suites
 // In a real scenario, you would compile each test separately
 
-#include "../src/BCL.hpp"
+#include "../src/rtcorlib.hpp"
 
 using namespace System;
 
@@ -9,7 +9,7 @@ void PrintMenu() {
     Console::Clear();
     Console::SetForegroundColor(ConsoleColor::Cyan);
     Console::WriteLine("=================================");
-    Console::WriteLine("    BCL Test Suite Runner");
+    Console::WriteLine("    rtcorlib Test Suite Runner");
     Console::WriteLine("=================================");
     Console::ResetColor();
     Console::WriteLine();
@@ -58,7 +58,7 @@ void PrintMenu() {
 void DemoBasicFunctionality() {
     Console::WriteLine();
     Console::SetForegroundColor(ConsoleColor::Cyan);
-    Console::WriteLine("=== Quick BCL Demo ===");
+    Console::WriteLine("=== Quick rtcorlib Demo ===");
     Console::ResetColor();
     Console::WriteLine();
 

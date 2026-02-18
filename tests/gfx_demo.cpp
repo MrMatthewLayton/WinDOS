@@ -1,8 +1,8 @@
-// Graphics Demo - BCL VGA Mode 0x12 (640x480x4bpp)
+// Graphics Demo - rtcorlib VGA Mode 0x12 (640x480x4bpp)
 // Loads a BMP background, draws a white mouse cursor with black border
 // Optimized with dirty rectangles - only redraws changed regions
 
-#include "../src/BCL.hpp"
+#include "../src/rtcorlib.hpp"
 
 using namespace System;
 using namespace System::Drawing;

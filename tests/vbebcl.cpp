@@ -1,7 +1,7 @@
-// Minimal VBE test using BCL library
+// Minimal VBE test using rtcorlib library
 // Tests VBE detection and mode setting without full Forms system
 
-#include "../src/BCL.hpp"
+#include "../src/rtcorlib.hpp"
 #include <cstdio>
 #include <conio.h>
 
@@ -10,7 +10,7 @@ using namespace System::Drawing;
 using namespace System::Devices;
 
 int main() {
-    printf("=== VBE BCL Test ===\n\n");
+    printf("=== VBE rtcorlib Test ===\n\n");
 
     printf("Step 1: Checking VBE availability...\n");
     getch();
@@ -117,7 +117,7 @@ int main() {
     GraphicsBuffer::DestroyFrameBuffer();
     Display::SetDefaultMode();
 
-    printf("\n=== VBE BCL Test Complete ===\n");
+    printf("\n=== VBE rtcorlib Test Complete ===\n");
     getch();
 
     return 0;

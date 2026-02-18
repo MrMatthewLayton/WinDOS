@@ -1,7 +1,7 @@
 // Hatch Pattern Demo - Shows various hatch patterns
 // Tests the HatchStyle class with FillRectangle
 
-#include "../src/BCL.hpp"
+#include "../src/rtcorlib.hpp"
 
 using namespace System;
 using namespace System::Drawing;

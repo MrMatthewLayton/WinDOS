@@ -4,7 +4,8 @@
 #include <cstring>
 #include <cmath>
 
-namespace System {
+namespace System
+{
 
 // ============================================================================
 // Boolean implementation
@@ -13,26 +14,32 @@ namespace System {
 const Boolean Boolean::True(true);
 const Boolean Boolean::False(false);
 
-String Boolean::ToString() const {
+String Boolean::ToString() const
+{
     return _value ? String("True") : String("False");
 }
 
-Boolean Boolean::Parse(const String& s) {
+Boolean Boolean::Parse(const String& s)
+{
     Boolean result;
-    if (!TryParse(s, result)) {
+    if (!TryParse(s, result))
+    {
         throw FormatException("String was not recognized as a valid Boolean.");
     }
     return result;
 }
 
-bool Boolean::TryParse(const String& s, Boolean& result) {
+bool Boolean::TryParse(const String& s, Boolean& result)
+{
     String trimmed = s.Trim();
 
-    if (trimmed.EqualsIgnoreCase("true") || trimmed == "1") {
+    if (trimmed.EqualsIgnoreCase("true") || trimmed == "1")
+    {
         result = true;
         return true;
     }
-    if (trimmed.EqualsIgnoreCase("false") || trimmed == "0") {
+    if (trimmed.EqualsIgnoreCase("false") || trimmed == "0")
+    {
         result = false;
         return true;
     }
@@ -43,7 +50,8 @@ bool Boolean::TryParse(const String& s, Boolean& result) {
 // Char implementation
 // ============================================================================
 
-String Char::ToString() const {
+String Char::ToString() const
+{
     return String(_value, 1);
 }
 
@@ -51,12 +59,15 @@ String Char::ToString() const {
 // Helper functions for integer parsing/formatting
 // ============================================================================
 
-namespace {
+namespace
+{
 
 // Convert integer to string (works for both signed and unsigned)
 template<typename T>
-String IntToString(T value) {
-    if (value == 0) {
+String IntToString(T value)
+{
+    if (value == 0)
+    {
         return String("0");
     }
 
@@ -65,25 +76,31 @@ String IntToString(T value) {
     buffer[pos] = '\0';
 
     bool negative = false;
-    if (value < 0) {
+    if (value < 0)
+    {
         negative = true;
         // Handle minimum value edge case
-        if (value == std::numeric_limits<T>::min()) {
+        if (value == std::numeric_limits<T>::min())
+        {
             // Special handling for minimum negative value
             T lastDigit = -(value % 10);
             value = -(value / 10);
             buffer[--pos] = '0' + static_cast<char>(lastDigit);
-        } else {
+        }
+        else
+        {
             value = -value;
         }
     }
 
-    while (value > 0) {
+    while (value > 0)
+    {
         buffer[--pos] = '0' + (value % 10);
         value /= 10;
     }
 
-    if (negative) {
+    if (negative)
+    {
         buffer[--pos] = '-';
     }
 
@@ -92,8 +109,10 @@ String IntToString(T value) {
 
 // Convert unsigned integer to string
 template<typename T>
-String UIntToString(T value) {
-    if (value == 0) {
+String UIntToString(T value)
+{
+    if (value == 0)
+    {
         return String("0");
     }
 
@@ -101,7 +120,8 @@ String UIntToString(T value) {
     int pos = 23;
     buffer[pos] = '\0';
 
-    while (value > 0) {
+    while (value > 0)
+    {
         buffer[--pos] = '0' + (value % 10);
         value /= 10;
     }
@@ -111,8 +131,10 @@ String UIntToString(T value) {
 
 // Parse signed integer
 template<typename T>
-bool TryParseInt(const String& s, T& result, T minVal, T maxVal) {
-    if (s.Length() == 0) {
+bool TryParseInt(const String& s, T& result, T minVal, T maxVal)
+{
+    if (s.Length() == 0)
+    {
         return false;
     }
 
@@ -121,43 +143,58 @@ bool TryParseInt(const String& s, T& result, T minVal, T maxVal) {
     bool negative = false;
 
     // Skip leading whitespace
-    while (str[i] && (str[i] == ' ' || str[i] == '\t')) {
+    while (str[i] && (str[i] == ' ' || str[i] == '\t'))
+    {
         i++;
     }
 
     // Handle sign
-    if (str[i] == '-') {
+    if (str[i] == '-')
+    {
         negative = true;
         i++;
-    } else if (str[i] == '+') {
+    }
+    else if (str[i] == '+')
+    {
         i++;
     }
 
-    if (!str[i]) {
+    if (!str[i])
+    {
         return false;
     }
 
     // Parse digits
     long long value = 0;
-    while (str[i]) {
-        if (str[i] >= '0' && str[i] <= '9') {
+    while (str[i])
+    {
+        if (str[i] >= '0' && str[i] <= '9')
+        {
             value = value * 10 + (str[i] - '0');
 
             // Check overflow
-            if (negative) {
+            if (negative)
+            {
                 if (-value < minVal) return false;
-            } else {
+            }
+            else
+            {
                 if (value > maxVal) return false;
             }
-        } else if (str[i] == ' ' || str[i] == '\t') {
+        }
+        else if (str[i] == ' ' || str[i] == '\t')
+        {
             // Skip trailing whitespace
             i++;
-            while (str[i] && (str[i] == ' ' || str[i] == '\t')) {
+            while (str[i] && (str[i] == ' ' || str[i] == '\t'))
+            {
                 i++;
             }
             if (str[i]) return false;  // Non-whitespace after number
             break;
-        } else {
+        }
+        else
+        {
             return false;
         }
         i++;
@@ -169,8 +206,10 @@ bool TryParseInt(const String& s, T& result, T minVal, T maxVal) {
 
 // Parse unsigned integer
 template<typename T>
-bool TryParseUInt(const String& s, T& result, T maxVal) {
-    if (s.Length() == 0) {
+bool TryParseUInt(const String& s, T& result, T maxVal)
+{
+    if (s.Length() == 0)
+    {
         return false;
     }
 
@@ -178,42 +217,54 @@ bool TryParseUInt(const String& s, T& result, T maxVal) {
     int i = 0;
 
     // Skip leading whitespace
-    while (str[i] && (str[i] == ' ' || str[i] == '\t')) {
+    while (str[i] && (str[i] == ' ' || str[i] == '\t'))
+    {
         i++;
     }
 
     // Handle optional plus sign
-    if (str[i] == '+') {
+    if (str[i] == '+')
+    {
         i++;
     }
 
     // Negative not allowed for unsigned
-    if (str[i] == '-') {
+    if (str[i] == '-')
+    {
         return false;
     }
 
-    if (!str[i]) {
+    if (!str[i])
+    {
         return false;
     }
 
     // Parse digits
     unsigned long long value = 0;
-    while (str[i]) {
-        if (str[i] >= '0' && str[i] <= '9') {
+    while (str[i])
+    {
+        if (str[i] >= '0' && str[i] <= '9')
+        {
             unsigned long long newValue = value * 10 + (str[i] - '0');
-            if (newValue < value || newValue > maxVal) {
+            if (newValue < value || newValue > maxVal)
+            {
                 return false;  // Overflow
             }
             value = newValue;
-        } else if (str[i] == ' ' || str[i] == '\t') {
+        }
+        else if (str[i] == ' ' || str[i] == '\t')
+        {
             // Skip trailing whitespace
             i++;
-            while (str[i] && (str[i] == ' ' || str[i] == '\t')) {
+            while (str[i] && (str[i] == ' ' || str[i] == '\t'))
+            {
                 i++;
             }
             if (str[i]) return false;
             break;
-        } else {
+        }
+        else
+        {
             return false;
         }
         i++;
@@ -229,21 +280,26 @@ bool TryParseUInt(const String& s, T& result, T maxVal) {
 // Int8 implementation
 // ============================================================================
 
-String Int8::ToString() const {
+String Int8::ToString() const
+{
     return IntToString(static_cast<int>(_value));
 }
 
-Int8 Int8::Parse(const String& s) {
+Int8 Int8::Parse(const String& s)
+{
     Int8 result;
-    if (!TryParse(s, result)) {
+    if (!TryParse(s, result))
+    {
         throw FormatException("Input string was not in a correct format.");
     }
     return result;
 }
 
-bool Int8::TryParse(const String& s, Int8& result) {
+bool Int8::TryParse(const String& s, Int8& result)
+{
     signed char val;
-    if (TryParseInt<signed char>(s, val, MinValue, MaxValue)) {
+    if (TryParseInt<signed char>(s, val, MinValue, MaxValue))
+    {
         result = val;
         return true;
     }
@@ -254,21 +310,26 @@ bool Int8::TryParse(const String& s, Int8& result) {
 // UInt8 implementation
 // ============================================================================
 
-String UInt8::ToString() const {
+String UInt8::ToString() const
+{
     return UIntToString(static_cast<unsigned int>(_value));
 }
 
-UInt8 UInt8::Parse(const String& s) {
+UInt8 UInt8::Parse(const String& s)
+{
     UInt8 result;
-    if (!TryParse(s, result)) {
+    if (!TryParse(s, result))
+    {
         throw FormatException("Input string was not in a correct format.");
     }
     return result;
 }
 
-bool UInt8::TryParse(const String& s, UInt8& result) {
+bool UInt8::TryParse(const String& s, UInt8& result)
+{
     unsigned char val;
-    if (TryParseUInt<unsigned char>(s, val, MaxValue)) {
+    if (TryParseUInt<unsigned char>(s, val, MaxValue))
+    {
         result = val;
         return true;
     }
@@ -279,21 +340,26 @@ bool UInt8::TryParse(const String& s, UInt8& result) {
 // Int16 implementation
 // ============================================================================
 
-String Int16::ToString() const {
+String Int16::ToString() const
+{
     return IntToString(static_cast<int>(_value));
 }
 
-Int16 Int16::Parse(const String& s) {
+Int16 Int16::Parse(const String& s)
+{
     Int16 result;
-    if (!TryParse(s, result)) {
+    if (!TryParse(s, result))
+    {
         throw FormatException("Input string was not in a correct format.");
     }
     return result;
 }
 
-bool Int16::TryParse(const String& s, Int16& result) {
+bool Int16::TryParse(const String& s, Int16& result)
+{
     short val;
-    if (TryParseInt<short>(s, val, MinValue, MaxValue)) {
+    if (TryParseInt<short>(s, val, MinValue, MaxValue))
+    {
         result = val;
         return true;
     }
@@ -304,21 +370,26 @@ bool Int16::TryParse(const String& s, Int16& result) {
 // UInt16 implementation
 // ============================================================================
 
-String UInt16::ToString() const {
+String UInt16::ToString() const
+{
     return UIntToString(static_cast<unsigned int>(_value));
 }
 
-UInt16 UInt16::Parse(const String& s) {
+UInt16 UInt16::Parse(const String& s)
+{
     UInt16 result;
-    if (!TryParse(s, result)) {
+    if (!TryParse(s, result))
+    {
         throw FormatException("Input string was not in a correct format.");
     }
     return result;
 }
 
-bool UInt16::TryParse(const String& s, UInt16& result) {
+bool UInt16::TryParse(const String& s, UInt16& result)
+{
     unsigned short val;
-    if (TryParseUInt<unsigned short>(s, val, MaxValue)) {
+    if (TryParseUInt<unsigned short>(s, val, MaxValue))
+    {
         result = val;
         return true;
     }
@@ -329,21 +400,26 @@ bool UInt16::TryParse(const String& s, UInt16& result) {
 // Int32 implementation
 // ============================================================================
 
-String Int32::ToString() const {
+String Int32::ToString() const
+{
     return IntToString(_value);
 }
 
-Int32 Int32::Parse(const String& s) {
+Int32 Int32::Parse(const String& s)
+{
     Int32 result;
-    if (!TryParse(s, result)) {
+    if (!TryParse(s, result))
+    {
         throw FormatException("Input string was not in a correct format.");
     }
     return result;
 }
 
-bool Int32::TryParse(const String& s, Int32& result) {
+bool Int32::TryParse(const String& s, Int32& result)
+{
     int val;
-    if (TryParseInt<int>(s, val, MinValue, MaxValue)) {
+    if (TryParseInt<int>(s, val, MinValue, MaxValue))
+    {
         result = val;
         return true;
     }
@@ -354,21 +430,26 @@ bool Int32::TryParse(const String& s, Int32& result) {
 // UInt32 implementation
 // ============================================================================
 
-String UInt32::ToString() const {
+String UInt32::ToString() const
+{
     return UIntToString(_value);
 }
 
-UInt32 UInt32::Parse(const String& s) {
+UInt32 UInt32::Parse(const String& s)
+{
     UInt32 result;
-    if (!TryParse(s, result)) {
+    if (!TryParse(s, result))
+    {
         throw FormatException("Input string was not in a correct format.");
     }
     return result;
 }
 
-bool UInt32::TryParse(const String& s, UInt32& result) {
+bool UInt32::TryParse(const String& s, UInt32& result)
+{
     unsigned int val;
-    if (TryParseUInt<unsigned int>(s, val, MaxValue)) {
+    if (TryParseUInt<unsigned int>(s, val, MaxValue))
+    {
         result = val;
         return true;
     }
@@ -379,21 +460,26 @@ bool UInt32::TryParse(const String& s, UInt32& result) {
 // Int64 implementation
 // ============================================================================
 
-String Int64::ToString() const {
+String Int64::ToString() const
+{
     return IntToString(_value);
 }
 
-Int64 Int64::Parse(const String& s) {
+Int64 Int64::Parse(const String& s)
+{
     Int64 result;
-    if (!TryParse(s, result)) {
+    if (!TryParse(s, result))
+    {
         throw FormatException("Input string was not in a correct format.");
     }
     return result;
 }
 
-bool Int64::TryParse(const String& s, Int64& result) {
+bool Int64::TryParse(const String& s, Int64& result)
+{
     long long val;
-    if (TryParseInt<long long>(s, val, MinValue, MaxValue)) {
+    if (TryParseInt<long long>(s, val, MinValue, MaxValue))
+    {
         result = val;
         return true;
     }
@@ -404,21 +490,26 @@ bool Int64::TryParse(const String& s, Int64& result) {
 // UInt64 implementation
 // ============================================================================
 
-String UInt64::ToString() const {
+String UInt64::ToString() const
+{
     return UIntToString(_value);
 }
 
-UInt64 UInt64::Parse(const String& s) {
+UInt64 UInt64::Parse(const String& s)
+{
     UInt64 result;
-    if (!TryParse(s, result)) {
+    if (!TryParse(s, result))
+    {
         throw FormatException("Input string was not in a correct format.");
     }
     return result;
 }
 
-bool UInt64::TryParse(const String& s, UInt64& result) {
+bool UInt64::TryParse(const String& s, UInt64& result)
+{
     unsigned long long val;
-    if (TryParseUInt<unsigned long long>(s, val, MaxValue)) {
+    if (TryParseUInt<unsigned long long>(s, val, MaxValue))
+    {
         result = val;
         return true;
     }
@@ -429,27 +520,34 @@ bool UInt64::TryParse(const String& s, UInt64& result) {
 // Float32 implementation
 // ============================================================================
 
-bool Float32::IsNaN(Float32 value) {
+bool Float32::IsNaN(Float32 value)
+{
     return std::isnan(value._value);
 }
 
-bool Float32::IsInfinity(Float32 value) {
+bool Float32::IsInfinity(Float32 value)
+{
     return std::isinf(value._value);
 }
 
-bool Float32::IsPositiveInfinity(Float32 value) {
+bool Float32::IsPositiveInfinity(Float32 value)
+{
     return std::isinf(value._value) && value._value > 0;
 }
 
-bool Float32::IsNegativeInfinity(Float32 value) {
+bool Float32::IsNegativeInfinity(Float32 value)
+{
     return std::isinf(value._value) && value._value < 0;
 }
 
-String Float32::ToString() const {
-    if (std::isnan(_value)) {
+String Float32::ToString() const
+{
+    if (std::isnan(_value))
+    {
         return String("NaN");
     }
-    if (std::isinf(_value)) {
+    if (std::isinf(_value))
+    {
         return _value > 0 ? String("Infinity") : String("-Infinity");
     }
 
@@ -458,16 +556,20 @@ String Float32::ToString() const {
     return String(buffer);
 }
 
-Float32 Float32::Parse(const String& s) {
+Float32 Float32::Parse(const String& s)
+{
     Float32 result;
-    if (!TryParse(s, result)) {
+    if (!TryParse(s, result))
+    {
         throw FormatException("Input string was not in a correct format.");
     }
     return result;
 }
 
-bool Float32::TryParse(const String& s, Float32& result) {
-    if (s.Length() == 0) {
+bool Float32::TryParse(const String& s, Float32& result)
+{
+    if (s.Length() == 0)
+    {
         return false;
     }
 
@@ -478,7 +580,8 @@ bool Float32::TryParse(const String& s, Float32& result) {
     float value = std::strtof(str, &endptr);
 
     // Check if entire string was consumed
-    if (*endptr != '\0') {
+    if (*endptr != '\0')
+    {
         return false;
     }
 
@@ -486,9 +589,11 @@ bool Float32::TryParse(const String& s, Float32& result) {
     return true;
 }
 
-int Float32::GetHashCode() const {
+int Float32::GetHashCode() const
+{
     // Simple bit cast for hash
-    union {
+    union
+    {
         float f;
         int i;
     } u;
@@ -500,27 +605,34 @@ int Float32::GetHashCode() const {
 // Float64 implementation
 // ============================================================================
 
-bool Float64::IsNaN(Float64 value) {
+bool Float64::IsNaN(Float64 value)
+{
     return std::isnan(value._value);
 }
 
-bool Float64::IsInfinity(Float64 value) {
+bool Float64::IsInfinity(Float64 value)
+{
     return std::isinf(value._value);
 }
 
-bool Float64::IsPositiveInfinity(Float64 value) {
+bool Float64::IsPositiveInfinity(Float64 value)
+{
     return std::isinf(value._value) && value._value > 0;
 }
 
-bool Float64::IsNegativeInfinity(Float64 value) {
+bool Float64::IsNegativeInfinity(Float64 value)
+{
     return std::isinf(value._value) && value._value < 0;
 }
 
-String Float64::ToString() const {
-    if (std::isnan(_value)) {
+String Float64::ToString() const
+{
+    if (std::isnan(_value))
+    {
         return String("NaN");
     }
-    if (std::isinf(_value)) {
+    if (std::isinf(_value))
+    {
         return _value > 0 ? String("Infinity") : String("-Infinity");
     }
 
@@ -529,16 +641,20 @@ String Float64::ToString() const {
     return String(buffer);
 }
 
-Float64 Float64::Parse(const String& s) {
+Float64 Float64::Parse(const String& s)
+{
     Float64 result;
-    if (!TryParse(s, result)) {
+    if (!TryParse(s, result))
+    {
         throw FormatException("Input string was not in a correct format.");
     }
     return result;
 }
 
-bool Float64::TryParse(const String& s, Float64& result) {
-    if (s.Length() == 0) {
+bool Float64::TryParse(const String& s, Float64& result)
+{
+    if (s.Length() == 0)
+    {
         return false;
     }
 
@@ -549,7 +665,8 @@ bool Float64::TryParse(const String& s, Float64& result) {
     double value = std::strtod(str, &endptr);
 
     // Check if entire string was consumed
-    if (*endptr != '\0') {
+    if (*endptr != '\0')
+    {
         return false;
     }
 
@@ -557,9 +674,11 @@ bool Float64::TryParse(const String& s, Float64& result) {
     return true;
 }
 
-int Float64::GetHashCode() const {
+int Float64::GetHashCode() const
+{
     // Combine high and low bits for hash
-    union {
+    union
+    {
         double d;
         long long ll;
     } u;
