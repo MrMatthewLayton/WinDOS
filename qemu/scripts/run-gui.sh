@@ -69,7 +69,7 @@ if [ ! -f "$IMAGE" ] || [ "$BUILD_DIR/forms.exe" -nt "$IMAGE" ]; then
 DOS=HIGH,UMB
 FILES=40
 BUFFERS=20
-SHELL=A:\COMMAND.COM /E:1024 /P
+SHELL=A:\COMMAND.COM /E:1024 /P=\FDAUTO.BAT
 EOF
     sed -i '' 's/$/\r/' /tmp/fdconfig.sys 2>/dev/null || true
     mcopy -i "$IMAGE" /tmp/fdconfig.sys ::FDCONFIG.SYS
