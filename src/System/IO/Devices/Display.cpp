@@ -1006,12 +1006,32 @@ void Display::GetCursorPosition(Int32& row, Int32& col)
     col = Int32(c);
 }
 
+void Display::GetScreenSize(Int32& rows, Int32& cols)
+{
+    int r, c;
+    BiosGetScreenSize(r, c);
+    rows = Int32(r);
+    cols = Int32(c);
+}
+
 void Display::ClearScreen(UInt8 attr)
 {
     int rows, cols;
     BiosGetScreenSize(rows, cols);
     BiosScrollUp(0, static_cast<unsigned char>(attr), 0, 0, rows - 1, cols - 1);
     BiosSetCursorPosition(0, 0);
+}
+
+void Display::WriteChar(char c, UInt8 attr)
+{
+    BiosWriteChar(c, static_cast<unsigned char>(attr));
+}
+
+void Display::ScrollUp(Int32 lines, UInt8 attr, Int32 left, Int32 top, Int32 right, Int32 bottom)
+{
+    BiosScrollUp(static_cast<int>(lines), static_cast<unsigned char>(attr),
+                 static_cast<int>(top), static_cast<int>(left),
+                 static_cast<int>(bottom), static_cast<int>(right));
 }
 
 /******************************************************************************/

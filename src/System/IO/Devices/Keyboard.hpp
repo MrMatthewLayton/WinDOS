@@ -126,6 +126,25 @@ public:
     /// Queries the BIOS for the current state of Shift, Ctrl, Alt, and
     /// lock keys (Caps Lock, Num Lock, Scroll Lock).
     static KeyboardStatus GetStatus();
+
+    /// @brief Reads a character from keyboard input (alias for ReadKey).
+    /// @return The ASCII character of the pressed key
+    ///
+    /// Blocks until a key is pressed if the buffer is empty.
+    /// This is an alias for ReadKey() for compatibility with Console API.
+    static char ReadChar()
+    {
+        return static_cast<char>(ReadKey());
+    }
+
+    /// @brief Checks if a key is waiting in the buffer (alias for IsKeyPressed).
+    /// @return True if a keypress is waiting to be read
+    ///
+    /// This is an alias for IsKeyPressed() for compatibility with Console API.
+    static Boolean IsKeyAvailable()
+    {
+        return IsKeyPressed();
+    }
 };
 
 } // namespace System::IO::Devices

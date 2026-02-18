@@ -1,6 +1,7 @@
 #ifndef SYSTEM_IO_ENVIRONMENT_HPP
 #define SYSTEM_IO_ENVIRONMENT_HPP
 
+#include "../Types.hpp"
 #include "../String.hpp"
 
 namespace System::IO

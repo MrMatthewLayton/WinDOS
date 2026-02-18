@@ -226,12 +226,40 @@ public:
     /// Retrieves the current cursor row and column from the BIOS data area.
     static void GetCursorPosition(Int32& row, Int32& col);
 
+    /// @brief Gets the current screen size in text mode.
+    /// @param rows Receives the number of rows (typically 25, 43, or 50)
+    /// @param cols Receives the number of columns (typically 40 or 80)
+    ///
+    /// Retrieves the current screen dimensions from the BIOS data area.
+    /// Only valid in text modes.
+    static void GetScreenSize(Int32& rows, Int32& cols);
+
     /// @brief Clears the entire screen with a specified attribute.
     /// @param attr The color attribute to fill the screen with
     ///
     /// Fills the entire screen with space characters using the given color
     /// attribute, and resets the cursor to the home position (0, 0).
     static void ClearScreen(UInt8 attr);
+
+    /// @brief Writes a character with a color attribute at the current cursor position.
+    /// @param c The character to write
+    /// @param attr The color attribute (foreground and background color combined)
+    ///
+    /// Writes the character to the screen at the current cursor position using
+    /// the specified color attribute. Does not advance the cursor.
+    static void WriteChar(char c, UInt8 attr);
+
+    /// @brief Scrolls a screen region up by the specified number of lines.
+    /// @param lines Number of lines to scroll up
+    /// @param attr Color attribute for the blank line at the bottom
+    /// @param left Left column of the scroll region (0-based)
+    /// @param top Top row of the scroll region (0-based)
+    /// @param right Right column of the scroll region (0-based)
+    /// @param bottom Bottom row of the scroll region (0-based)
+    ///
+    /// Scrolls the specified rectangular region upward, filling the bottom
+    /// with blank characters using the given attribute.
+    static void ScrollUp(Int32 lines, UInt8 attr, Int32 left, Int32 top, Int32 right, Int32 bottom);
 
     /**************************************************************************/
     /*    Low-Level VGA Operations (for GraphicsBuffer use)                   */

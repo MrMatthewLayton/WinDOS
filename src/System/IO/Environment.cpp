@@ -1,5 +1,5 @@
 #include "Environment.hpp"
-#include "../StringBuilder.hpp"
+#include "../String.hpp"
 #include <dos.h>
 #include <dpmi.h>
 #include <cstdlib>

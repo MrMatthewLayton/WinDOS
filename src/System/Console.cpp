@@ -31,13 +31,8 @@ void Console::_writeChar(Char c)
     if (c == '\r')
     {
         Int32 row, col;
-        {
-            int r, c_;
-            System::IO::Devices::Display::GetCursorPosition(r, c_);
-            row = Int32(r);
-            col = Int32(c_);
-        }
-        System::IO::Devices::Display::SetCursorPosition(static_cast<int>(row), 0);
+        System::IO::Devices::Display::GetCursorPosition(row, col);
+        System::IO::Devices::Display::SetCursorPosition(row, Int32(0));
         return;
     }
 
@@ -45,13 +40,8 @@ void Console::_writeChar(Char c)
     {
         // Tab to next 8-column boundary
         Int32 row, col;
-        {
-            int r, c_;
-            System::IO::Devices::Display::GetCursorPosition(r, c_);
-            row = Int32(r);
-            col = Int32(c_);
-        }
-        Int32 spaces = Int32(8) - (col % 8);
+        System::IO::Devices::Display::GetCursorPosition(row, col);
+        Int32 spaces = Int32(8) - (col % Int32(8));
         for (Int32 i = Int32(0); i < spaces; i += 1)
         {
             _writeChar(Char(' '));
@@ -62,35 +52,20 @@ void Console::_writeChar(Char c)
     if (c == '\b')
     {
         Int32 row, col;
-        {
-            int r, c_;
-            System::IO::Devices::Display::GetCursorPosition(r, c_);
-            row = Int32(r);
-            col = Int32(c_);
-        }
+        System::IO::Devices::Display::GetCursorPosition(row, col);
         if (col > 0)
         {
-            System::IO::Devices::Display::SetCursorPosition(static_cast<int>(row), static_cast<int>(col - 1));
+            System::IO::Devices::Display::SetCursorPosition(row, col - 1);
         }
         return;
     }
 
     // Regular character - write with color and advance cursor
     Int32 rows, cols;
-    {
-        int r, c_;
-        System::IO::Devices::Display::GetScreenSize(r, c_);
-        rows = Int32(r);
-        cols = Int32(c_);
-    }
+    System::IO::Devices::Display::GetScreenSize(rows, cols);
 
     Int32 row, col;
-    {
-        int r, c_;
-        System::IO::Devices::Display::GetCursorPosition(r, c_);
-        row = Int32(r);
-        col = Int32(c_);
-    }
+    System::IO::Devices::Display::GetCursorPosition(row, col);
 
     // Write character with attribute
     System::IO::Devices::Display::WriteChar(static_cast<char>(c), static_cast<unsigned char>(_getColorAttribute()));
@@ -104,31 +79,21 @@ void Console::_writeChar(Char c)
         if (row >= rows)
         {
             // Scroll up
-            System::IO::Devices::Display::ScrollUp(1, static_cast<unsigned char>(_getColorAttribute()), 0, 0, static_cast<int>(rows - 1), static_cast<int>(cols - 1));
+            System::IO::Devices::Display::ScrollUp(Int32(1), _getColorAttribute(), Int32(0), Int32(0), cols - 1, rows - 1);
             row = rows - 1;
         }
     }
 
-    System::IO::Devices::Display::SetCursorPosition(static_cast<int>(row), static_cast<int>(col));
+    System::IO::Devices::Display::SetCursorPosition(row, col);
 }
 
 void Console::_handleNewline()
 {
     Int32 rows, cols;
-    {
-        int r, c_;
-        System::IO::Devices::Display::GetScreenSize(r, c_);
-        rows = Int32(r);
-        cols = Int32(c_);
-    }
+    System::IO::Devices::Display::GetScreenSize(rows, cols);
 
     Int32 row, col;
-    {
-        int r, c_;
-        System::IO::Devices::Display::GetCursorPosition(r, c_);
-        row = Int32(r);
-        col = Int32(c_);
-    }
+    System::IO::Devices::Display::GetCursorPosition(row, col);
 
     row += 1;
     col = Int32(0);
@@ -136,11 +101,11 @@ void Console::_handleNewline()
     if (row >= rows)
     {
         // Scroll up
-        System::IO::Devices::Display::ScrollUp(1, static_cast<unsigned char>(_getColorAttribute()), 0, 0, static_cast<int>(rows - 1), static_cast<int>(cols - 1));
+        System::IO::Devices::Display::ScrollUp(Int32(1), _getColorAttribute(), Int32(0), Int32(0), cols - 1, rows - 1);
         row = rows - 1;
     }
 
-    System::IO::Devices::Display::SetCursorPosition(static_cast<int>(row), static_cast<int>(col));
+    System::IO::Devices::Display::SetCursorPosition(row, col);
 }
 
 // ============================================================================
@@ -482,12 +447,7 @@ Boolean Console::KeyAvailable()
 void Console::SetCursorPosition(Int32 left, Int32 top)
 {
     Int32 rows, cols;
-    {
-        int r, c;
-        System::IO::Devices::Display::GetScreenSize(r, c);
-        rows = Int32(r);
-        cols = Int32(c);
-    }
+    System::IO::Devices::Display::GetScreenSize(rows, cols);
 
     // Clamp values
     Int32 l = left;
@@ -509,30 +469,20 @@ void Console::SetCursorPosition(Int32 left, Int32 top)
         t = rows - 1;
     }
 
-    System::IO::Devices::Display::SetCursorPosition(static_cast<int>(t), static_cast<int>(l));
+    System::IO::Devices::Display::SetCursorPosition(t, l);
 }
 
 Int32 Console::CursorLeft()
 {
     Int32 row, col;
-    {
-        int r, c;
-        System::IO::Devices::Display::GetCursorPosition(r, c);
-        row = Int32(r);
-        col = Int32(c);
-    }
+    System::IO::Devices::Display::GetCursorPosition(row, col);
     return col;
 }
 
 Int32 Console::CursorTop()
 {
     Int32 row, col;
-    {
-        int r, c;
-        System::IO::Devices::Display::GetCursorPosition(r, c);
-        row = Int32(r);
-        col = Int32(c);
-    }
+    System::IO::Devices::Display::GetCursorPosition(row, col);
     return row;
 }
 
@@ -578,24 +528,14 @@ void Console::Clear()
 Int32 Console::WindowWidth()
 {
     Int32 rows, cols;
-    {
-        int r, c;
-        System::IO::Devices::Display::GetScreenSize(r, c);
-        rows = Int32(r);
-        cols = Int32(c);
-    }
+    System::IO::Devices::Display::GetScreenSize(rows, cols);
     return cols;
 }
 
 Int32 Console::WindowHeight()
 {
     Int32 rows, cols;
-    {
-        int r, c;
-        System::IO::Devices::Display::GetScreenSize(r, c);
-        rows = Int32(r);
-        cols = Int32(c);
-    }
+    System::IO::Devices::Display::GetScreenSize(rows, cols);
     return rows;
 }
 
