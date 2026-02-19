@@ -58,7 +58,7 @@ void TestAccess() {
     ASSERT_THROWS(s[-1], IndexOutOfRangeException, "Negative index throws");
     ASSERT_THROWS(s[5], IndexOutOfRangeException, "Out of bounds index throws");
 
-    ASSERT(std::strcmp(s.CStr(), "Hello") == 0, "CStr returns correct pointer");
+    ASSERT(std::strcmp(s.GetRawString(), "Hello") == 0, "GetRawString returns correct pointer");
 
     Test::PrintSummary();
 }

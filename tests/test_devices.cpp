@@ -3,7 +3,9 @@
 // Note: Hardware-dependent methods (Initialize, ReadKey, etc.) require actual hardware
 
 #include "test_framework.hpp"
-#include "../src/System/Devices/Devices.hpp"
+#include "../src/System/IO/Devices/Display.hpp"
+#include "../src/System/IO/Devices/Mouse.hpp"
+#include "../src/System/IO/Devices/Keyboard.hpp"
 
 using namespace System;
 using namespace System::IO::Devices;

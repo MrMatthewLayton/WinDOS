@@ -3,7 +3,7 @@
 
 #include "test_framework.hpp"
 #include "../src/System/Drawing/Drawing.hpp"
-#include "../src/System/Devices/Devices.hpp"
+#include "../src/System/IO/Devices/Display.hpp"
 
 using namespace System;
 using namespace System::Drawing;
