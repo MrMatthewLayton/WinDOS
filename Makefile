@@ -34,7 +34,10 @@ SYSTEM_SRCS = \
     $(SRC_DIR)/System/Drawing/Size.cpp \
     $(SRC_DIR)/System/Drawing/Rectangle.cpp \
     $(SRC_DIR)/System/Drawing/HatchStyle.cpp \
-    $(SRC_DIR)/System/Drawing/Drawing.cpp \
+    $(SRC_DIR)/System/Drawing/Image.cpp \
+    $(SRC_DIR)/System/Drawing/Font.cpp \
+    $(SRC_DIR)/System/Drawing/GraphicsBuffer.cpp \
+    $(SRC_DIR)/System/Drawing/Graphics.cpp \
     $(SRC_DIR)/System/Windows/Forms/Forms.cpp \
     $(SRC_DIR)/ThirdParty/stb_truetype_impl.cpp \
     $(SRC_DIR)/ThirdParty/stb_image_impl.cpp

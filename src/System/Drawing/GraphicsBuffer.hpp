@@ -174,6 +174,22 @@ public:
     }
 };
 
+/******************************************************************************/
+/*    Dirty rectangle tracking (internal use)                                 */
+/******************************************************************************/
+
+/// @brief Marks a screen region as needing refresh.
+/// @param x Left edge of dirty region.
+/// @param y Top edge of dirty region.
+/// @param width Width of dirty region.
+/// @param height Height of dirty region.
+/// @note Internal use by Graphics class.
+void MarkDirty(Int32 x, Int32 y, Int32 width, Int32 height);
+
+/// @brief Clears the dirty rectangle state.
+/// @note Internal use by GraphicsBuffer::FlushFrameBuffer.
+void ClearDirty();
+
 } // namespace System::Drawing
 
 #endif // SYSTEM_DRAWING_GRAPHICSBUFFER_HPP
