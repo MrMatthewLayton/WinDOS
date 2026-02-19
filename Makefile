@@ -29,6 +29,10 @@ SYSTEM_SRCS = \
     $(SRC_DIR)/System/Console.cpp \
     $(SRC_DIR)/System/Environment.cpp \
     $(SRC_DIR)/System/IO/File.cpp \
+    $(SRC_DIR)/System/Drawing/Color.cpp \
+    $(SRC_DIR)/System/Drawing/Point.cpp \
+    $(SRC_DIR)/System/Drawing/Size.cpp \
+    $(SRC_DIR)/System/Drawing/Rectangle.cpp \
     $(SRC_DIR)/System/Drawing/Drawing.cpp \
     $(SRC_DIR)/System/Windows/Forms/Forms.cpp \
     $(SRC_DIR)/ThirdParty/stb_truetype_impl.cpp \
