@@ -761,12 +761,12 @@ void Display::FadeIn(Int32 milliseconds)
         Int32 width = img.Width();
         Int32 height = img.Height();
 
-        // Store original pixel data
-        UInt32* original = static_cast<UInt32*>(std::malloc(static_cast<int>(width) * static_cast<int>(height) * sizeof(UInt32)));
+        // Store original pixel data (use unsigned int* for memcpy compatibility)
+        unsigned int* original = static_cast<unsigned int*>(std::malloc(static_cast<int>(width) * static_cast<int>(height) * sizeof(unsigned int)));
         if (!original) return;
 
         unsigned int* pixels = img.Data();
-        std::memcpy(original, pixels, static_cast<int>(width) * static_cast<int>(height) * sizeof(UInt32));
+        std::memcpy(original, pixels, static_cast<int>(width) * static_cast<int>(height) * sizeof(unsigned int));
 
         // Fade from black to original
         for (Int32 step = Int32(0); static_cast<int>(step) <= static_cast<int>(VBE_FADE_STEPS); step += 1)
@@ -843,12 +843,12 @@ void Display::FadeOut(Int32 milliseconds)
         Int32 width = img.Width();
         Int32 height = img.Height();
 
-        // Store original pixel data
-        UInt32* original = static_cast<UInt32*>(std::malloc(static_cast<int>(width) * static_cast<int>(height) * sizeof(UInt32)));
+        // Store original pixel data (use unsigned int* for memcpy compatibility)
+        unsigned int* original = static_cast<unsigned int*>(std::malloc(static_cast<int>(width) * static_cast<int>(height) * sizeof(unsigned int)));
         if (!original) return;
 
         unsigned int* pixels = img.Data();
-        std::memcpy(original, pixels, static_cast<int>(width) * static_cast<int>(height) * sizeof(UInt32));
+        std::memcpy(original, pixels, static_cast<int>(width) * static_cast<int>(height) * sizeof(unsigned int));
 
         // Fade from original to black
         for (Int32 step = VBE_FADE_STEPS; static_cast<int>(step) >= 0; step -= 1)

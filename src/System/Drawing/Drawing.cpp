@@ -2210,7 +2210,6 @@ struct Font::FontData {
         // Each byte-column (8 horizontal pixels) is stored as 'height' sequential bytes
         // Source layout: src[byteCol * height + row]
         // Bits: MSB is leftmost pixel within each byte
-        Int32 pitch = Int32((static_cast<int>(width) + 7) / 8);  // Number of byte-columns
         const unsigned char* src = bitmapData + charOffsets[static_cast<int>(ch)];
 
         for (Int32 row = Int32(0); static_cast<int>(row) < static_cast<int>(height); row += 1)

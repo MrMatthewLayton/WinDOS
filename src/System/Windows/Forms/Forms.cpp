@@ -405,9 +405,6 @@ void Control::OnPaintClient(PaintEventArgs& e)
         Control* child = _children[static_cast<int>(i)];
         if (child)
         {
-            // Get child bounds in screen coordinates
-            Rectangle childScreen = child->ScreenBounds();
-
             // Calculate clip region as intersection of parent's client area and child bounds
             // Also intersect with any existing clip region from parent
             Int32 clipLeft = static_cast<int>(parentClientScreen.x);
@@ -774,7 +771,7 @@ void Control::ArrangeFlexChildren(const Rectangle& contentArea)
         Int32 lineMaxCross = Int32(0); // Max cross-axis size in current line
 
         Int32 mainAxisSize = static_cast<bool>(isRow) ? cw : ch;
-        Int32 crossAxisSize = static_cast<bool>(isRow) ? ch : cw;
+        // Note: crossAxisSize not needed in wrap mode - we track lineMaxCross instead
 
         for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1)
         {

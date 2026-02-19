@@ -823,6 +823,169 @@ public: \
         return _value % other; \
     } \
     \
+    /* ------------------------------------------------------------------ */ \
+    /* int overloads - eliminate ambiguity when comparing with literals   */ \
+    /* ------------------------------------------------------------------ */ \
+    \
+    /** @brief Determines whether this value equals an int literal. */ \
+    /** @param other The int value to compare with. */ \
+    /** @return true if the values are equal; otherwise, false. */ \
+    /** @note For unsigned types, negative int values wrap to large positive values. */ \
+    bool operator==(int other) const \
+    { \
+        return _value == static_cast<UnderlyingType>(other); \
+    } \
+    \
+    /** @brief Determines whether this value differs from an int literal. */ \
+    /** @param other The int value to compare with. */ \
+    /** @return true if the values differ; otherwise, false. */ \
+    /** @note For unsigned types, negative int values wrap to large positive values. */ \
+    bool operator!=(int other) const \
+    { \
+        return _value != static_cast<UnderlyingType>(other); \
+    } \
+    \
+    /** @brief Determines whether this value is less than an int literal. */ \
+    /** @param other The int value to compare with. */ \
+    /** @return true if this value is less than other; otherwise, false. */ \
+    /** @note For unsigned types, negative int values wrap to large positive values. */ \
+    bool operator<(int other) const \
+    { \
+        return _value < static_cast<UnderlyingType>(other); \
+    } \
+    \
+    /** @brief Determines whether this value is greater than an int literal. */ \
+    /** @param other The int value to compare with. */ \
+    /** @return true if this value is greater than other; otherwise, false. */ \
+    /** @note For unsigned types, negative int values wrap to large positive values. */ \
+    bool operator>(int other) const \
+    { \
+        return _value > static_cast<UnderlyingType>(other); \
+    } \
+    \
+    /** @brief Determines whether this value is less than or equal to an int literal. */ \
+    /** @param other The int value to compare with. */ \
+    /** @return true if this value is less than or equal to other; otherwise, false. */ \
+    /** @note For unsigned types, negative int values wrap to large positive values. */ \
+    bool operator<=(int other) const \
+    { \
+        return _value <= static_cast<UnderlyingType>(other); \
+    } \
+    \
+    /** @brief Determines whether this value is greater than or equal to an int literal. */ \
+    /** @param other The int value to compare with. */ \
+    /** @return true if this value is greater than or equal to other; otherwise, false. */ \
+    /** @note For unsigned types, negative int values wrap to large positive values. */ \
+    bool operator>=(int other) const \
+    { \
+        return _value >= static_cast<UnderlyingType>(other); \
+    } \
+    \
+    /** @brief Adds an int literal to this instance. */ \
+    /** @param other The int value to add. */ \
+    /** @return The sum of the two values. */ \
+    ClassName operator+(int other) const \
+    { \
+        return ClassName(_value + static_cast<UnderlyingType>(other)); \
+    } \
+    \
+    /** @brief Subtracts an int literal from this instance. */ \
+    /** @param other The int value to subtract. */ \
+    /** @return The difference of the two values. */ \
+    ClassName operator-(int other) const \
+    { \
+        return ClassName(_value - static_cast<UnderlyingType>(other)); \
+    } \
+    \
+    /** @brief Multiplies this instance by an int literal. */ \
+    /** @param other The int value to multiply by. */ \
+    /** @return The product of the two values. */ \
+    ClassName operator*(int other) const \
+    { \
+        return ClassName(_value * static_cast<UnderlyingType>(other)); \
+    } \
+    \
+    /** @brief Divides this instance by an int literal. */ \
+    /** @param other The int divisor. */ \
+    /** @return The quotient of the division. */ \
+    /** @throws InvalidOperationException if other is zero. */ \
+    ClassName operator/(int other) const \
+    { \
+        if (other == 0) \
+        { \
+            throw InvalidOperationException("Division by zero."); \
+        } \
+        return ClassName(_value / static_cast<UnderlyingType>(other)); \
+    } \
+    \
+    /** @brief Computes the remainder of division by an int literal. */ \
+    /** @param other The int divisor. */ \
+    /** @return The remainder after division. */ \
+    /** @throws InvalidOperationException if other is zero. */ \
+    ClassName operator%(int other) const \
+    { \
+        if (other == 0) \
+        { \
+            throw InvalidOperationException("Division by zero."); \
+        } \
+        return ClassName(_value % static_cast<UnderlyingType>(other)); \
+    } \
+    \
+    /** @brief Adds an int literal and assigns the result. */ \
+    /** @param other The int value to add. */ \
+    /** @return A reference to this instance. */ \
+    ClassName& operator+=(int other) \
+    { \
+        _value += static_cast<UnderlyingType>(other); \
+        return *this; \
+    } \
+    \
+    /** @brief Subtracts an int literal and assigns the result. */ \
+    /** @param other The int value to subtract. */ \
+    /** @return A reference to this instance. */ \
+    ClassName& operator-=(int other) \
+    { \
+        _value -= static_cast<UnderlyingType>(other); \
+        return *this; \
+    } \
+    \
+    /** @brief Multiplies by an int literal and assigns the result. */ \
+    /** @param other The int value to multiply by. */ \
+    /** @return A reference to this instance. */ \
+    ClassName& operator*=(int other) \
+    { \
+        _value *= static_cast<UnderlyingType>(other); \
+        return *this; \
+    } \
+    \
+    /** @brief Divides by an int literal and assigns the result. */ \
+    /** @param other The int divisor. */ \
+    /** @return A reference to this instance. */ \
+    /** @throws InvalidOperationException if other is zero. */ \
+    ClassName& operator/=(int other) \
+    { \
+        if (other == 0) \
+        { \
+            throw InvalidOperationException("Division by zero."); \
+        } \
+        _value /= static_cast<UnderlyingType>(other); \
+        return *this; \
+    } \
+    \
+    /** @brief Computes remainder by an int literal and assigns the result. */ \
+    /** @param other The int divisor. */ \
+    /** @return A reference to this instance. */ \
+    /** @throws InvalidOperationException if other is zero. */ \
+    ClassName& operator%=(int other) \
+    { \
+        if (other == 0) \
+        { \
+            throw InvalidOperationException("Division by zero."); \
+        } \
+        _value %= static_cast<UnderlyingType>(other); \
+        return *this; \
+    } \
+    \
     /** @brief Adds a primitive value and assigns the result. */ \
     /** @param other The primitive value to add. */ \
     /** @return A reference to this instance. */ \
