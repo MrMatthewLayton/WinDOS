@@ -184,7 +184,7 @@ public:
 
     /// @brief Constructs a color from a 32-bit ARGB value.
     /// @param argb The color in ARGB format (0xAARRGGBB).
-    Color(unsigned int argb) : _value(argb)
+    explicit Color(unsigned int argb) : _value(argb)
     {
     }
 
