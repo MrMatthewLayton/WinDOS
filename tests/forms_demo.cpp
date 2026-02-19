@@ -95,8 +95,8 @@ int main() {
         }
     }
 
-    // Create desktop with cyan background
-    Desktop desktop(Color::Cyan);
+    // Create desktop with teal background (Windows 95 style)
+    Desktop desktop(Color(UInt8(1), UInt8(130), UInt8(129)));
 
     // Determine icon library path (try C: drive first for combo boot, then current dir)
     const char* iconLibPath = "C:\\SYSICONS.ICL";
@@ -111,13 +111,13 @@ int main() {
         // If cursor loading fails, desktop will use fallback cursor
     }
 
-    // Add desktop icons (32x32 icons from sysicons.icl)
+    // Add desktop icons (32x32 icons from sysicons.icl) with text labels
     try {
-        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::Computer);      // My Computer
-        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::BinEmpty);      // Recycle Bin
-        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::FolderLibrary); // Library
-        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::DriveHdd);      // Hard Drive
-        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::StoreCdrom);    // CD-ROM
+        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::Computer, String("Computer"));
+        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::BinEmpty, String("Recycle Bin"));
+        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::FolderDocs, String("Documents"));
+        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::DriveHdd, String("Hard Disk"));
+        desktop.AddIconFromLibrary(iconLibPath, SystemIcons::StoreCdrom, String("Disc"));
     } catch (...) {
         // If icon loading fails, continue without icons
     }

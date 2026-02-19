@@ -998,6 +998,72 @@ See `qemu/scripts/run-gui-combo.sh` for the setup.
 
 ---
 
+## FON Bitmap Font Format (Complete)
+
+### Overview
+
+Windows FON fonts use the NE (New Executable) format containing FNT font resources. Each FNT resource contains a header followed by a character table and glyph bitmap data.
+
+### Glyph Bitmap Storage Format
+
+**Critical**: FON glyph bitmaps are stored in **column-major** order by byte-columns, NOT row-major.
+
+For a glyph with width W and height H:
+- `pitch = ceil(W / 8)` = number of byte-columns
+- Total bytes = `pitch * H`
+- Storage: All H bytes of column 0, then all H bytes of column 1, etc.
+
+**Byte access formula**: `src[byteCol * height + row]`
+
+```cpp
+// Correct (column-major):
+Int32 byteCol = col / 8;
+unsigned char byte = src[byteCol * height + row];
+
+// WRONG (row-major) - produces garbled glyphs for chars > 8 pixels wide:
+Int32 byteIndex = col / 8;
+unsigned char byte = src[row * bytesPerRow + byteIndex];
+```
+
+### Why This Matters
+
+For characters ≤8 pixels wide (single byte-column), both formulas give the same result. The bug only manifests for wider characters like 'W' (11 pixels), 'M', etc.
+
+### FNT Header Structure
+
+| Offset | Size | Field | Description |
+|--------|------|-------|-------------|
+| 0x00 | 2 | dfVersion | 0x0200 (V2) or 0x0300 (V3) |
+| 0x02 | 4 | dfSize | Total resource size |
+| 0x06 | 60 | dfCopyright | Copyright string |
+| 0x42 | 2 | dfType | 0 = raster |
+| 0x58 | 2 | dfPixHeight | Pixel height |
+| 0x5f | 1 | dfFirstChar | First character code |
+| 0x60 | 1 | dfLastChar | Last character code |
+| ... | | | |
+
+**Header sizes**:
+- V2.0: 118 bytes
+- V3.0: 148 bytes
+
+**Character table** follows header:
+- V2.0: 4 bytes per entry (2-byte width + 2-byte offset)
+- V3.0: 6 bytes per entry (2-byte width + 4-byte offset)
+
+### Reference Implementation
+
+FreeType's `winfnt.c` (lines 1092-1106) transposes column-major source to row-major destination:
+```c
+// FreeType comment: "since glyphs are stored in columns and not in rows"
+for ( ; pitch > 0; pitch--, column++ )
+{
+    for ( write = column; p < limit; p++, write += bitmap->pitch )
+        *write = *p;
+}
+```
+
+---
+
 ## PNG/JPEG Image Loading (Complete)
 
 ### Overview

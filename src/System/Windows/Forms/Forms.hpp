@@ -24,6 +24,7 @@ using namespace System::IO::Devices;
 class Control;
 class Desktop;
 class DesktopIcon;
+class DesktopIconControl;
 class Window;
 class TaskBar;
 class TaskBarButton;
@@ -50,16 +51,17 @@ typedef void (*ClickEventHandler)(Button* sender, void* userData);
 /// Use GetControlType() to query and AsXxx() methods for safe downcasting.
 enum class ControlType
 {
-    Control,        ///< Base control type
-    Desktop,        ///< Desktop surface (root of control hierarchy)
-    Window,         ///< Top-level window with title bar and frame
-    TaskBar,        ///< Windows 95-style taskbar
-    TaskBarButton,  ///< Button in taskbar representing an open window
-    Button,         ///< Clickable button control
-    Picture,        ///< Image display control
-    Spectrum,       ///< Vertical color gradient control (32-bit)
-    StartMenu,      ///< Windows 95-style Start menu popup
-    MenuItem        ///< Individual item within a menu
+    Control,           ///< Base control type
+    Desktop,           ///< Desktop surface (root of control hierarchy)
+    Window,            ///< Top-level window with title bar and frame
+    TaskBar,           ///< Windows 95-style taskbar
+    TaskBarButton,     ///< Button in taskbar representing an open window
+    Button,            ///< Clickable button control
+    Picture,           ///< Image display control
+    Spectrum,          ///< Vertical color gradient control (32-bit)
+    StartMenu,         ///< Windows 95-style Start menu popup
+    MenuItem,          ///< Individual item within a menu
+    DesktopIconControl ///< Desktop icon with image
 };
 
 /******************************************************************************/
@@ -96,6 +98,15 @@ enum class AlignItems : unsigned char
     Center,         ///< Center along cross axis
     End,            ///< Align to end of cross axis
     Stretch         ///< Stretch to fill cross axis
+};
+
+/// @brief Whether children wrap to multiple lines when container is full.
+/// @details Similar to CSS flex-wrap property. Controls whether children
+/// that exceed the container's main axis size wrap to additional lines.
+enum class FlexWrap : unsigned char
+{
+    NoWrap,         ///< All items on single line (default)
+    Wrap            ///< Items wrap to next line/column when container full
 };
 
 /// @brief Determines how a control's size is calculated.
@@ -137,6 +148,7 @@ struct LayoutProperties
     FlexDirection direction;        ///< Layout direction for children
     JustifyContent justifyContent;  ///< Main axis alignment
     AlignItems alignItems;          ///< Cross axis alignment
+    FlexWrap wrap;                  ///< Whether children wrap to multiple lines
     Int32 gap;                      ///< Space between children (pixels)
 
     // Self properties (when this control is inside a flex container)
@@ -164,6 +176,8 @@ struct LayoutProperties
     // Behavior flags
     bool participatesInLayout;      ///< If false, control is floating (e.g., Windows)
     bool needsLayout;               ///< Dirty flag for layout optimization
+    bool alwaysOnTop;               ///< If true, control is painted above other controls
+    Int32 zIndex;                   ///< Z-index for paint order (higher = on top, TaskBar uses 1000)
 
     /// @brief Default constructor with sensible initial values.
     /// @details Initializes with Column direction, Start justification,
@@ -172,6 +186,7 @@ struct LayoutProperties
         : direction(FlexDirection::Column)
         , justifyContent(JustifyContent::Start)
         , alignItems(AlignItems::Stretch)
+        , wrap(FlexWrap::NoWrap)
         , gap(0)
         , flexGrow(0)
         , flexShrink(1)
@@ -191,6 +206,8 @@ struct LayoutProperties
         , paddingLeft(0)
         , participatesInLayout(true)
         , needsLayout(true)
+        , alwaysOnTop(false)
+        , zIndex(0)
     {
     }
 
@@ -218,6 +235,15 @@ struct LayoutProperties
     LayoutProperties& SetAlignItems(AlignItems ai)
     {
         alignItems = ai;
+        return *this;
+    }
+
+    /// @brief Set whether children wrap to multiple lines.
+    /// @param w The FlexWrap mode.
+    /// @return Reference to this for method chaining.
+    LayoutProperties& SetWrap(FlexWrap w)
+    {
+        wrap = w;
         return *this;
     }
 
@@ -367,6 +393,26 @@ struct LayoutProperties
         participatesInLayout = participates;
         return *this;
     }
+
+    /// @brief Set whether this control should always be painted on top.
+    /// @param onTop If true, control is painted above other controls.
+    /// @return Reference to this for method chaining.
+    /// @note Use for menus, tooltips, or floating toolbars.
+    LayoutProperties& SetAlwaysOnTop(bool onTop)
+    {
+        alwaysOnTop = onTop;
+        return *this;
+    }
+
+    /// @brief Set the z-index for paint order.
+    /// @param z Z-index value (higher = painted on top).
+    /// @return Reference to this for method chaining.
+    /// @note TaskBar uses zIndex=1000. Normal controls use 0.
+    LayoutProperties& SetZIndex(Int32 z)
+    {
+        zIndex = z;
+        return *this;
+    }
 };
 
 /******************************************************************************/
@@ -400,22 +446,35 @@ struct MeasureResult
 
 /// @brief Event arguments passed to paint event handlers.
 /// @details Contains the Graphics context for drawing and the bounds
-/// that need to be repainted. Similar to .NET PaintEventArgs.
+/// that need to be repainted. Also includes clip bounds for clipping
+/// child controls to parent boundaries. Similar to .NET PaintEventArgs.
 class PaintEventArgs
 {
 public:
     Graphics* graphics;     ///< Graphics context for drawing operations
     Rectangle bounds;       ///< Bounds of the area to be painted
+    Rectangle clipBounds;   ///< Clip region in screen coordinates (drawing clipped to this area)
 
     /// @brief Default constructor.
-    PaintEventArgs() : graphics(nullptr), bounds()
+    PaintEventArgs() : graphics(nullptr), bounds(), clipBounds()
     {
     }
 
     /// @brief Constructor with graphics context and bounds.
     /// @param g Pointer to the Graphics context.
     /// @param b Rectangle defining the paint bounds.
-    PaintEventArgs(Graphics* g, const Rectangle& b) : graphics(g), bounds(b)
+    /// @note Clip bounds defaults to the same as bounds.
+    PaintEventArgs(Graphics* g, const Rectangle& b)
+        : graphics(g), bounds(b), clipBounds(b)
+    {
+    }
+
+    /// @brief Constructor with graphics context, bounds, and clip region.
+    /// @param g Pointer to the Graphics context.
+    /// @param b Rectangle defining the paint bounds.
+    /// @param clip Rectangle defining the clip region in screen coordinates.
+    PaintEventArgs(Graphics* g, const Rectangle& b, const Rectangle& clip)
+        : graphics(g), bounds(b), clipBounds(clip)
     {
     }
 };
@@ -892,6 +951,7 @@ public:
 /// @brief Represents an icon displayed on the desktop surface.
 /// @details Desktop icons are displayed in a grid pattern with optional labels.
 /// Icons are typically 32x32 pixels and loaded from icon libraries.
+/// @deprecated Use DesktopIconControl for new code; this struct is for compatibility.
 struct DesktopIcon
 {
     Image image;      ///< Icon image (typically 32x32)
@@ -909,6 +969,114 @@ struct DesktopIcon
     /// @param py Y position on desktop.
     DesktopIcon(const Image& img, int px, int py) : image(img), x(px), y(py)
     {
+    }
+};
+
+/******************************************************************************/
+/*    System::Windows::Forms::DesktopIconControl                              */
+/******************************************************************************/
+
+/// @brief Control that displays a desktop icon with image and text label.
+/// @details Used by Desktop to display icons in a flexbox layout with wrapping.
+/// Each icon has a fixed cell size (64x96 pixels):
+/// - Top area (64x64): Contains 32x32 icon with 16px padding all around
+/// - Bottom area (64x32): Contains centered, wrapped text with ellipsis
+///
+/// Icons participate in layout by default and report their cell size as
+/// preferred size, enabling automatic arrangement via flex layout.
+class DesktopIconControl : public Control
+{
+    static const int ICON_SIZE = 32;       ///< Icon image size (32x32)
+    static const int CELL_WIDTH = 64;      ///< Icon cell width
+    static const int CELL_HEIGHT = 96;     ///< Icon cell height
+    static const int ICON_AREA_HEIGHT = 64;///< Height of icon area
+    static const int TEXT_AREA_HEIGHT = 32;///< Height of text area
+    static const int ICON_PADDING = 16;    ///< Padding around icon in icon area
+
+    Image _icon;           ///< Icon image to display
+    String _text;          ///< Text label below icon
+    Font _font;            ///< Font for text (MS Sans Serif)
+    bool _isSelected;      ///< True if icon is selected
+
+    /// @brief Truncate text with ellipsis if it exceeds available width.
+    /// @param text Text to truncate.
+    /// @param maxWidth Maximum width in pixels.
+    /// @return Truncated text with "..." if needed.
+    String TruncateWithEllipsis(const String& text, Int32 maxWidth) const;
+
+public:
+    /// @brief Constructor with parent and icon image.
+    /// @param parent Parent control (typically icon container in Desktop).
+    /// @param icon Icon image to display.
+    DesktopIconControl(Control* parent, const Image& icon);
+
+    /// @brief Constructor with parent, icon image, and text label.
+    /// @param parent Parent control (typically icon container in Desktop).
+    /// @param icon Icon image to display.
+    /// @param text Text label for the icon.
+    DesktopIconControl(Control* parent, const Image& icon, const String& text);
+
+    /// @brief Destructor.
+    virtual ~DesktopIconControl() = default;
+
+    /// @brief Get the icon image.
+    /// @return Const reference to the icon image.
+    const Image& GetIcon() const
+    {
+        return _icon;
+    }
+
+    /// @brief Set the icon image.
+    /// @param icon New icon image.
+    void SetIcon(const Image& icon)
+    {
+        _icon = icon;
+        Invalidate();
+    }
+
+    /// @brief Get the text label.
+    /// @return Const reference to the text.
+    const String& GetText() const
+    {
+        return _text;
+    }
+
+    /// @brief Set the text label.
+    /// @param text New text label.
+    void SetText(const String& text)
+    {
+        _text = text;
+        Invalidate();
+    }
+
+    /// @brief Check if the icon is selected.
+    /// @return True if selected.
+    Boolean IsSelected() const
+    {
+        return Boolean(_isSelected);
+    }
+
+    /// @brief Set the selection state.
+    /// @param selected New selection state.
+    void SetSelected(Boolean selected)
+    {
+        _isSelected = static_cast<bool>(selected);
+        Invalidate();
+    }
+
+    /// @brief Paint the icon and text in its cell.
+    /// @param e Paint event arguments.
+    virtual void OnPaint(PaintEventArgs& e) override;
+
+    /// @brief Get preferred size for layout (cell size).
+    /// @return MeasureResult with cell dimensions.
+    virtual MeasureResult GetPreferredSize() const override;
+
+    /// @brief Get the runtime type of this control.
+    /// @return ControlType::DesktopIconControl.
+    virtual ControlType GetControlType() const override
+    {
+        return ControlType::DesktopIconControl;
     }
 };
 
@@ -933,10 +1101,13 @@ class Desktop : public Control
 {
     static const int CURSOR_SIZE = 24;     ///< Cursor size (24x24 pixels)
     static const int ICON_SIZE = 32;       ///< Desktop icon size
-    static const int ICON_SPACING_X = 75;  ///< Horizontal icon spacing
-    static const int ICON_SPACING_Y = 70;  ///< Vertical icon spacing
-    static const int ICON_MARGIN_X = 20;   ///< Left margin for first icon
-    static const int ICON_MARGIN_Y = 16;   ///< Top margin for first icon
+    static const int ICON_CELL_WIDTH = 64; ///< Icon cell width (includes text area)
+    static const int ICON_CELL_HEIGHT = 96;///< Icon cell height (64 icon + 32 text)
+    static const int ICON_SPACING_X = 75;  ///< Legacy horizontal icon spacing
+    static const int ICON_SPACING_Y = 70;  ///< Legacy vertical icon spacing
+    static const int ICON_MARGIN_X = 8;    ///< Left margin for icon grid
+    static const int ICON_MARGIN_Y = 8;    ///< Top margin for icon grid
+    static const int TASKBAR_HEIGHT = 28;  ///< TaskBar height in pixels
 
     Color _backgroundColor;         ///< Desktop background color
     Window* _focusedWindow;         ///< Currently focused window
@@ -947,7 +1118,7 @@ class Desktop : public Control
     Int32 _dragStartY;              ///< Drag start position Y
     Image _dragBitmap;              ///< Captured window bitmap during drag
     Image _cursorImage;             ///< Mouse cursor image (24x24)
-    Array<DesktopIcon> _icons;      ///< Desktop icons
+    Array<DesktopIcon> _icons;      ///< Desktop icons (legacy, for backward compat)
     bool _isDragging;               ///< True if window is being dragged
     bool _running;                  ///< True if event loop is running
     Int32 _cursorX;                 ///< Current cursor X position
@@ -960,14 +1131,15 @@ class Desktop : public Control
     bool _cursorSaved;              ///< True if cursor save is valid
     Int32 _screenWidth;             ///< Cached screen width
     Int32 _screenHeight;            ///< Cached screen height
-    Int32 _nextIconX;               ///< Next icon grid X position
-    Int32 _nextIconY;               ///< Next icon grid Y position
+    Int32 _nextIconX;               ///< Next icon grid X position (legacy)
+    Int32 _nextIconY;               ///< Next icon grid Y position (legacy)
 
     SpatialGrid _spatialGrid;       ///< Spatial index for hit testing
 
     // References to special controls (not owned - they're in _children)
     TaskBar* _taskBar;              ///< Reference to taskbar
     StartMenu* _startMenu;          ///< Reference to start menu
+    Control* _iconContainer;        ///< Container for desktop icons with flex layout
 
     /// @brief Check for controls needing repaint.
     void CheckForUpdates();
@@ -981,7 +1153,7 @@ class Desktop : public Control
     /// @brief Draw the cursor at current position.
     void DrawCursor();
 
-    /// @brief Draw all desktop icons.
+    /// @brief Draw all desktop icons (legacy method).
     void DrawIcons();
 
     /// @brief Capture a window's bitmap for dragging.
@@ -993,6 +1165,10 @@ class Desktop : public Control
 
     /// @brief Rebuild the spatial grid from children.
     void UpdateSpatialGrid();
+
+protected:
+    /// @brief Update client bounds to exclude taskbar area.
+    virtual void UpdateClientBounds() override;
 
 public:
     /// @brief Constructor with optional background color.
@@ -1054,15 +1230,33 @@ public:
     /// @note Icons are automatically positioned in a grid.
     void AddIcon(const Image& icon);
 
+    /// @brief Add an icon to the desktop with a text label.
+    /// @param icon Image for the desktop icon (typically 32x32).
+    /// @param text Text label to display below the icon.
+    /// @note Icons are automatically positioned in a grid.
+    void AddIcon(const Image& icon, const String& text);
+
     /// @brief Add a desktop icon from an icon library by index.
     /// @param path Path to icon library file.
     /// @param iconIndex Zero-based index of icon in library.
     void AddIconFromLibrary(const char* path, Int32 iconIndex);
 
+    /// @brief Add a desktop icon from an icon library by index with text label.
+    /// @param path Path to icon library file.
+    /// @param iconIndex Zero-based index of icon in library.
+    /// @param text Text label to display below the icon.
+    void AddIconFromLibrary(const char* path, Int32 iconIndex, const String& text);
+
     /// @brief Add a desktop icon from an icon library by name.
     /// @param path Path to icon library file.
     /// @param iconName Name of the icon in the library.
     void AddIconFromLibrary(const char* path, const char* iconName);
+
+    /// @brief Add a desktop icon from an icon library by name with text label.
+    /// @param path Path to icon library file.
+    /// @param iconName Name of the icon in the library.
+    /// @param text Text label to display below the icon.
+    void AddIconFromLibrary(const char* path, const char* iconName, const String& text);
 
     /// @brief Set the taskbar reference.
     /// @param taskBar Pointer to the TaskBar control.

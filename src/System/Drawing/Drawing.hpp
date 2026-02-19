@@ -852,6 +852,26 @@ public:
     /// has been converted to alpha = 0.
     void CopyFromWithAlpha(const Image& src, Int32 destX, Int32 destY);
 
+    /// @brief Copies pixels from another image with clipping (opaque copy).
+    /// @param src Source image.
+    /// @param destX Destination X coordinate.
+    /// @param destY Destination Y coordinate.
+    /// @param clipRect Clip rectangle in destination coordinates.
+    ///
+    /// Only pixels within the clipRect are copied. Useful for child control
+    /// clipping where drawing should be limited to parent bounds.
+    void CopyFromClipped(const Image& src, Int32 destX, Int32 destY, const Rectangle& clipRect);
+
+    /// @brief Copies pixels from another image with alpha blending and clipping.
+    /// @param src Source image.
+    /// @param destX Destination X coordinate.
+    /// @param destY Destination Y coordinate.
+    /// @param clipRect Clip rectangle in destination coordinates.
+    ///
+    /// Combines alpha blending with clip region. Only pixels within clipRect
+    /// that have alpha >= 128 are copied.
+    void CopyFromWithAlphaClipped(const Image& src, Int32 destX, Int32 destY, const Rectangle& clipRect);
+
     /// @brief Extracts a rectangular region as a new image.
     /// @param x Left edge of region.
     /// @param y Top edge of region.

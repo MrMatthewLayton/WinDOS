@@ -611,6 +611,212 @@ void TestRowLayoutWithGap() {
 }
 
 /******************************************************************************/
+/*    Test: Column Layout with Wrap                                            */
+/******************************************************************************/
+
+void TestColumnLayoutWithWrap() {
+    Test::PrintHeader("Column Layout with Wrap");
+
+    // Container: 200x200, children: 50x70 each
+    // 200 / 70 = 2 children per column before wrap
+    MockControl root(nullptr, Rectangle(0, 0, 200, 200));
+    root.Layout().direction = FlexDirection::Column;
+    root.Layout().wrap = FlexWrap::Wrap;
+    root.Layout().gap = 0;
+
+    // Create 5 children, each 50x70
+    MockControl* child1 = new MockControl(&root, Rectangle(0, 0, 50, 70));
+    MockControl* child2 = new MockControl(&root, Rectangle(0, 0, 50, 70));
+    MockControl* child3 = new MockControl(&root, Rectangle(0, 0, 50, 70));
+    MockControl* child4 = new MockControl(&root, Rectangle(0, 0, 50, 70));
+    MockControl* child5 = new MockControl(&root, Rectangle(0, 0, 50, 70));
+
+    root.Measure(Int32(200), Int32(200));
+    root.Arrange(Rectangle(0, 0, 200, 200));
+
+    // Column layout wraps: first column (child1, child2), second (child3, child4), third (child5)
+    // child1: Y=0, X=0
+    // child2: Y=70, X=0
+    // child3: Y=0, X=50 (wrapped to next column)
+    // child4: Y=70, X=50
+    // child5: Y=0, X=100
+
+    ASSERT_EQ(Int32(0), child1->Bounds().y, "Child1 Y=0 (first column)");
+    ASSERT_EQ(Int32(0), child1->Bounds().x, "Child1 X=0");
+
+    ASSERT_EQ(Int32(70), child2->Bounds().y, "Child2 Y=70 (first column)");
+    ASSERT_EQ(Int32(0), child2->Bounds().x, "Child2 X=0");
+
+    ASSERT_EQ(Int32(0), child3->Bounds().y, "Child3 Y=0 (wrapped to second column)");
+    ASSERT_EQ(Int32(50), child3->Bounds().x, "Child3 X=50");
+
+    ASSERT_EQ(Int32(70), child4->Bounds().y, "Child4 Y=70 (second column)");
+    ASSERT_EQ(Int32(50), child4->Bounds().x, "Child4 X=50");
+
+    ASSERT_EQ(Int32(0), child5->Bounds().y, "Child5 Y=0 (wrapped to third column)");
+    ASSERT_EQ(Int32(100), child5->Bounds().x, "Child5 X=100");
+
+    Test::PrintSummary();
+}
+
+/******************************************************************************/
+/*    Test: Row Layout with Wrap                                               */
+/******************************************************************************/
+
+void TestRowLayoutWithWrap() {
+    Test::PrintHeader("Row Layout with Wrap");
+
+    // Container: 200x200, children: 70x50 each
+    // 200 / 70 = 2 children per row before wrap
+    MockControl root(nullptr, Rectangle(0, 0, 200, 200));
+    root.Layout().direction = FlexDirection::Row;
+    root.Layout().wrap = FlexWrap::Wrap;
+    root.Layout().gap = 0;
+
+    // Create 5 children, each 70x50
+    MockControl* child1 = new MockControl(&root, Rectangle(0, 0, 70, 50));
+    MockControl* child2 = new MockControl(&root, Rectangle(0, 0, 70, 50));
+    MockControl* child3 = new MockControl(&root, Rectangle(0, 0, 70, 50));
+    MockControl* child4 = new MockControl(&root, Rectangle(0, 0, 70, 50));
+    MockControl* child5 = new MockControl(&root, Rectangle(0, 0, 70, 50));
+
+    root.Measure(Int32(200), Int32(200));
+    root.Arrange(Rectangle(0, 0, 200, 200));
+
+    // Row layout wraps: first row (child1, child2), second (child3, child4), third (child5)
+    // child1: X=0, Y=0
+    // child2: X=70, Y=0
+    // child3: X=0, Y=50 (wrapped to next row)
+    // child4: X=70, Y=50
+    // child5: X=0, Y=100
+
+    ASSERT_EQ(Int32(0), child1->Bounds().x, "Child1 X=0 (first row)");
+    ASSERT_EQ(Int32(0), child1->Bounds().y, "Child1 Y=0");
+
+    ASSERT_EQ(Int32(70), child2->Bounds().x, "Child2 X=70 (first row)");
+    ASSERT_EQ(Int32(0), child2->Bounds().y, "Child2 Y=0");
+
+    ASSERT_EQ(Int32(0), child3->Bounds().x, "Child3 X=0 (wrapped to second row)");
+    ASSERT_EQ(Int32(50), child3->Bounds().y, "Child3 Y=50");
+
+    ASSERT_EQ(Int32(70), child4->Bounds().x, "Child4 X=70 (second row)");
+    ASSERT_EQ(Int32(50), child4->Bounds().y, "Child4 Y=50");
+
+    ASSERT_EQ(Int32(0), child5->Bounds().x, "Child5 X=0 (wrapped to third row)");
+    ASSERT_EQ(Int32(100), child5->Bounds().y, "Child5 Y=100");
+
+    Test::PrintSummary();
+}
+
+/******************************************************************************/
+/*    Test: Column Wrap with Gap                                               */
+/******************************************************************************/
+
+void TestColumnWrapWithGap() {
+    Test::PrintHeader("Column Wrap with Gap");
+
+    // Container: 200x200, children: 50x70 each, gap: 10
+    // With gap, only 2 children fit per column (70 + 10 + 70 = 150 < 200)
+    MockControl root(nullptr, Rectangle(0, 0, 200, 200));
+    root.Layout().direction = FlexDirection::Column;
+    root.Layout().wrap = FlexWrap::Wrap;
+    root.Layout().gap = 10;
+
+    MockControl* child1 = new MockControl(&root, Rectangle(0, 0, 50, 70));
+    MockControl* child2 = new MockControl(&root, Rectangle(0, 0, 50, 70));
+    MockControl* child3 = new MockControl(&root, Rectangle(0, 0, 50, 70));
+
+    root.Measure(Int32(200), Int32(200));
+    root.Arrange(Rectangle(0, 0, 200, 200));
+
+    // child1: Y=0, X=0
+    // child2: Y=70+10=80, X=0
+    // child3: Y=0, X=50+10=60 (wrapped, gap applies to cross axis too)
+
+    ASSERT_EQ(Int32(0), child1->Bounds().y, "Child1 Y=0");
+    ASSERT_EQ(Int32(0), child1->Bounds().x, "Child1 X=0");
+
+    ASSERT_EQ(Int32(80), child2->Bounds().y, "Child2 Y=80 (70 + gap 10)");
+    ASSERT_EQ(Int32(0), child2->Bounds().x, "Child2 X=0");
+
+    ASSERT_EQ(Int32(0), child3->Bounds().y, "Child3 Y=0 (wrapped)");
+    ASSERT_EQ(Int32(60), child3->Bounds().x, "Child3 X=60 (50 + gap 10)");
+
+    Test::PrintSummary();
+}
+
+/******************************************************************************/
+/*    Test: Column Wrap with Padding                                           */
+/******************************************************************************/
+
+void TestColumnWrapWithPadding() {
+    Test::PrintHeader("Column Wrap with Padding");
+
+    // Container: 200x200, padding: 20 on all sides
+    // Content area: 160x160
+    MockControl root(nullptr, Rectangle(0, 0, 200, 200));
+    root.Layout().direction = FlexDirection::Column;
+    root.Layout().wrap = FlexWrap::Wrap;
+    root.Layout().SetPadding(Int32(20));
+
+    // Children 50x70 each - only 2 fit in 160 height (70+70=140 < 160)
+    MockControl* child1 = new MockControl(&root, Rectangle(0, 0, 50, 70));
+    MockControl* child2 = new MockControl(&root, Rectangle(0, 0, 50, 70));
+    MockControl* child3 = new MockControl(&root, Rectangle(0, 0, 50, 70));
+
+    root.Measure(Int32(200), Int32(200));
+    root.Arrange(Rectangle(0, 0, 200, 200));
+
+    // All positions offset by padding (20, 20)
+    ASSERT_EQ(Int32(20), child1->Bounds().y, "Child1 Y=20 (padding)");
+    ASSERT_EQ(Int32(20), child1->Bounds().x, "Child1 X=20 (padding)");
+
+    ASSERT_EQ(Int32(90), child2->Bounds().y, "Child2 Y=90 (20 + 70)");
+    ASSERT_EQ(Int32(20), child2->Bounds().x, "Child2 X=20");
+
+    ASSERT_EQ(Int32(20), child3->Bounds().y, "Child3 Y=20 (wrapped)");
+    // Wrapped to next column: X = 20 (padding) + 50 (child width) + 0 (gap) = 70
+    ASSERT_EQ(Int32(70), child3->Bounds().x, "Child3 X=70 (wrapped)");
+
+    Test::PrintSummary();
+}
+
+/******************************************************************************/
+/*    Test: NoWrap is Default Behavior                                         */
+/******************************************************************************/
+
+void TestNoWrapDefault() {
+    Test::PrintHeader("NoWrap is Default Behavior");
+
+    LayoutProperties props;
+    ASSERT(props.wrap == FlexWrap::NoWrap, "Default wrap should be NoWrap");
+
+    // Container: 100x100, 3 children 50x50 each - without wrap, they overflow
+    MockControl root(nullptr, Rectangle(0, 0, 100, 100));
+    root.Layout().direction = FlexDirection::Column;
+    // wrap is NoWrap by default
+
+    MockControl* child1 = new MockControl(&root, Rectangle(0, 0, 50, 50));
+    MockControl* child2 = new MockControl(&root, Rectangle(0, 0, 50, 50));
+    MockControl* child3 = new MockControl(&root, Rectangle(0, 0, 50, 50));
+
+    root.Measure(Int32(100), Int32(100));
+    root.Arrange(Rectangle(0, 0, 100, 100));
+
+    // Without wrap, all children stack vertically even if they overflow
+    ASSERT_EQ(Int32(0), child1->Bounds().y, "Child1 Y=0");
+    ASSERT_EQ(Int32(50), child2->Bounds().y, "Child2 Y=50");
+    ASSERT_EQ(Int32(100), child3->Bounds().y, "Child3 Y=100 (overflows)");
+
+    // All in same column (X=0)
+    ASSERT_EQ(Int32(0), child1->Bounds().x, "Child1 X=0");
+    ASSERT_EQ(Int32(0), child2->Bounds().x, "Child2 X=0");
+    ASSERT_EQ(Int32(0), child3->Bounds().x, "Child3 X=0 (no wrap)");
+
+    Test::PrintSummary();
+}
+
+/******************************************************************************/
 /*    Main Entry Point                                                         */
 /******************************************************************************/
 
@@ -647,6 +853,13 @@ int main() {
     TestMarginOnChildren();
     TestPerformLayoutAndInvalidate();
     TestRowLayoutWithGap();
+
+    // Wrap Tests
+    TestColumnLayoutWithWrap();
+    TestRowLayoutWithWrap();
+    TestColumnWrapWithGap();
+    TestColumnWrapWithPadding();
+    TestNoWrapDefault();
 
     Console::WriteLine();
     Console::WriteLine("========================================");

@@ -492,6 +492,98 @@ void Image::CopyFromWithAlpha(const Image& src, Int32 destX, Int32 destY)
     }
 }
 
+void Image::CopyFromClipped(const Image& src, Int32 destX, Int32 destY, const Rectangle& clipRect)
+{
+    if (!_data || !src._data) return;
+
+    // Get clip bounds
+    int clipLeft = static_cast<int>(clipRect.x);
+    int clipTop = static_cast<int>(clipRect.y);
+    int clipRight = clipLeft + static_cast<int>(clipRect.width);
+    int clipBottom = clipTop + static_cast<int>(clipRect.height);
+
+    Int32 dstX = destX;
+    Int32 dstY = destY;
+
+    for (Int32 sy = Int32(0); static_cast<int>(sy) < src._height; sy += 1)
+    {
+        Int32 dy = Int32(static_cast<int>(dstY) + static_cast<int>(sy));
+        if (static_cast<int>(dy) < 0 || static_cast<int>(dy) >= _height) continue;
+        if (static_cast<int>(dy) < clipTop || static_cast<int>(dy) >= clipBottom) continue;
+
+        Int32 srcStartX = Int32(0);
+        Int32 dstStartX = dstX;
+        Int32 copyWidth = Int32(src._width);
+
+        // Clip to image bounds
+        if (static_cast<int>(dstStartX) < 0)
+        {
+            srcStartX = Int32(-static_cast<int>(dstStartX));
+            copyWidth = Int32(static_cast<int>(copyWidth) + static_cast<int>(dstStartX));
+            dstStartX = Int32(0);
+        }
+        if (static_cast<int>(dstStartX) + static_cast<int>(copyWidth) > _width)
+        {
+            copyWidth = Int32(_width - static_cast<int>(dstStartX));
+        }
+
+        // Clip to clip rectangle (left)
+        if (static_cast<int>(dstStartX) < clipLeft)
+        {
+            Int32 diff = Int32(clipLeft - static_cast<int>(dstStartX));
+            srcStartX = Int32(static_cast<int>(srcStartX) + static_cast<int>(diff));
+            copyWidth = Int32(static_cast<int>(copyWidth) - static_cast<int>(diff));
+            dstStartX = Int32(clipLeft);
+        }
+        // Clip to clip rectangle (right)
+        if (static_cast<int>(dstStartX) + static_cast<int>(copyWidth) > clipRight)
+        {
+            copyWidth = Int32(clipRight - static_cast<int>(dstStartX));
+        }
+
+        if (static_cast<int>(copyWidth) <= 0) continue;
+
+        unsigned int* dstRow = _data + static_cast<int>(dy) * _width + static_cast<int>(dstStartX);
+        const unsigned int* srcRow = src._data + static_cast<int>(sy) * src._width + static_cast<int>(srcStartX);
+        std::memcpy(dstRow, srcRow, static_cast<int>(copyWidth) * sizeof(unsigned int));
+    }
+}
+
+void Image::CopyFromWithAlphaClipped(const Image& src, Int32 destX, Int32 destY, const Rectangle& clipRect)
+{
+    if (!_data || !src._data) return;
+
+    // Get clip bounds
+    int clipLeft = static_cast<int>(clipRect.x);
+    int clipTop = static_cast<int>(clipRect.y);
+    int clipRight = clipLeft + static_cast<int>(clipRect.width);
+    int clipBottom = clipTop + static_cast<int>(clipRect.height);
+
+    Int32 dstX = destX;
+    Int32 dstY = destY;
+
+    for (Int32 sy = Int32(0); static_cast<int>(sy) < src._height; sy += 1)
+    {
+        Int32 dy = Int32(static_cast<int>(dstY) + static_cast<int>(sy));
+        if (static_cast<int>(dy) < 0 || static_cast<int>(dy) >= _height) continue;
+        if (static_cast<int>(dy) < clipTop || static_cast<int>(dy) >= clipBottom) continue;
+
+        for (Int32 sx = Int32(0); static_cast<int>(sx) < src._width; sx += 1)
+        {
+            Int32 dx = Int32(static_cast<int>(dstX) + static_cast<int>(sx));
+            if (static_cast<int>(dx) < 0 || static_cast<int>(dx) >= _width) continue;
+            if (static_cast<int>(dx) < clipLeft || static_cast<int>(dx) >= clipRight) continue;
+
+            UInt32 pixel = UInt32(src._data[static_cast<int>(sy) * src._width + static_cast<int>(sx)]);
+            // Only copy if alpha >= 128 (semi-opaque or opaque)
+            if ((static_cast<unsigned int>(pixel) >> 24) >= 128)
+            {
+                _data[static_cast<int>(dy) * _width + static_cast<int>(dx)] = static_cast<unsigned int>(pixel);
+            }
+        }
+    }
+}
+
 Image Image::GetRegion(Int32 x, Int32 y, Int32 width, Int32 height) const
 {
     Int32 xi = x;
@@ -2114,19 +2206,21 @@ struct Font::FontData {
         // Create transparent glyph image
         glyphCache[static_cast<int>(ch)] = Image(width, height, Color::Transparent);
 
-        // FON bitmap format: row-major, MSB first
-        // Each row is ceil(width/8) bytes
-        // Rows are stored top-to-bottom
-        Int32 bytesPerRow = Int32((static_cast<int>(width) + 7) / 8);
+        // FON bitmap format: column-major by byte-columns (per FreeType winfnt.c)
+        // Each byte-column (8 horizontal pixels) is stored as 'height' sequential bytes
+        // Source layout: src[byteCol * height + row]
+        // Bits: MSB is leftmost pixel within each byte
+        Int32 pitch = Int32((static_cast<int>(width) + 7) / 8);  // Number of byte-columns
         const unsigned char* src = bitmapData + charOffsets[static_cast<int>(ch)];
 
         for (Int32 row = Int32(0); static_cast<int>(row) < static_cast<int>(height); row += 1)
         {
             for (Int32 col = Int32(0); static_cast<int>(col) < static_cast<int>(width); col += 1)
             {
-                Int32 byteIndex = Int32(static_cast<int>(col) / 8);
+                Int32 byteCol = Int32(static_cast<int>(col) / 8);
                 Int32 bitIndex = Int32(7 - (static_cast<int>(col) % 8));  // MSB is leftmost pixel
-                unsigned char byte = src[static_cast<int>(row) * static_cast<int>(bytesPerRow) + static_cast<int>(byteIndex)];
+                // Column-major access: byteCol * height + row
+                unsigned char byte = src[static_cast<int>(byteCol) * static_cast<int>(height) + static_cast<int>(row)];
                 Boolean pixel = Boolean(((byte >> static_cast<int>(bitIndex)) & 1) != 0);
                 if (static_cast<bool>(pixel))
                 {
@@ -2476,8 +2570,11 @@ Font Font::FromFile(const char* path, Int32 size, FontStyle style)
     Boolean isV3 = Boolean(bestFont->Version() >= 0x0300);
     Int32 numChars = Int32(static_cast<int>(data->lastChar) - static_cast<int>(data->firstChar) + 1);
 
-    // Character table follows FntHeader (118 bytes for V2/V3)
-    const unsigned char* charTable = fontBase + 118;
+    // Character table follows FntHeader (per FreeType winfnt.c line 1026)
+    // V2.0: 118 bytes
+    // V3.0: 148 bytes
+    Int32 headerSize = static_cast<bool>(isV3) ? Int32(148) : Int32(118);
+    const unsigned char* charTable = fontBase + static_cast<int>(headerSize);
 
     if (static_cast<bool>(isV3))
     {
@@ -2511,7 +2608,7 @@ Font Font::FromFile(const char* path, Int32 size, FontStyle style)
     }
 
     // Copy bitmap data
-    // Each glyph bitmap size is: ceil(width/8) * height (row-major format)
+    // Each glyph bitmap size is: pitch * height (where pitch = ceil(width/8))
     UInt32 bitmapStart = UInt32(0);
     UInt32 bitmapEnd = UInt32(0);
     Int32 height = data->pixelHeight;
