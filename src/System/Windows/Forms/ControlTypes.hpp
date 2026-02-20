@@ -26,7 +26,8 @@ enum class ControlType
     Spectrum,          ///< Vertical color gradient control (32-bit)
     StartMenu,         ///< Windows 95-style Start menu popup
     MenuItem,          ///< Individual item within a menu
-    DesktopIconControl ///< Desktop icon with image
+    DesktopIconControl,///< Desktop icon with image
+    TaskTray           ///< System tray area with notification icons
 };
 
 } // namespace System::Windows::Forms

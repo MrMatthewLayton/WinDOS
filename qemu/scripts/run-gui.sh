@@ -30,7 +30,7 @@ if [ ! -f "$IMAGE" ] || [ "$BUILD_DIR/forms.exe" -nt "$IMAGE" ]; then
 
     # Extract and copy COMMAND.COM to root
     mcopy -i "$FREEDOS_DIR/144m/x86BOOT.img" ::FREEDOS/BIN/COMMAND.COM /tmp/
-    mcopy -i "$IMAGE" /tmp/COMMAND.COM ::
+    mcopy -o -i "$IMAGE" /tmp/COMMAND.COM ::
 
     # Copy CWSDPMI
     mcopy -i "$IMAGE" "$FREEDOS_DIR/bin/CWSDPMI.EXE" ::

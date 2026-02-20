@@ -4,7 +4,7 @@
 # Compiler settings
 CXX = ~/djgpp/bin/i586-pc-msdosdjgpp-g++
 AR = ~/djgpp/bin/i586-pc-msdosdjgpp-ar
-CXXFLAGS = -std=gnu++17 -O2 -Wall -Wextra -I./src
+CXXFLAGS = -std=gnu++20 -O2 -Wall -Wextra -I./src
 LDFLAGS =
 
 # Directories
@@ -35,6 +35,7 @@ SYSTEM_SRCS = \
     $(SRC_DIR)/System/Drawing/Rectangle.cpp \
     $(SRC_DIR)/System/Drawing/HatchStyle.cpp \
     $(SRC_DIR)/System/Drawing/Image.cpp \
+    $(SRC_DIR)/System/Drawing/IconLibrary.cpp \
     $(SRC_DIR)/System/Drawing/Font.cpp \
     $(SRC_DIR)/System/Drawing/GraphicsBuffer.cpp \
     $(SRC_DIR)/System/Drawing/Graphics.cpp \

@@ -192,6 +192,7 @@ Control::Control()
     , _bounds()
     , _clientBounds()
     , _isInvalid(true)
+    , _visible(true)
 {
 }
 
@@ -201,6 +202,7 @@ Control::Control(Control* parent, const Rectangle& bounds)
     , _bounds(bounds)
     , _clientBounds()
     , _isInvalid(true)
+    , _visible(true)
 {
     UpdateClientBounds();
     if (parent)
@@ -403,7 +405,7 @@ void Control::OnPaintClient(PaintEventArgs& e)
     for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1)
     {
         Control* child = _children[static_cast<int>(i)];
-        if (child)
+        if (child && static_cast<bool>(child->IsVisible()))
         {
             // Calculate clip region as intersection of parent's client area and child bounds
             // Also intersect with any existing clip region from parent
@@ -1247,33 +1249,99 @@ void DesktopIconControl::OnPaint(PaintEventArgs& e)
         }
     }
 
-    // Draw text in bottom area (64x32), centered with ellipsis
+    // Draw text below icon, aligned to top of text area
     if (_text.Length() > Int32(0) && static_cast<bool>(_font.IsValid()))
     {
         // Measure and possibly truncate text
         String displayText = TruncateWithEllipsis(_text, Int32(CELL_WIDTH - 4));  // 2px margin each side
         Size textSize = _font.MeasureString(displayText);
 
-        // Calculate text position in SCREEN coordinates (like the icon)
-        // Text area starts at sy + ICON_AREA_HEIGHT
-        Int32 textAreaY = Int32(static_cast<int>(sy) + ICON_AREA_HEIGHT);
+        // Calculate text position in LOCAL coordinates (relative to control bounds)
+        // Graphics adds screen offset automatically when drawing to framebuffer
+        Int32 localTextX = Int32((CELL_WIDTH - static_cast<int>(textSize.width)) / 2);
+        // Position text 2px below the icon area
+        Int32 localTextY = Int32(ICON_AREA_HEIGHT + 2);
 
-        // Center text horizontally in cell
-        Int32 textX = Int32(static_cast<int>(sx) + (CELL_WIDTH - static_cast<int>(textSize.width)) / 2);
-
-        // Center text vertically in text area
-        Int32 textY = Int32(static_cast<int>(textAreaY) + (TEXT_AREA_HEIGHT - static_cast<int>(textSize.height)) / 2);
-
-        // Draw text directly to framebuffer using screen coordinates
-        // Use screen bounds for Graphics so coordinates match
+        // Draw text using Graphics with screen bounds - it handles offset internally
         Graphics g(BufferMode::Single, screen);
-        g.DrawString(displayText, _font, Color::White, textX, textY);
+        g.DrawString(displayText, _font, Color::White, localTextX, localTextY);
+    }
+
+    // Draw selection visual if selected
+    if (_isSelected)
+    {
+        Color navyBlue(UInt8(0), UInt8(0), UInt8(128));  // Navy blue 0x000080
+
+        // Draw navy blue outline around the cell (1 pixel thick)
+        Graphics g(BufferMode::Single, screen);
+        Int32 right = Int32(CELL_WIDTH - 1);
+        Int32 bottom = Int32(CELL_HEIGHT - 1);
+
+        // Top, bottom, left, right lines
+        g.DrawLine(Int32(0), Int32(0), right, Int32(0), navyBlue);
+        g.DrawLine(Int32(0), bottom, right, bottom, navyBlue);
+        g.DrawLine(Int32(0), Int32(0), Int32(0), bottom, navyBlue);
+        g.DrawLine(right, Int32(0), right, bottom, navyBlue);
+
+        // Draw 25% translucent blue overlay using alpha blending
+        Int32 imgW = img.Width();
+        Int32 imgH = img.Height();
+        Int32 screenX = sx;
+        Int32 screenY = sy;
+
+        // Navy blue RGB components
+        const int blueR = 0;
+        const int blueG = 0;
+        const int blueB = 128;
+
+        for (Int32 py = Int32(1); static_cast<int>(py) < CELL_HEIGHT - 1; py += 1)
+        {
+            for (Int32 px = Int32(1); static_cast<int>(px) < CELL_WIDTH - 1; px += 1)
+            {
+                Int32 absX = Int32(static_cast<int>(screenX) + static_cast<int>(px));
+                Int32 absY = Int32(static_cast<int>(screenY) + static_cast<int>(py));
+
+                // Bounds check
+                if (absX >= Int32(0) && absX < imgW && absY >= Int32(0) && absY < imgH)
+                {
+                    // Get existing pixel
+                    Color existing = img.GetPixel(absX, absY);
+
+                    // Alpha blend at 25% opacity: result = blue * 0.25 + existing * 0.75
+                    int newR = (blueR * 64 + static_cast<int>(existing.R()) * 192) / 256;
+                    int newG = (blueG * 64 + static_cast<int>(existing.G()) * 192) / 256;
+                    int newB = (blueB * 64 + static_cast<int>(existing.B()) * 192) / 256;
+
+                    img.SetPixel(absX, absY, Color(UInt8(newR), UInt8(newG), UInt8(newB)));
+                }
+            }
+        }
     }
 }
 
 MeasureResult DesktopIconControl::GetPreferredSize() const
 {
     return MeasureResult(Int32(CELL_WIDTH), Int32(CELL_HEIGHT));
+}
+
+void DesktopIconControl::OnMouse(MouseEventArgs& e)
+{
+    // Check for click (left button pressed)
+    if (static_cast<bool>(e.leftButton))
+    {
+        // Find the Desktop parent to notify of selection
+        Control* p = Parent();
+        while (p)
+        {
+            Desktop* desktop = p->AsDesktop();
+            if (desktop)
+            {
+                desktop->SelectIcon(this);
+                break;
+            }
+            p = p->Parent();
+        }
+    }
 }
 
 /******************************************************************************/
@@ -1309,6 +1377,8 @@ Desktop::Desktop(const Color& backgroundColor)
     , _taskBar(nullptr)
     , _startMenu(nullptr)
     , _iconContainer(nullptr)
+    , _selectedIcon(nullptr)
+    , _iconLibrary(nullptr)
 {
     // Get screen dimensions from current display mode
     Display current = Display::GetCurrent();
@@ -1365,6 +1435,14 @@ void Desktop::UpdateClientBounds()
 
 Desktop::~Desktop()
 {
+    delete _iconLibrary;
+    _iconLibrary = nullptr;
+}
+
+void Desktop::SetIconLibrary(Drawing::IconLibrary* library)
+{
+    delete _iconLibrary;
+    _iconLibrary = library;
 }
 
 void Desktop::SetCursor(const Image& cursorImage)
@@ -1374,7 +1452,7 @@ void Desktop::SetCursor(const Image& cursorImage)
 
 void Desktop::LoadCursorFromLibrary(const char* path, Int32 iconIndex)
 {
-    _cursorImage = Image::FromIconLibrary(path, iconIndex, Size::IconCursor);
+    _cursorImage = Image::FromIconLibrary(path, iconIndex, Size::IconMedium);
 }
 
 void Desktop::AddIcon(const Image& icon)
@@ -1426,7 +1504,7 @@ void Desktop::AddIconFromLibrary(const char* path, Int32 iconIndex, const String
 
 void Desktop::LoadCursorFromLibrary(const char* path, const char* iconName)
 {
-    _cursorImage = Image::FromIconLibrary(path, iconName, Size::IconCursor);
+    _cursorImage = Image::FromIconLibrary(path, iconName, Size::IconMedium);
 }
 
 void Desktop::AddIconFromLibrary(const char* path, const char* iconName)
@@ -1439,6 +1517,24 @@ void Desktop::AddIconFromLibrary(const char* path, const char* iconName, const S
 {
     Image icon = Image::FromIconLibrary(path, iconName, Size::IconMedium);
     AddIcon(icon, text);
+}
+
+void Desktop::SelectIcon(DesktopIconControl* icon)
+{
+    // Deselect previous icon if different
+    if (_selectedIcon && _selectedIcon != icon)
+    {
+        _selectedIcon->SetSelected(Boolean(false));
+    }
+
+    // Select new icon
+    _selectedIcon = icon;
+    if (_selectedIcon)
+    {
+        _selectedIcon->SetSelected(Boolean(true));
+    }
+
+    Invalidate();
 }
 
 void Desktop::DrawIcons()
@@ -1561,10 +1657,36 @@ void Desktop::UpdateSpatialGrid()
     }
 }
 
+void Desktop::SetWallpaper(const Image& wallpaper)
+{
+    // Scale wallpaper to fit screen if needed
+    if (wallpaper.Width() != _screenWidth || wallpaper.Height() != _screenHeight)
+    {
+        _wallpaper = wallpaper.ScaleTo(_screenWidth, _screenHeight);
+    }
+    else
+    {
+        _wallpaper = wallpaper;
+    }
+    Invalidate();
+}
+
 void Desktop::OnPaint(PaintEventArgs& e)
 {
-    // Fill background
-    e.graphics->FillRectangle(_bounds, _backgroundColor);
+    // Draw wallpaper if present, otherwise fill with background color
+    if (_wallpaper.Width() > Int32(0) && _wallpaper.Height() > Int32(0))
+    {
+        GraphicsBuffer* fb = GraphicsBuffer::GetFrameBuffer();
+        if (fb)
+        {
+            Image& fbImg = fb->GetImage();
+            fbImg.CopyFrom(_wallpaper, 0, 0);
+        }
+    }
+    else
+    {
+        e.graphics->FillRectangle(_bounds, _backgroundColor);
+    }
 
     // Icons are now painted as children of _iconContainer via flexbox layout
     // The legacy DrawIcons() is kept but only used if _iconContainer is null
@@ -1581,7 +1703,7 @@ void Desktop::OnPaint(PaintEventArgs& e)
     for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1)
     {
         Control* child = _children[static_cast<int>(i)];
-        if (child && !child->Layout().alwaysOnTop &&
+        if (child && static_cast<bool>(child->IsVisible()) && !child->Layout().alwaysOnTop &&
             child != static_cast<Control*>(_taskBar) &&
             child != static_cast<Control*>(_startMenu))
         {
@@ -1594,7 +1716,7 @@ void Desktop::OnPaint(PaintEventArgs& e)
     for (Int32 i = Int32(0); static_cast<int>(i) < _children.Length(); i += 1)
     {
         Control* child = _children[static_cast<int>(i)];
-        if (child && child->Layout().alwaysOnTop &&
+        if (child && static_cast<bool>(child->IsVisible()) && child->Layout().alwaysOnTop &&
             child != static_cast<Control*>(_taskBar) &&
             child != static_cast<Control*>(_startMenu))
         {
@@ -1905,6 +2027,35 @@ void Desktop::HandleMouse(MouseEventArgs& e)
         }
     }
 
+    // Deselect desktop icon if clicking outside of icon container
+    // The icon's OnMouse will re-select if an icon was actually clicked
+    if (static_cast<bool>(isNewClick))
+    {
+        // Check if click was outside the icon container
+        bool clickedOnIconContainer = (hitChild == _iconContainer);
+
+        // Also check if we clicked on a child of the icon container
+        if (!clickedOnIconContainer && hitChild)
+        {
+            Control* parent = hitChild->Parent();
+            while (parent)
+            {
+                if (parent == _iconContainer)
+                {
+                    clickedOnIconContainer = true;
+                    break;
+                }
+                parent = parent->Parent();
+            }
+        }
+
+        // If click was not on icon container or its children, deselect
+        if (!clickedOnIconContainer && _selectedIcon)
+        {
+            SelectIcon(nullptr);
+        }
+    }
+
     // ALWAYS propagate mouse events to children (for button state tracking)
     if (hitChild)
     {
@@ -2004,6 +2155,7 @@ void Desktop::Run()
                 {
                     Control* child = _children[static_cast<int>(i)];
                     if (child && child != _dragWindow &&
+                        static_cast<bool>(child->IsVisible()) &&
                         !child->Layout().alwaysOnTop &&
                         child != static_cast<Control*>(_taskBar) &&
                         child != static_cast<Control*>(_startMenu))
@@ -2018,6 +2170,7 @@ void Desktop::Run()
                 {
                     Control* child = _children[static_cast<int>(i)];
                     if (child && child != _dragWindow &&
+                        static_cast<bool>(child->IsVisible()) &&
                         child->Layout().alwaysOnTop &&
                         child != static_cast<Control*>(_taskBar) &&
                         child != static_cast<Control*>(_startMenu))
@@ -2114,6 +2267,15 @@ Window::Window(Control* parent, const Rectangle& bounds)
     , _isFocused(false)
     , _title()
     , _font(LoadWindowFont())
+    , _backColor(Color::Gray)
+    , _isMaximized(false)
+    , _isMinimized(false)
+    , _restoreBounds(bounds)
+    , _borderStyle(BorderStyle::RaisedDouble)
+    , _closeIcon()
+    , _maximizeIcon()
+    , _minimizeIcon()
+    , _restoreIcon()
 {
     // Must call UpdateClientBounds again because virtual dispatch doesn't work
     // from base class constructor (Control called Control::UpdateClientBounds)
@@ -2142,15 +2304,178 @@ Window::~Window()
 void Window::UpdateClientBounds()
 {
     // Client area is relative to window bounds (not screen)
-    // Outer frame: 2 pixels, title bar: 20 pixels, client sunken border: 1 pixel
+    // Normal: Outer frame: 2 pixels, title bar: 20 pixels, client sunken border: 1 pixel
+    // Maximized: No frame, title bar: 20 pixels, client sunken border: 1 pixel
     Int32 bw = _bounds.width;
     Int32 bh = _bounds.height;
+    int frame = _isMaximized ? 0 : FRAME_WIDTH;
     _clientBounds = Rectangle(
-        Int32(FRAME_WIDTH),
-        Int32(TITLE_BAR_HEIGHT + FRAME_WIDTH),
-        Int32(static_cast<int>(bw) - FRAME_WIDTH * 2),
-        Int32(static_cast<int>(bh) - TITLE_BAR_HEIGHT - FRAME_WIDTH * 2)
+        Int32(frame),
+        Int32(TITLE_BAR_HEIGHT + frame),
+        Int32(static_cast<int>(bw) - frame * 2),
+        Int32(static_cast<int>(bh) - TITLE_BAR_HEIGHT - frame * 2)
     );
+}
+
+Rectangle Window::GetCloseButtonRect() const
+{
+    Rectangle screen = ScreenBounds();
+    int frame = _isMaximized ? 0 : FRAME_WIDTH;
+    // Close button is rightmost, frame+2px from right edge of title bar
+    Int32 btnX = Int32(static_cast<int>(screen.x) + static_cast<int>(screen.width) - BUTTON_SIZE - frame - 2);
+    Int32 btnY = Int32(static_cast<int>(screen.y) + frame + (TITLE_BAR_HEIGHT - BUTTON_SIZE) / 2);
+    return Rectangle(btnX, btnY, Int32(BUTTON_SIZE), Int32(BUTTON_SIZE));
+}
+
+Rectangle Window::GetMaximizeButtonRect() const
+{
+    Rectangle closeBtn = GetCloseButtonRect();
+    // Maximize button is left of close button
+    Int32 btnX = Int32(static_cast<int>(closeBtn.x) - BUTTON_SIZE - BUTTON_SPACING);
+    return Rectangle(btnX, closeBtn.y, Int32(BUTTON_SIZE), Int32(BUTTON_SIZE));
+}
+
+Rectangle Window::GetMinimizeButtonRect() const
+{
+    Rectangle maxBtn = GetMaximizeButtonRect();
+    // Minimize button is left of maximize button
+    Int32 btnX = Int32(static_cast<int>(maxBtn.x) - BUTTON_SIZE - BUTTON_SPACING);
+    return Rectangle(btnX, maxBtn.y, Int32(BUTTON_SIZE), Int32(BUTTON_SIZE));
+}
+
+void Window::Minimize()
+{
+    if (!_isMinimized)
+    {
+        _isMinimized = true;
+        SetVisible(Boolean(false));
+        Invalidate();
+    }
+}
+
+void Window::Maximize()
+{
+    if (!_isMaximized)
+    {
+        // Save current bounds for restore
+        _restoreBounds = _bounds;
+        _isMaximized = true;
+
+        // Change border style to None when maximized (no frame)
+        _borderStyle = BorderStyle::None;
+
+        // Get desktop client bounds (excludes taskbar)
+        Control* p = Parent();
+        if (p && p->GetControlType() == ControlType::Desktop)
+        {
+            Desktop* desktop = static_cast<Desktop*>(p);
+            Rectangle clientArea = desktop->ClientBounds();
+            // Maximize to fill desktop client area, starting at (0,0)
+            SetBounds(Int32(0), Int32(0), clientArea.width, clientArea.height);
+        }
+        Invalidate();
+    }
+}
+
+void Window::Restore()
+{
+    if (_isMaximized)
+    {
+        _isMaximized = false;
+        // Restore border style to RaisedDouble
+        _borderStyle = BorderStyle::RaisedDouble;
+        SetBounds(_restoreBounds.x, _restoreBounds.y, _restoreBounds.width, _restoreBounds.height);
+        Invalidate();
+    }
+    if (_isMinimized)
+    {
+        _isMinimized = false;
+        SetVisible(Boolean(true));
+        Invalidate();
+    }
+}
+
+void Window::Close()
+{
+    // Remove from parent
+    Control* p = Parent();
+    if (p)
+    {
+        // Remove from taskbar if applicable
+        if (p->GetControlType() == ControlType::Desktop)
+        {
+            Desktop* desktop = static_cast<Desktop*>(p);
+            TaskBar* taskBar = desktop->GetTaskBar();
+            if (taskBar)
+            {
+                taskBar->RemoveWindowButton(this);
+            }
+            // Clear focus if this window had it
+            if (desktop->FocusedWindow() == this)
+            {
+                desktop->SetFocusedWindow(nullptr);
+            }
+        }
+        p->RemoveChild(this);
+    }
+    // Note: Window is now orphaned. Caller should delete it or it will leak.
+    // In a real implementation, we might want to mark it for deletion.
+}
+
+void Window::LoadButtonIcons()
+{
+    // Get desktop's icon library
+    Control* p = Parent();
+    if (!p || p->GetControlType() != ControlType::Desktop)
+    {
+        return;
+    }
+
+    Desktop* desktop = static_cast<Desktop*>(p);
+    Drawing::IconLibrary* icons = desktop->GetIconLibrary();
+    if (!icons)
+    {
+        return;
+    }
+
+    // Load 16x16 button icons
+    try
+    {
+        _closeIcon = icons->FromName("ui-close", Drawing::IconSize::Small);
+    }
+    catch (...)
+    {
+        // Icon loading failed - will use fallback
+    }
+
+    try
+    {
+        _maximizeIcon = icons->FromName("ui-maximize", Drawing::IconSize::Small);
+    }
+    catch (...)
+    {
+        // Icon loading failed - will use fallback
+    }
+
+    try
+    {
+        _minimizeIcon = icons->FromName("ui-minimize", Drawing::IconSize::Small);
+    }
+    catch (...)
+    {
+        // Icon loading failed - will use fallback
+    }
+
+    try
+    {
+        _restoreIcon = icons->FromName("ui-restore", Drawing::IconSize::Small);
+    }
+    catch (...)
+    {
+        // Icon loading failed - will use fallback
+    }
+
+    Invalidate();
 }
 
 void Window::OnPaint(PaintEventArgs& e)
@@ -2161,29 +2486,130 @@ void Window::OnPaint(PaintEventArgs& e)
     Int32 sw = screen.width;
     Int32 sh = screen.height;
 
-    // Draw window frame with Window border style (2-pixel thick 3D border)
-    e.graphics->FillRectangle(screen, BorderStyle::Window);
+    // Frame offset: 0 when maximized (no frame), FRAME_WIDTH when normal
+    int frame = _isMaximized ? 0 : FRAME_WIDTH;
 
-    // Draw title bar - blue if focused, dark gray if not
-    Rectangle titleBar(Int32(static_cast<int>(sx) + 2), Int32(static_cast<int>(sy) + 2),
-                       Int32(static_cast<int>(sw) - 4), Int32(TITLE_BAR_HEIGHT));
-    Color titleColor = _isFocused ? Color::DarkBlue : Color::DarkGray;
-    e.graphics->FillRectangle(titleBar, titleColor);
+    // Draw window frame with current border style
+    // Maximized windows use None (no frame), normal windows use RaisedDouble (Window style)
+    BorderStyle frameStyle = _isMaximized ? BorderStyle::None : BorderStyle::Window;
+    e.graphics->FillRectangle(screen, frameStyle);
+
+    // Draw title bar - gradient if focused, solid dark gray if not
+    Rectangle titleBar(Int32(static_cast<int>(sx) + frame), Int32(static_cast<int>(sy) + frame),
+                       Int32(static_cast<int>(sw) - frame * 2), Int32(TITLE_BAR_HEIGHT));
+    if (_isFocused)
+    {
+        // Horizontal gradient from dark blue (left) to lighter blue (right)
+        Color leftColor(UInt32(0xFF000080));   // Dark blue
+        Color rightColor(UInt32(0xFF1084D0));  // Lighter blue
+        Int32 titleX = Int32(static_cast<int>(sx) + frame);
+        Int32 titleY = Int32(static_cast<int>(sy) + frame);
+        Int32 titleW = Int32(static_cast<int>(sw) - frame * 2);
+        Int32 titleH = Int32(TITLE_BAR_HEIGHT);
+
+        // Draw vertical lines with interpolated colors
+        for (Int32 col = Int32(0); static_cast<int>(col) < static_cast<int>(titleW); col += 1)
+        {
+            Float32 t = static_cast<float>(static_cast<int>(col)) / static_cast<float>(static_cast<int>(titleW) - 1);
+            Color lineColor = Color::Lerp(leftColor, rightColor, t);
+            Int32 lineX = Int32(static_cast<int>(titleX) + static_cast<int>(col));
+            e.graphics->DrawLine(lineX, titleY, lineX, Int32(static_cast<int>(titleY) + static_cast<int>(titleH) - 1), lineColor);
+        }
+    }
+    else
+    {
+        e.graphics->FillRectangle(titleBar, Color::DarkGray);
+    }
 
     // Draw title text (white, centered vertically, left-aligned with padding)
     if (_title.Length() > Int32(0) && static_cast<bool>(_font.IsValid()))
     {
-        Int32 textX = Int32(static_cast<int>(sx) + 6);  // Left padding
-        Int32 textY = Int32(static_cast<int>(sy) + 2 + (TITLE_BAR_HEIGHT - static_cast<int>(_font.Height())) / 2);
+        Int32 textX = Int32(static_cast<int>(sx) + frame + 4);  // Left padding
+        Int32 textY = Int32(static_cast<int>(sy) + frame + (TITLE_BAR_HEIGHT - static_cast<int>(_font.Height())) / 2);
         e.graphics->DrawString(_title, _font, Color::White, textX, textY);
     }
 
+    // Draw title bar buttons (minimize, maximize, close)
+    Rectangle closeBtn = GetCloseButtonRect();
+    Rectangle maxBtn = GetMaximizeButtonRect();
+    Rectangle minBtn = GetMinimizeButtonRect();
+
+    // Draw buttons with raised 3D effect
+    e.graphics->FillRectangle(minBtn, BorderStyle::Raised);
+    e.graphics->FillRectangle(maxBtn, BorderStyle::Raised);
+    e.graphics->FillRectangle(closeBtn, BorderStyle::Raised);
+
+    // Get framebuffer for icon drawing
+    GraphicsBuffer* fb = GraphicsBuffer::GetFrameBuffer();
+
+    // Draw button icons if loaded, otherwise fall back to line symbols
+    if (_minimizeIcon.Width() > Int32(0) && fb)
+    {
+        Image& fbImg = fb->GetImage();
+        fbImg.CopyFromWithAlpha(_minimizeIcon, static_cast<int>(minBtn.x), static_cast<int>(minBtn.y));
+    }
+    else
+    {
+        // Fallback: horizontal line at bottom
+        Color btnColor = Color::Black;
+        Int32 minLineY = Int32(static_cast<int>(minBtn.y) + static_cast<int>(minBtn.height) - 5);
+        e.graphics->DrawLine(Int32(static_cast<int>(minBtn.x) + 4), minLineY,
+                             Int32(static_cast<int>(minBtn.x) + static_cast<int>(minBtn.width) - 5), minLineY, btnColor);
+    }
+
+    // Maximize/Restore button - use restore icon if maximized
+    const Image& maxIcon = _isMaximized ? _restoreIcon : _maximizeIcon;
+    if (maxIcon.Width() > Int32(0) && fb)
+    {
+        Image& fbImg = fb->GetImage();
+        fbImg.CopyFromWithAlpha(maxIcon, static_cast<int>(maxBtn.x), static_cast<int>(maxBtn.y));
+    }
+    else
+    {
+        // Fallback: rectangle outline
+        Color btnColor = Color::Black;
+        Int32 maxLeft = Int32(static_cast<int>(maxBtn.x) + 3);
+        Int32 maxTop = Int32(static_cast<int>(maxBtn.y) + 3);
+        Int32 maxRight = Int32(static_cast<int>(maxBtn.x) + static_cast<int>(maxBtn.width) - 4);
+        Int32 maxBottom = Int32(static_cast<int>(maxBtn.y) + static_cast<int>(maxBtn.height) - 4);
+        e.graphics->DrawLine(maxLeft, maxTop, maxRight, maxTop, btnColor);
+        e.graphics->DrawLine(maxLeft, Int32(static_cast<int>(maxTop) + 1), maxRight, Int32(static_cast<int>(maxTop) + 1), btnColor);
+        e.graphics->DrawLine(maxLeft, maxTop, maxLeft, maxBottom, btnColor);
+        e.graphics->DrawLine(maxRight, maxTop, maxRight, maxBottom, btnColor);
+        e.graphics->DrawLine(maxLeft, maxBottom, maxRight, maxBottom, btnColor);
+    }
+
+    // Close button
+    if (_closeIcon.Width() > Int32(0) && fb)
+    {
+        Image& fbImg = fb->GetImage();
+        fbImg.CopyFromWithAlpha(_closeIcon, static_cast<int>(closeBtn.x), static_cast<int>(closeBtn.y));
+    }
+    else
+    {
+        // Fallback: X shape
+        Color btnColor = Color::Black;
+        Int32 closeLeft = Int32(static_cast<int>(closeBtn.x) + 4);
+        Int32 closeTop = Int32(static_cast<int>(closeBtn.y) + 4);
+        Int32 closeRight = Int32(static_cast<int>(closeBtn.x) + static_cast<int>(closeBtn.width) - 5);
+        Int32 closeBottom = Int32(static_cast<int>(closeBtn.y) + static_cast<int>(closeBtn.height) - 5);
+        e.graphics->DrawLine(closeLeft, closeTop, closeRight, closeBottom, btnColor);
+        e.graphics->DrawLine(closeRight, closeTop, closeLeft, closeBottom, btnColor);
+    }
+
     // Draw client area with sunken border effect
-    Rectangle clientFrame(Int32(static_cast<int>(sx) + 2),
-                          Int32(static_cast<int>(sy) + TITLE_BAR_HEIGHT + 2),
-                          Int32(static_cast<int>(sw) - 4),
-                          Int32(static_cast<int>(sh) - TITLE_BAR_HEIGHT - 4));
+    Rectangle clientFrame(Int32(static_cast<int>(sx) + frame),
+                          Int32(static_cast<int>(sy) + TITLE_BAR_HEIGHT + frame),
+                          Int32(static_cast<int>(sw) - frame * 2),
+                          Int32(static_cast<int>(sh) - TITLE_BAR_HEIGHT - frame * 2));
     e.graphics->FillRectangle(clientFrame, BorderStyle::Sunken);
+
+    // Fill client area interior with back color (inside the sunken border)
+    Rectangle clientInterior(Int32(static_cast<int>(sx) + frame + 1),
+                             Int32(static_cast<int>(sy) + TITLE_BAR_HEIGHT + frame + 1),
+                             Int32(static_cast<int>(sw) - frame * 2 - 2),
+                             Int32(static_cast<int>(sh) - TITLE_BAR_HEIGHT - frame * 2 - 2));
+    e.graphics->FillRectangle(clientInterior, _backColor);
 
     // Paint children in client area
     OnPaintClient(e);
@@ -2191,8 +2617,52 @@ void Window::OnPaint(PaintEventArgs& e)
 
 void Window::OnMouse(MouseEventArgs& e)
 {
-    // Window click handling - focus is managed by Desktop
-    (void)e;
+    // Check for button clicks (only on mouse down)
+    if (static_cast<bool>(e.leftButton))
+    {
+        Int32 mx = e.x;
+        Int32 my = e.y;
+
+        // Check close button
+        Rectangle closeBtn = GetCloseButtonRect();
+        if (static_cast<int>(mx) >= static_cast<int>(closeBtn.x) &&
+            static_cast<int>(mx) < static_cast<int>(closeBtn.x) + static_cast<int>(closeBtn.width) &&
+            static_cast<int>(my) >= static_cast<int>(closeBtn.y) &&
+            static_cast<int>(my) < static_cast<int>(closeBtn.y) + static_cast<int>(closeBtn.height))
+        {
+            Close();
+            return;
+        }
+
+        // Check maximize button
+        Rectangle maxBtn = GetMaximizeButtonRect();
+        if (static_cast<int>(mx) >= static_cast<int>(maxBtn.x) &&
+            static_cast<int>(mx) < static_cast<int>(maxBtn.x) + static_cast<int>(maxBtn.width) &&
+            static_cast<int>(my) >= static_cast<int>(maxBtn.y) &&
+            static_cast<int>(my) < static_cast<int>(maxBtn.y) + static_cast<int>(maxBtn.height))
+        {
+            if (_isMaximized)
+            {
+                Restore();
+            }
+            else
+            {
+                Maximize();
+            }
+            return;
+        }
+
+        // Check minimize button
+        Rectangle minBtn = GetMinimizeButtonRect();
+        if (static_cast<int>(mx) >= static_cast<int>(minBtn.x) &&
+            static_cast<int>(mx) < static_cast<int>(minBtn.x) + static_cast<int>(minBtn.width) &&
+            static_cast<int>(my) >= static_cast<int>(minBtn.y) &&
+            static_cast<int>(my) < static_cast<int>(minBtn.y) + static_cast<int>(minBtn.height))
+        {
+            Minimize();
+            return;
+        }
+    }
 }
 
 /******************************************************************************/
@@ -2214,17 +2684,18 @@ void TaskBar::OnStartButtonClick(Button* sender, void* userData)
 }
 
 TaskBar::TaskBar(Control* parent, StartMenu* startMenu)
-    : Control(parent, Rectangle(Int32(0), Int32(0), Int32(0), Int32(28)))  // Temporary bounds, updated below
+    : Control(parent, Rectangle(Int32(0), Int32(0), Int32(0), Int32(32)))  // Temporary bounds, updated below
     , _startButton(nullptr)
     , _startMenu(startMenu)
     , _desktop(nullptr)
     , _windowButtons()
+    , _taskTray(nullptr)
 {
     // Get screen dimensions from current display mode
     Display current = Display::GetCurrent();
     Int32 screenWidth = Int32(static_cast<int>(current.Width()));
     Int32 screenHeight = Int32(static_cast<int>(current.Height()));
-    Int32 taskBarHeight = Int32(28);
+    Int32 taskBarHeight = Int32(32);
 
     // Position taskbar at bottom of screen
     SetBounds(Int32(0), Int32(static_cast<int>(screenHeight) - static_cast<int>(taskBarHeight)),
@@ -2244,19 +2715,143 @@ TaskBar::TaskBar(Control* parent, StartMenu* startMenu)
     _layout.zIndex = Int32(1000);
 
     // Create Start button (positioned relative to taskbar, not screen)
-    _startButton = new Button(this, Rectangle(Int32(4), Int32(4), Int32(54), Int32(20)));
+    // Make it wider to fit icon + bold text
+    _startButton = new Button(this, Rectangle(Int32(4), Int32(4), Int32(65), Int32(24)));
     _startButton->SetText("Start");
     _startButton->SetOnClick(OnStartButtonClick, this);
+
+    // Use bold font for "Start"
+    _startButton->SetFont(Font::SystemFontBold());
 
     // Start button has fixed size
     _startButton->Layout().widthMode = SizeMode::Fixed;
     _startButton->Layout().heightMode = SizeMode::Fixed;
+
+    // Create task tray on the right side
+    _taskTray = new TaskTray(this);
+
+    // Note: Icons are loaded later via LoadIcons() when the icon library is available
+
+    // Position task tray on the right side
+    Int32 trayWidth = _taskTray->CalculateWidth();
+    Int32 trayHeight = Int32(24);  // Same height as buttons
+    Int32 trayX = Int32(static_cast<int>(screenWidth) - static_cast<int>(trayWidth) - 4);  // 4px right margin
+    Int32 trayY = Int32(4);  // 4px top margin
+    _taskTray->SetBounds(trayX, trayY, trayWidth, trayHeight);
+
+    // Task tray has fixed size and doesn't participate in layout
+    _taskTray->Layout().participatesInLayout = false;
 }
 
 TaskBar::~TaskBar()
 {
     // Children are deleted by Control destructor
     // _windowButtons are children, so they get deleted too
+}
+
+void TaskBar::LoadIcons()
+{
+    if (!_desktop)
+    {
+        return;
+    }
+
+    Drawing::IconLibrary* icons = _desktop->GetIconLibrary();
+    if (!icons)
+    {
+        return;
+    }
+
+    // Load Start button icon
+    try
+    {
+        Image startIcon = icons->FromIndex(Int32(0), Drawing::IconSize::Small);
+        _startButton->SetIcon(startIcon);
+    }
+    catch (...)
+    {
+        // If icon loading fails, continue without icon
+    }
+
+    // Load task tray icons
+    try
+    {
+        Image soundIcon = icons->FromName("sound", Drawing::IconSize::Small);
+        _taskTray->AddIcon(soundIcon);
+
+        Image txSendIcon = icons->FromName("tx-send", Drawing::IconSize::Small);
+        _taskTray->AddIcon(txSendIcon);
+
+        Image networkIcon = icons->FromName("network-signal-2", Drawing::IconSize::Small);
+        _taskTray->AddIcon(networkIcon);
+
+        Image shieldIcon = icons->FromName("shield-danger", Drawing::IconSize::Small);
+        _taskTray->AddIcon(shieldIcon);
+    }
+    catch (...)
+    {
+        // If icon loading fails, continue without icons
+    }
+
+    // Reposition task tray now that icons are loaded
+    Display current = Display::GetCurrent();
+    Int32 screenWidth = Int32(static_cast<int>(current.Width()));
+    Int32 trayWidth = _taskTray->CalculateWidth();
+    Int32 trayHeight = Int32(24);
+    Int32 trayX = Int32(static_cast<int>(screenWidth) - static_cast<int>(trayWidth) - 4);
+    Int32 trayY = Int32(4);
+    _taskTray->SetBounds(trayX, trayY, trayWidth, trayHeight);
+
+    Invalidate();
+}
+
+/******************************************************************************/
+/*    TaskTray Implementation                                                 */
+/******************************************************************************/
+
+TaskTray::TaskTray(Control* parent)
+    : Control(parent, Rectangle(Int32(0), Int32(0), Int32(0), Int32(24)))
+    , _icons()
+{
+}
+
+void TaskTray::AddIcon(const Image& icon)
+{
+    Int32 oldLen = Int32(_icons.Length());
+    _icons.Resize(static_cast<int>(oldLen) + 1);
+    _icons[static_cast<int>(oldLen)] = icon;
+    Invalidate();
+}
+
+void TaskTray::OnPaint(PaintEventArgs& e)
+{
+    Rectangle screen = ScreenBounds();
+
+    // Draw sunken border
+    e.graphics->FillRectangle(screen, BorderStyle::Sunken);
+
+    // Draw icons
+    Int32 iconX = Int32(static_cast<int>(screen.x) + PADDING);
+    Int32 iconY = Int32(static_cast<int>(screen.y) + (static_cast<int>(screen.height) - ICON_SIZE) / 2);
+
+    GraphicsBuffer* fb = GraphicsBuffer::GetFrameBuffer();
+    if (fb)
+    {
+        Image& targetImg = fb->GetImage();
+        for (int i = 0; i < _icons.Length(); i++)
+        {
+            targetImg.CopyFromWithAlpha(_icons[i], iconX, iconY);
+            iconX = Int32(static_cast<int>(iconX) + ICON_SIZE + ICON_SPACING);
+        }
+    }
+
+    // Paint children
+    OnPaintClient(e);
+}
+
+MeasureResult TaskTray::GetPreferredSize() const
+{
+    return MeasureResult(CalculateWidth(), Int32(24));
 }
 
 void TaskBar::AddWindowButton(Window* window)
@@ -2391,6 +2986,7 @@ Button::Button(Control* parent, const Rectangle& bounds)
     , _onClickUserData(nullptr)
     , _text()
     , _font(Font::SystemFont())
+    , _icon()
 {
 }
 
@@ -2424,21 +3020,50 @@ void Button::OnPaint(PaintEventArgs& e)
         e.graphics->FillRectangle(screen, BorderStyle::RaisedDouble);
     }
 
-    // Draw button text (centered)
+    // Calculate content area (inside borders)
+    Int32 contentX = Int32(static_cast<int>(sx) + 4);
+    Int32 contentY = Int32(static_cast<int>(sy) + 2);
+    Int32 contentH = Int32(static_cast<int>(sh) - 4);
+
+    // Track icon dimensions
+    Int32 iconW = _icon.Width();
+    Int32 iconH = _icon.Height();
+    Int32 hasIcon = (static_cast<int>(iconW) > 0 && static_cast<int>(iconH) > 0) ? 1 : 0;
+
+    // Measure text
+    Drawing::Size textSize = _font.MeasureString(_text);
+    Int32 textH = _text.Length() > Int32(0) ? textSize.height : Int32(0);
+
+    // Gap between icon and text
+    Int32 gap = hasIcon && _text.Length() > Int32(0) ? Int32(3) : Int32(0);
+
+    // Left-align content with small padding (better for icon buttons)
+    Int32 startX = Int32(static_cast<int>(contentX) + 2);
+
+    // Offset by 1 pixel when pressed for 3D effect
+    if (static_cast<bool>(visualPressed))
+    {
+        startX = Int32(static_cast<int>(startX) + 1);
+        contentY = Int32(static_cast<int>(contentY) + 1);
+    }
+
+    // Draw icon if present
+    if (hasIcon)
+    {
+        Int32 iconY = Int32(static_cast<int>(contentY) + (static_cast<int>(contentH) - static_cast<int>(iconH)) / 2);
+        GraphicsBuffer* fb = GraphicsBuffer::GetFrameBuffer();
+        if (fb)
+        {
+            fb->GetImage().CopyFromWithAlpha(_icon, startX, iconY);
+        }
+        startX = Int32(static_cast<int>(startX) + static_cast<int>(iconW) + static_cast<int>(gap));
+    }
+
+    // Draw button text
     if (_text.Length() > Int32(0) && static_cast<bool>(_font.IsValid()))
     {
-        Drawing::Size textSize = _font.MeasureString(_text);
-        Int32 textW = textSize.width;
-        Int32 textH = textSize.height;
-        Int32 textX = Int32(static_cast<int>(sx) + (static_cast<int>(sw) - static_cast<int>(textW)) / 2);
-        Int32 textY = Int32(static_cast<int>(sy) + (static_cast<int>(sh) - static_cast<int>(textH)) / 2);
-        // Offset by 1 pixel when pressed for 3D effect
-        if (static_cast<bool>(visualPressed))
-        {
-            textX = Int32(static_cast<int>(textX) + 1);
-            textY = Int32(static_cast<int>(textY) + 1);
-        }
-        e.graphics->DrawString(_text, _font, Color::Black, textX, textY);
+        Int32 textY = Int32(static_cast<int>(contentY) + (static_cast<int>(contentH) - static_cast<int>(textH)) / 2);
+        e.graphics->DrawString(_text, _font, Color::Black, startX, textY);
     }
 
     // Paint children
@@ -2717,7 +3342,13 @@ void TaskBarButton::OnTaskBarButtonClick(Button* sender, void* userData)
 
     if (btn && btn->_window)
     {
-        // Find the desktop through the control hierarchy
+        // If window is minimized, restore it
+        if (static_cast<bool>(btn->_window->IsMinimized()))
+        {
+            btn->_window->Restore();
+        }
+
+        // Find the desktop through the control hierarchy and focus the window
         Control* parent = btn->Parent();
         while (parent)
         {
@@ -2812,7 +3443,10 @@ void TaskBarButton::OnPaint(PaintEventArgs& e)
 MenuItem::MenuItem(Control* parent, const Rectangle& bounds, int itemIndex)
     : Control(parent, bounds)
     , _icon()
+    , _text()
     , _isHighlighted(false)
+    , _isSeparator(false)
+    , _wasPressed(false)
     , _onClick(nullptr)
     , _onClickUserData(nullptr)
     , _itemIndex(itemIndex)
@@ -2829,6 +3463,18 @@ void MenuItem::SetIcon(const Image& icon)
     Invalidate();
 }
 
+void MenuItem::SetText(const String& text)
+{
+    _text = text;
+    Invalidate();
+}
+
+void MenuItem::SetSeparator(Boolean isSeparator)
+{
+    _isSeparator = static_cast<bool>(isSeparator);
+    Invalidate();
+}
+
 void MenuItem::SetOnClick(ClickEventHandler handler, void* userData)
 {
     _onClick = handler;
@@ -2840,15 +3486,37 @@ void MenuItem::OnPaint(PaintEventArgs& e)
     Rectangle screen = ScreenBounds();
     Int32 sx = screen.x;
     Int32 sy = screen.y;
+    Int32 sw = screen.width;
     Int32 sh = screen.height;
+
+    // Handle separator items
+    if (_isSeparator)
+    {
+        // Draw background
+        e.graphics->FillRectangle(screen, Color::Gray);
+
+        // Draw 3D separator line (dark grey on top, white on bottom)
+        Int32 lineY = Int32(static_cast<int>(sy) + static_cast<int>(sh) / 2 - 1);
+        Int32 lineX1 = Int32(static_cast<int>(sx) + ICON_MARGIN);
+        Int32 lineX2 = Int32(static_cast<int>(sx) + static_cast<int>(sw) - ICON_MARGIN);
+
+        // Top line: dark grey
+        e.graphics->DrawLine(lineX1, lineY, lineX2, lineY, Color::DarkGray);
+        // Bottom line: white
+        e.graphics->DrawLine(lineX1, Int32(static_cast<int>(lineY) + 1), lineX2, Int32(static_cast<int>(lineY) + 1), Color::White);
+        return;
+    }
 
     // Draw background
     Color bgColor = _isHighlighted ? Color::DarkBlue : Color::Gray;
+    Color textColor = _isHighlighted ? Color::White : Color::Black;
     e.graphics->FillRectangle(screen, bgColor);
 
     // Draw icon if present
     Int32 iw = _icon.Width();
     Int32 ih = _icon.Height();
+    Int32 textX = Int32(static_cast<int>(sx) + ICON_MARGIN + ICON_SIZE + TEXT_MARGIN);
+
     if (iw > Int32(0) && ih > Int32(0))
     {
         // Center icon vertically in item
@@ -2863,32 +3531,51 @@ void MenuItem::OnPaint(PaintEventArgs& e)
         }
     }
 
+    // Draw text if present
+    if (_text.Length() > Int32(0))
+    {
+        Font sysFont = Font::SystemFont();
+        Int32 textY = Int32(static_cast<int>(sy) + (static_cast<int>(sh) - static_cast<int>(sysFont.Height())) / 2);
+        e.graphics->DrawString(_text, sysFont, textColor, textX, textY);
+    }
+
     // Paint children
     OnPaintClient(e);
 }
 
-void MenuItem::OnMouse(MouseEventArgs& e)
+bool MenuItem::HandleMouseUpdate(MouseEventArgs& e)
 {
+    // Skip separators - return false (no change)
+    if (_isSeparator)
+    {
+        return false;
+    }
+
     Int32 ex = e.x;
     Int32 ey = e.y;
     Boolean isOver = HitTest(ex, ey);
     Boolean leftDown = e.leftButton;
 
-    Boolean wasHighlighted = Boolean(_isHighlighted);
+    bool wasHighlighted = _isHighlighted;
     _isHighlighted = static_cast<bool>(isOver);
 
     // Fire click on release while over
-    static bool wasPressed = false;
-    if (wasPressed && !static_cast<bool>(leftDown) && static_cast<bool>(isOver) && _onClick)
+    if (_wasPressed && !static_cast<bool>(leftDown) && static_cast<bool>(isOver) && _onClick)
     {
         _onClick(reinterpret_cast<Button*>(this), _onClickUserData);
     }
-    wasPressed = static_cast<bool>(leftDown) && static_cast<bool>(isOver);
+    _wasPressed = static_cast<bool>(leftDown) && static_cast<bool>(isOver);
 
-    if (_isHighlighted != static_cast<bool>(wasHighlighted))
-    {
-        Invalidate();
-    }
+    // Return true if highlight state changed (caller handles repaint)
+    return _isHighlighted != wasHighlighted;
+}
+
+void MenuItem::OnMouse(MouseEventArgs& e)
+{
+    // StartMenu handles all mouse events for menu items via HandleMouseUpdate
+    // This method exists for compatibility but defers to HandleMouseUpdate
+    // without any painting (StartMenu batches repaints for performance)
+    HandleMouseUpdate(e);
 }
 
 /******************************************************************************/
@@ -2904,10 +3591,11 @@ StartMenu::StartMenu(Desktop* desktop)
     // Get screen dimensions
     Display current = Display::GetCurrent();
     Int32 screenHeight = Int32(static_cast<int>(current.Height()));
-    Int32 taskBarHeight = Int32(28);
+    Int32 taskBarHeight = Int32(32);
 
-    // Calculate menu height and position
-    Int32 menuHeight = Int32(ITEM_COUNT * ITEM_HEIGHT + 4);  // +4 for border
+    // Menu structure: items 3 and 8 (0-indexed) are separators
+    // Total height: 9 regular items (40px each) + 2 separators (8px each) = 376px + 4px border
+    Int32 menuHeight = Int32(9 * ITEM_HEIGHT + 2 * SEPARATOR_HEIGHT + 4);  // +4 for border
     Int32 menuX = Int32(0);
     Int32 menuY = Int32(static_cast<int>(screenHeight) - static_cast<int>(taskBarHeight) - static_cast<int>(menuHeight));
 
@@ -2929,18 +3617,28 @@ StartMenu::StartMenu(Desktop* desktop)
     _layout.zIndex = Int32(1001);
 
     // Create menu items with RELATIVE positioning (to parent's client area)
+    // Items 3 and 8 (0-indexed) are separators with smaller height
     _items.Resize(ITEM_COUNT);
+    Int32 currentY = Int32(0);
+
     for (Int32 i = Int32(0); static_cast<int>(i) < ITEM_COUNT; i += 1)
     {
-        // Items positioned relative to client area (after sidebar)
-        Int32 itemY = Int32(static_cast<int>(i) * ITEM_HEIGHT);  // Relative Y position within client
-        Int32 itemX = Int32(0);                // Relative X position within client
-        _items[static_cast<int>(i)] = new MenuItem(this, Rectangle(itemX, itemY,
-            Int32(MENU_WIDTH - SIDEBAR_WIDTH - 2), Int32(ITEM_HEIGHT)), static_cast<int>(i));
+        bool isSeparator = (static_cast<int>(i) == 3 || static_cast<int>(i) == 8);
+        Int32 itemHeight = isSeparator ? Int32(SEPARATOR_HEIGHT) : Int32(ITEM_HEIGHT);
+
+        _items[static_cast<int>(i)] = new MenuItem(this, Rectangle(Int32(0), currentY,
+            Int32(MENU_WIDTH - SIDEBAR_WIDTH - 2), itemHeight), static_cast<int>(i));
+
+        if (isSeparator)
+        {
+            _items[static_cast<int>(i)]->SetSeparator(Boolean(true));
+        }
 
         // Menu items have fixed height
         _items[static_cast<int>(i)]->Layout().heightMode = SizeMode::Fixed;
         _items[static_cast<int>(i)]->Layout().widthMode = SizeMode::Fill;
+
+        currentY = Int32(static_cast<int>(currentY) + static_cast<int>(itemHeight));
     }
 
     // Load icons
@@ -2959,36 +3657,83 @@ StartMenu::~StartMenu()
     // MenuItems are children, deleted by Control destructor
 }
 
+// Shutdown handler for start menu
+static void OnShutdownClick(Button* sender, void* userData)
+{
+    (void)sender;
+    Desktop* desktop = static_cast<Desktop*>(userData);
+    if (desktop)
+    {
+        desktop->Stop();
+    }
+}
+
 void StartMenu::LoadIcons()
 {
-    // Map menu items to system icons by name
-    static const char* iconNames[ITEM_COUNT] =
+    if (!_desktop)
     {
-        Drawing::SystemIcons::FolderApps,     // Programs
-        Drawing::SystemIcons::FolderDocs,     // Documents
-        Drawing::SystemIcons::DisplaySettings1,// Settings
-        Drawing::SystemIcons::FolderOpen,     // Find
-        Drawing::SystemIcons::DialogInfo1,    // Help
-        Drawing::SystemIcons::AppWindos,      // Run
-        Drawing::SystemIcons::FolderLibrary,  // Favorites
-        Drawing::SystemIcons::FolderOpenFiles,// Recent
-        Drawing::SystemIcons::Computer,       // My Computer
-        Drawing::SystemIcons::ComputerNet,    // Network
-        Drawing::SystemIcons::DialogWarning1, // Shut Down
-        Drawing::SystemIcons::DialogQuestion1 // Log Off
+        return;
+    }
+
+    Drawing::IconLibrary* icons = _desktop->GetIconLibrary();
+    if (!icons)
+    {
+        return;
+    }
+
+    // Menu item definitions: icon name, display text
+    // Items 3 and 8 are separators (no icon/text needed)
+    struct MenuItemDef
+    {
+        const char* iconName;
+        const char* text;
+    };
+
+    static const MenuItemDef menuItems[ITEM_COUNT] =
+    {
+        { "computer",      "Computer" },        // 0
+        { "folder-library", "Documents" },      // 1
+        { "settings",      "Settings" },        // 2
+        { nullptr,         nullptr },           // 3 - separator
+        { "app-winfx-2",   "Application 1" },   // 4
+        { "app-winfx-1",   "Application 2" },   // 5
+        { "app-windos",    "Application 3" },   // 6
+        { "app-msdos",     "Command Prompt" },  // 7
+        { nullptr,         nullptr },           // 8 - separator
+        { "sys-logout",    "Log off..." },      // 9
+        { "sys-shutdown",  "Shut down" }        // 10
     };
 
     for (Int32 i = Int32(0); static_cast<int>(i) < ITEM_COUNT && static_cast<int>(i) < _items.Length(); i += 1)
     {
+        int idx = static_cast<int>(i);
+        const MenuItemDef& def = menuItems[idx];
+
+        // Skip separators
+        if (def.iconName == nullptr)
+        {
+            continue;
+        }
+
+        // Set text
+        _items[idx]->SetText(String(def.text));
+
+        // Set icon (32x32)
         try
         {
-            Image icon = Drawing::SystemIcons::Load(iconNames[static_cast<int>(i)], Size::IconSmall);
-            _items[static_cast<int>(i)]->SetIcon(icon);
+            Image icon = icons->FromName(def.iconName, Drawing::IconSize::Medium);
+            _items[idx]->SetIcon(icon);
         }
         catch (...)
         {
             // Icon loading failed - item will show without icon
         }
+    }
+
+    // Set shutdown handler on last item
+    if (_items.Length() > 0)
+    {
+        _items[ITEM_COUNT - 1]->SetOnClick(OnShutdownClick, _desktop);
     }
 }
 
@@ -3062,12 +3807,38 @@ void StartMenu::OnMouse(MouseEventArgs& e)
 {
     // Propagate mouse events to ALL menu items so they can update highlight state
     // (not just the one under cursor, so items can un-highlight when mouse leaves)
+    // Track if any item changed state to batch the framebuffer flush
+    bool anyChanged = false;
+    GraphicsBuffer* fb = GraphicsBuffer::GetFrameBuffer();
+
     for (Int32 i = Int32(0); static_cast<int>(i) < _items.Length(); i += 1)
     {
-        if (_items[static_cast<int>(i)])
+        MenuItem* item = _items[static_cast<int>(i)];
+        if (item)
         {
-            _items[static_cast<int>(i)]->OnMouse(e);
+            // HandleMouseUpdate returns true if highlight changed
+            if (item->HandleMouseUpdate(e))
+            {
+                // Repaint just this item (without flush)
+                if (fb)
+                {
+                    // Use full framebuffer bounds for Graphics to avoid coordinate clipping issues
+                    // (item->OnPaint uses screen coordinates which must not be clipped to item bounds)
+                    Image& fbImg = fb->GetImage();
+                    Rectangle fbBounds(Int32(0), Int32(0), fbImg.Width(), fbImg.Height());
+                    Graphics g(BufferMode::Single, fbBounds);
+                    PaintEventArgs paintArgs(&g, item->ScreenBounds());
+                    item->OnPaint(paintArgs);
+                }
+                anyChanged = true;
+            }
         }
+    }
+
+    // Single flush after all items are repainted
+    if (anyChanged)
+    {
+        GraphicsBuffer::FlushFrameBuffer();
     }
 }
 

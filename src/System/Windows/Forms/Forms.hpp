@@ -32,6 +32,7 @@ class DesktopIconControl;
 class Window;
 class TaskBar;
 class TaskBarButton;
+class TaskTray;
 class Button;
 class Picture;
 class SpectrumControl;
@@ -180,6 +181,7 @@ protected:
     Rectangle _bounds;            ///< Bounds relative to parent's client area
     Rectangle _clientBounds;      ///< Client bounds relative to this control's bounds
     bool _isInvalid;              ///< Dirty flag indicating repaint needed
+    bool _visible;                ///< True if control is visible
     LayoutProperties _layout;     ///< Layout configuration for flexbox behavior
     MeasureResult _measuredSize;  ///< Cached measurement result
 
@@ -282,6 +284,21 @@ public:
     /// @param e Paint event arguments with Graphics context.
     virtual void OnPaintClient(PaintEventArgs& e);
 
+    /// @brief Check if control is visible.
+    /// @return True if visible.
+    Boolean IsVisible() const
+    {
+        return Boolean(_visible);
+    }
+
+    /// @brief Set control visibility.
+    /// @param visible New visibility state.
+    void SetVisible(Boolean visible)
+    {
+        _visible = static_cast<bool>(visible);
+        Invalidate();
+    }
+
     /// @brief Mark this control as needing repaint.
     void Invalidate();
 
@@ -357,6 +374,20 @@ public:
     /// @brief Safe downcast to TaskBar (const version).
     /// @return Const pointer to this as TaskBar, or nullptr if not a TaskBar.
     virtual const TaskBar* AsTaskBar() const
+    {
+        return nullptr;
+    }
+
+    /// @brief Safe downcast to Desktop.
+    /// @return Pointer to this as Desktop, or nullptr if not a Desktop.
+    virtual Desktop* AsDesktop()
+    {
+        return nullptr;
+    }
+
+    /// @brief Safe downcast to Desktop (const version).
+    /// @return Const pointer to this as Desktop, or nullptr if not a Desktop.
+    virtual const Desktop* AsDesktop() const
     {
         return nullptr;
     }
@@ -493,10 +524,10 @@ class DesktopIconControl : public Control
 {
     static const int ICON_SIZE = 32;       ///< Icon image size (32x32)
     static const int CELL_WIDTH = 64;      ///< Icon cell width
-    static const int CELL_HEIGHT = 96;     ///< Icon cell height
-    static const int ICON_AREA_HEIGHT = 64;///< Height of icon area
-    static const int TEXT_AREA_HEIGHT = 32;///< Height of text area
-    static const int ICON_PADDING = 16;    ///< Padding around icon in icon area
+    static const int CELL_HEIGHT = 68;     ///< Icon cell height
+    static const int ICON_AREA_HEIGHT = 44;///< Height of icon area
+    static const int TEXT_AREA_HEIGHT = 24;///< Height of text area
+    static const int ICON_PADDING = 6;     ///< Padding around icon in icon area
 
     Image _icon;           ///< Icon image to display
     String _text;          ///< Text label below icon
@@ -573,6 +604,10 @@ public:
     /// @param e Paint event arguments.
     virtual void OnPaint(PaintEventArgs& e) override;
 
+    /// @brief Handle mouse events for selection.
+    /// @param e Mouse event arguments.
+    virtual void OnMouse(MouseEventArgs& e) override;
+
     /// @brief Get preferred size for layout (cell size).
     /// @return MeasureResult with cell dimensions.
     virtual MeasureResult GetPreferredSize() const override;
@@ -604,17 +639,18 @@ public:
 /// @note Desktop does not have a parent and is typically created on the stack.
 class Desktop : public Control
 {
-    static const int CURSOR_SIZE = 24;     ///< Cursor size (24x24 pixels)
+    static const int CURSOR_SIZE = 32;     ///< Cursor size (32x32 pixels)
     static const int ICON_SIZE = 32;       ///< Desktop icon size
     static const int ICON_CELL_WIDTH = 64; ///< Icon cell width (includes text area)
-    static const int ICON_CELL_HEIGHT = 96;///< Icon cell height (64 icon + 32 text)
+    static const int ICON_CELL_HEIGHT = 68;///< Icon cell height (44 icon + 24 text)
     static const int ICON_SPACING_X = 75;  ///< Legacy horizontal icon spacing
     static const int ICON_SPACING_Y = 70;  ///< Legacy vertical icon spacing
     static const int ICON_MARGIN_X = 8;    ///< Left margin for icon grid
     static const int ICON_MARGIN_Y = 8;    ///< Top margin for icon grid
-    static const int TASKBAR_HEIGHT = 28;  ///< TaskBar height in pixels
+    static const int TASKBAR_HEIGHT = 32;  ///< TaskBar height in pixels
 
     Color _backgroundColor;         ///< Desktop background color
+    Image _wallpaper;               ///< Desktop wallpaper image (optional)
     Window* _focusedWindow;         ///< Currently focused window
     Window* _dragWindow;            ///< Window being dragged
     Int32 _dragOffsetX;             ///< Drag offset from window origin X
@@ -645,6 +681,8 @@ class Desktop : public Control
     TaskBar* _taskBar;              ///< Reference to taskbar
     StartMenu* _startMenu;          ///< Reference to start menu
     Control* _iconContainer;        ///< Container for desktop icons with flex layout
+    DesktopIconControl* _selectedIcon; ///< Currently selected desktop icon
+    Drawing::IconLibrary* _iconLibrary; ///< System icon library (owned)
 
     /// @brief Check for controls needing repaint.
     void CheckForUpdates();
@@ -708,6 +746,10 @@ public:
     {
         return Int32(_screenHeight);
     }
+
+    /// @brief Set a wallpaper image for the desktop.
+    /// @param wallpaper Image to use as wallpaper (scaled to fit screen).
+    void SetWallpaper(const Image& wallpaper);
 
     /// @brief Get the number of desktop icons.
     /// @return Number of icons as Int32.
@@ -792,6 +834,29 @@ public:
         return _startMenu;
     }
 
+    /// @brief Set the system icon library.
+    /// @param library Pointer to an IconLibrary (ownership transferred to Desktop).
+    void SetIconLibrary(Drawing::IconLibrary* library);
+
+    /// @brief Get the system icon library.
+    /// @return Pointer to the IconLibrary, or nullptr if none loaded.
+    Drawing::IconLibrary* GetIconLibrary() const
+    {
+        return _iconLibrary;
+    }
+
+    /// @brief Select a desktop icon.
+    /// @param icon Pointer to icon to select, or nullptr to deselect all.
+    /// @note Only one icon can be selected at a time.
+    void SelectIcon(DesktopIconControl* icon);
+
+    /// @brief Get the currently selected desktop icon.
+    /// @return Pointer to selected icon, or nullptr if none.
+    DesktopIconControl* SelectedIcon() const
+    {
+        return _selectedIcon;
+    }
+
     /// @brief Add a child control to the desktop.
     /// @param child Control to add.
     /// @note Overridden to update spatial grid and taskbar.
@@ -829,6 +894,20 @@ public:
     {
         return ControlType::Desktop;
     }
+
+    /// @brief Safe downcast to Desktop.
+    /// @return Pointer to this Desktop.
+    virtual Desktop* AsDesktop() override
+    {
+        return this;
+    }
+
+    /// @brief Safe downcast to Desktop (const version).
+    /// @return Const pointer to this Desktop.
+    virtual const Desktop* AsDesktop() const override
+    {
+        return this;
+    }
 };
 
 /******************************************************************************/
@@ -848,9 +927,30 @@ class Window : public Control
 {
     static const int TITLE_BAR_HEIGHT = 20;  ///< Title bar height in pixels
     static const int FRAME_WIDTH = 3;        ///< Frame border width in pixels
+    static const int BUTTON_SIZE = 16;       ///< Title bar button size (square)
+    static const int BUTTON_SPACING = 2;     ///< Space between buttons
+
     bool _isFocused;                         ///< True if window has focus
     String _title;                           ///< Window title text
     Font _font;                              ///< Font for title rendering
+    Color _backColor;                        ///< Client area background color
+    bool _isMaximized;                       ///< True if window is maximized
+    bool _isMinimized;                       ///< True if window is minimized
+    Rectangle _restoreBounds;               ///< Bounds to restore to from maximized
+    BorderStyle _borderStyle;               ///< Current border style
+    Image _closeIcon;                        ///< Close button icon (16x16)
+    Image _maximizeIcon;                     ///< Maximize button icon (16x16)
+    Image _minimizeIcon;                     ///< Minimize button icon (16x16)
+    Image _restoreIcon;                      ///< Restore button icon (16x16)
+
+    /// @brief Get the close button rectangle (in screen coordinates).
+    Rectangle GetCloseButtonRect() const;
+
+    /// @brief Get the maximize button rectangle (in screen coordinates).
+    Rectangle GetMaximizeButtonRect() const;
+
+    /// @brief Get the minimize button rectangle (in screen coordinates).
+    Rectangle GetMinimizeButtonRect() const;
 
 protected:
     /// @brief Update client bounds to exclude title bar and frame.
@@ -904,6 +1004,21 @@ public:
         Invalidate();
     }
 
+    /// @brief Get the client area background color.
+    /// @return The background color.
+    Color BackColor() const
+    {
+        return _backColor;
+    }
+
+    /// @brief Set the client area background color.
+    /// @param color New background color.
+    void SetBackColor(const Color& color)
+    {
+        _backColor = color;
+        Invalidate();
+    }
+
     /// @brief Check if window has focus.
     /// @return True if this window is focused.
     Boolean IsFocused() const
@@ -918,6 +1033,36 @@ public:
     {
         _isFocused = static_cast<bool>(focused);
     }
+
+    /// @brief Check if window is maximized.
+    /// @return True if maximized.
+    Boolean IsMaximized() const
+    {
+        return Boolean(_isMaximized);
+    }
+
+    /// @brief Check if window is minimized.
+    /// @return True if minimized.
+    Boolean IsMinimized() const
+    {
+        return Boolean(_isMinimized);
+    }
+
+    /// @brief Minimize the window (hide it).
+    void Minimize();
+
+    /// @brief Maximize the window to fill the screen.
+    void Maximize();
+
+    /// @brief Restore the window to its previous size.
+    void Restore();
+
+    /// @brief Close the window (remove from parent).
+    void Close();
+
+    /// @brief Load button icons from the desktop's icon library.
+    /// @note Call after window is added to a Desktop with an IconLibrary.
+    void LoadButtonIcons();
 
     /// @brief Paint the window frame and title bar.
     /// @param e Paint event arguments.
@@ -965,14 +1110,15 @@ public:
 class TaskBar : public Control
 {
     static const int WINDOW_BUTTON_WIDTH = 120;    ///< Width of window buttons
-    static const int WINDOW_BUTTON_HEIGHT = 20;    ///< Height of window buttons
+    static const int WINDOW_BUTTON_HEIGHT = 24;    ///< Height of window buttons
     static const int WINDOW_BUTTON_SPACING = 2;    ///< Space between buttons
-    static const int WINDOW_BUTTON_START_X = 62;   ///< X offset after Start button
+    static const int WINDOW_BUTTON_START_X = 75;   ///< X offset after Start button (65 + margin)
 
     Button* _startButton;                ///< The Start button
     StartMenu* _startMenu;               ///< Reference to start menu (not owned)
     Desktop* _desktop;                   ///< Back-reference to desktop
     Array<TaskBarButton*> _windowButtons; ///< Buttons for open windows
+    TaskTray* _taskTray;                 ///< System tray on right side
 
     /// @brief Start button click handler.
     /// @param sender The button that was clicked.
@@ -1006,6 +1152,10 @@ public:
     {
         _desktop = desktop;
     }
+
+    /// @brief Load icons for Start button and system tray.
+    /// @note Call this after SetDesktop() and after Desktop has an IconLibrary.
+    void LoadIcons();
 
     /// @brief Get the desktop back-reference.
     /// @return Pointer to the Desktop.
@@ -1055,6 +1205,65 @@ public:
 };
 
 /******************************************************************************/
+/*    System::Windows::Forms::TaskTray                                        */
+/******************************************************************************/
+
+/// @brief System tray (notification area) on the right side of the taskbar.
+/// @details Contains small icons representing system status and notifications.
+/// Drawn with a sunken border and sizes automatically based on icon count.
+class TaskTray : public Control
+{
+    static const int ICON_SIZE = 16;        ///< Icon size (16x16)
+    static const int ICON_SPACING = 2;      ///< Space between icons
+    static const int PADDING = 4;           ///< Padding inside the tray
+
+    Array<Image> _icons;                    ///< Icons displayed in the tray
+
+public:
+    /// @brief Constructor with parent.
+    /// @param parent Parent control (typically TaskBar).
+    TaskTray(Control* parent);
+
+    /// @brief Destructor.
+    virtual ~TaskTray() = default;
+
+    /// @brief Add an icon to the tray.
+    /// @param icon The icon image to add (should be 16x16).
+    void AddIcon(const Image& icon);
+
+    /// @brief Get the number of icons in the tray.
+    /// @return Number of icons.
+    Int32 IconCount() const
+    {
+        return Int32(_icons.Length());
+    }
+
+    /// @brief Calculate the preferred width based on icon count.
+    /// @return Width in pixels.
+    Int32 CalculateWidth() const
+    {
+        int count = _icons.Length();
+        if (count == 0) return Int32(0);
+        return Int32(PADDING * 2 + count * ICON_SIZE + (count - 1) * ICON_SPACING);
+    }
+
+    /// @brief Paint the tray with sunken border and icons.
+    /// @param e Paint event arguments.
+    virtual void OnPaint(PaintEventArgs& e) override;
+
+    /// @brief Get preferred size for layout.
+    /// @return MeasureResult with calculated width and parent height.
+    virtual MeasureResult GetPreferredSize() const override;
+
+    /// @brief Get the runtime type of this control.
+    /// @return ControlType::TaskTray.
+    virtual ControlType GetControlType() const override
+    {
+        return ControlType::TaskTray;
+    }
+};
+
+/******************************************************************************/
 /*    System::Windows::Forms::Button                                          */
 /******************************************************************************/
 
@@ -1076,6 +1285,7 @@ class Button : public Control
     void* _onClickUserData;       ///< User data passed to click handler
     String _text;                 ///< Button label text
     Font _font;                   ///< Font for text rendering
+    Image _icon;                  ///< Optional icon displayed before text
 
 public:
     /// @brief Constructor with parent and bounds.
@@ -1122,6 +1332,21 @@ public:
     {
         _font = font;
         Invalidate();
+    }
+
+    /// @brief Set the button icon (displayed before text).
+    /// @param icon Icon image to display.
+    void SetIcon(const Image& icon)
+    {
+        _icon = icon;
+        Invalidate();
+    }
+
+    /// @brief Get the button icon.
+    /// @return Const reference to the icon image.
+    const Image& GetIcon() const
+    {
+        return _icon;
     }
 
     /// @brief Check if button appears pressed.
@@ -1368,12 +1593,17 @@ public:
 /// Fires click event when clicked.
 class MenuItem : public Control
 {
-    static const int ICON_SIZE = 16;      ///< Icon display size (16x16)
-    static const int ITEM_HEIGHT = 24;    ///< Item height in pixels
+    static const int ICON_SIZE = 32;      ///< Icon display size (32x32)
+    static const int ITEM_HEIGHT = 40;    ///< Item height in pixels
     static const int ICON_MARGIN = 4;     ///< Margin around icon
+    static const int TEXT_MARGIN = 8;     ///< Margin between icon and text
+    static const int SEPARATOR_HEIGHT = 8; ///< Height of separator items
 
     Image _icon;                   ///< Menu item icon
+    String _text;                  ///< Menu item text
     bool _isHighlighted;           ///< True if mouse is hovering
+    bool _isSeparator;             ///< True if this is a separator line
+    bool _wasPressed;              ///< Previous press state for click detection
     ClickEventHandler _onClick;    ///< Click event handler
     void* _onClickUserData;        ///< User data for click handler
     int _itemIndex;                ///< Index in parent menu
@@ -1392,6 +1622,21 @@ public:
     /// @param icon Icon image (typically 16x16).
     void SetIcon(const Image& icon);
 
+    /// @brief Set the menu item text.
+    /// @param text Text to display.
+    void SetText(const String& text);
+
+    /// @brief Set whether this is a separator.
+    /// @param isSeparator True to make this a separator line.
+    void SetSeparator(Boolean isSeparator);
+
+    /// @brief Check if this is a separator.
+    /// @return True if this is a separator.
+    Boolean IsSeparator() const
+    {
+        return Boolean(_isSeparator);
+    }
+
     /// @brief Register a click event handler.
     /// @param handler Function to call when item is clicked.
     /// @param userData Optional context data passed to handler.
@@ -1400,6 +1645,12 @@ public:
     /// @brief Paint the menu item.
     /// @param e Paint event arguments.
     virtual void OnPaint(PaintEventArgs& e) override;
+
+    /// @brief Update mouse state and return true if highlight changed.
+    /// @param e Mouse event arguments.
+    /// @return True if highlight state changed (needs repaint).
+    /// @details Used by StartMenu to batch repaints for better performance.
+    bool HandleMouseUpdate(MouseEventArgs& e);
 
     /// @brief Handle mouse events for hover and click.
     /// @param e Mouse event arguments.
@@ -1427,10 +1678,11 @@ public:
 /// outside the menu area.
 class StartMenu : public Control
 {
-    static const int MENU_WIDTH = 160;       ///< Total menu width
+    static const int MENU_WIDTH = 200;       ///< Total menu width
     static const int SIDEBAR_WIDTH = 24;     ///< Blue sidebar width
-    static const int ITEM_COUNT = 12;        ///< Number of menu items
-    static const int ITEM_HEIGHT = 24;       ///< Height of each item
+    static const int ITEM_COUNT = 11;        ///< Number of menu items
+    static const int ITEM_HEIGHT = 40;       ///< Height of each item (for 32x32 icons)
+    static const int SEPARATOR_HEIGHT = 8;   ///< Height of separator items
 
     Desktop* _desktop;              ///< Back-reference to desktop (not owned)
     bool _isVisible;                ///< True if menu is currently shown

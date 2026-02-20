@@ -25,7 +25,7 @@ mformat -i "$IMAGE" -f 1440 -v HATCHDEMO ::
 mcopy -i "$FREEDOS_DIR/144m/x86BOOT.img" ::KERNEL.SYS /tmp/
 mcopy -i "$IMAGE" /tmp/KERNEL.SYS ::
 mcopy -i "$FREEDOS_DIR/144m/x86BOOT.img" ::FREEDOS/BIN/COMMAND.COM /tmp/
-mcopy -i "$IMAGE" /tmp/COMMAND.COM ::
+mcopy -o -i "$IMAGE" /tmp/COMMAND.COM ::
 
 # Copy CWSDPMI and demo
 mcopy -i "$IMAGE" "$FREEDOS_DIR/bin/CWSDPMI.EXE" ::

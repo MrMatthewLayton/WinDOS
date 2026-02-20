@@ -1106,12 +1106,12 @@ fb->GetImage().CopyFrom(fullscreen, 0, 0);
 GraphicsBuffer::FlushFrameBuffer();
 ```
 
-### Boot Splash Screen
+### Desktop Wallpaper
 
-The forms demo displays a boot splash screen for 5 seconds before showing the desktop:
+The forms demo uses the boot image as desktop wallpaper:
 1. Loads `BOOT.PNG` or `BOOT.JPG` from C: drive (or current directory)
-2. Scales image to fill the entire screen
-3. Displays for 5 seconds using a busy-wait loop
+2. Calls `Desktop::SetWallpaper()` which auto-scales to screen dimensions
+3. Wallpaper is drawn in `Desktop::OnPaint()` before other elements
 
 ---
 
@@ -1310,6 +1310,75 @@ See `./merge-plan.md` for:
 - Detailed class APIs with all methods
 - Full rationale for decisions
 - Estimated effort (~6.5 hours)
+
+---
+
+---
+
+## Recent Changes (February 2026)
+
+### Window Maximize Behavior
+- **Maximized windows use BorderStyle::None** - No visible frame when maximized
+- **Maximized windows position at (0,0)** - Title bar flush with screen edge
+- **Dynamic frame offset in OnPaint** - Uses `frame = _isMaximized ? 0 : FRAME_WIDTH`
+- **UpdateClientBounds accounts for maximized state** - Client area calculation adjusts for no frame
+- **GetCloseButtonRect/etc. adjusted** - Button positions account for maximized state
+
+### Desktop Wallpaper Support
+- **Desktop::SetWallpaper(Image)** - Sets wallpaper image, auto-scales to screen size
+- **OnPaint draws wallpaper** - Replaces solid background color when wallpaper is set
+- **forms_demo loads BOOT.PNG/BOOT.JPG** - Uses wallpaper instead of boot splash
+
+### Window Title Bar Button Icons
+- **Window::LoadButtonIcons()** - Loads close, maximize, minimize, restore icons (16x16)
+- **Icons loaded from sysicons.icl** - Uses named icons: btn-close, btn-max, btn-min, btn-restore
+- **Fallback to line symbols** - If icons fail to load, draws simple line symbols
+
+### Cursor Size Change
+- **Desktop::CURSOR_SIZE = 32** - Increased from 24x24 to 32x32 pixels
+- **LoadCursorFromLibrary uses IconSize::Medium** - 32x32 cursor icons
+
+### Start Menu Restructure
+- **11 menu items** with 2 separators (items 3 and 8 are separators)
+- **32x32 icons** - Changed from 16x16 to match Windows 95 style
+- **ITEM_HEIGHT = 40** - Taller items to accommodate larger icons
+- **Menu items**: Computer, Documents, Settings, [sep], Application 1-3, Command Prompt, [sep], Log off, Shut down
+- **Shutdown handler** - Calls `desktop->Stop()` to exit the application
+
+### MenuItem Mouse Handling Optimization (WIP - BUGGY)
+- **HandleMouseUpdate()** - Separates state update from painting, returns true if highlight changed
+- **StartMenu::OnMouse batches repaints** - Single FlushFrameBuffer after all items processed
+- **Attempted fix for sluggish mouse** - Reduces framebuffer flushes from N to 1
+
+---
+
+## Known Bugs
+
+### Start Menu Hover Highlighting (HIGH PRIORITY)
+**Status:** BROKEN - Needs investigation
+
+**Symptoms:**
+- Blue hover highlight not appearing on menu items
+- Mouse performance still sluggish when hovering over start menu
+
+**Root Cause Analysis:**
+The optimization to batch framebuffer flushes introduced coordinate issues:
+1. `Graphics` object created with item's `ScreenBounds()` as clip region
+2. `MenuItem::OnPaint` uses screen coordinates (e.g., y=200)
+3. Clipping check `y >= bounds.height` (e.g., 200 >= 40) causes all drawing to be rejected
+
+**Attempted Fixes:**
+1. Changed to use full framebuffer bounds for Graphics - still not working
+2. Need to investigate coordinate transformation in Graphics::FillRectangle
+
+**Files Involved:**
+- `src/System/Windows/Forms/Forms.cpp` - `StartMenu::OnMouse`, `MenuItem::HandleMouseUpdate`, `MenuItem::OnMouse`
+- `src/System/Drawing/Graphics.cpp` - `FillRectangle` coordinate handling
+
+**Potential Solutions:**
+1. Revert to original per-item flush (slow but working)
+2. Fix coordinate transformation to handle screen coordinates properly
+3. Use Invalidate() and let normal paint cycle handle it (may be slow due to wallpaper)
 
 ---
 

@@ -33,7 +33,7 @@ mcopy -i "$FLOPPY" /tmp/KERNEL.SYS ::
 
 # Copy COMMAND.COM
 mcopy -i "$FREEDOS_DIR/144m/x86BOOT.img" ::FREEDOS/BIN/COMMAND.COM /tmp/
-mcopy -i "$FLOPPY" /tmp/COMMAND.COM ::
+mcopy -o -i "$FLOPPY" /tmp/COMMAND.COM ::
 
 # Copy CWSDPMI and mouse driver
 mcopy -i "$FLOPPY" "$FREEDOS_DIR/bin/CWSDPMI.EXE" ::

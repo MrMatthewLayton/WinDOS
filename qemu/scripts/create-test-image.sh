@@ -39,7 +39,7 @@ mcopy -i "$IMAGE" /tmp/KERNEL.SYS ::
 echo "Extracting COMMAND.COM from boot floppy..."
 mcopy -i "$FREEDOS_DIR/144m/x86BOOT.img" ::FREEDOS/BIN/COMMAND.COM /tmp/
 echo "Copying COMMAND.COM to test image..."
-mcopy -i "$IMAGE" /tmp/COMMAND.COM ::
+mcopy -o -i "$IMAGE" /tmp/COMMAND.COM ::
 
 echo "Copying CWSDPMI..."
 mcopy -i "$IMAGE" "$FREEDOS_DIR/bin/CWSDPMI.EXE" ::

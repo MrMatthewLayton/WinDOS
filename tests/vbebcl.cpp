@@ -83,21 +83,21 @@ int main() {
         // Draw red rectangle
         for (int y = 100; y < 200; y++) {
             for (int x = 100; x < 300; x++) {
-                img->SetPixel(x, y, Color32::Red);
+                img->SetPixel(x, y, Color::Red);
             }
         }
 
         // Draw green rectangle
         for (int y = 200; y < 300; y++) {
             for (int x = 100; x < 300; x++) {
-                img->SetPixel(x, y, Color32::Green);
+                img->SetPixel(x, y, Color::Green);
             }
         }
 
         // Draw blue rectangle
         for (int y = 300; y < 400; y++) {
             for (int x = 100; x < 300; x++) {
-                img->SetPixel(x, y, Color32::Blue);
+                img->SetPixel(x, y, Color::Blue);
             }
         }
 

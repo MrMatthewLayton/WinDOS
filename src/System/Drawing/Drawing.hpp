@@ -9,7 +9,7 @@
 /// - Graphics: Drawing context for rendering primitives, text, and images
 /// - GraphicsBuffer: Framebuffer management for VGA and VBE modes
 /// - HatchStyle: Fill patterns for hatched brushes
-/// - SystemIcons: Named constants for system icon library
+/// - IconLibrary: Load icons from PE-format icon libraries
 ///
 /// @note All colors and images use 32-bit ARGB format internally. For low-color
 /// display modes (4bpp/8bpp VGA), content is dithered at render time.
@@ -37,8 +37,8 @@
 // Image class (includes BitmapFileHeader, BitmapInfoHeader)
 #include "Image.hpp"
 
-// System icon constants
-#include "SystemIcons.hpp"
+// Icon library support
+#include "IconLibrary.hpp"
 
 // Font rendering
 #include "Font.hpp"

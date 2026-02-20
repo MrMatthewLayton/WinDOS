@@ -30,7 +30,7 @@ mcopy -i "$IMAGE" /tmp/KERNEL.SYS ::
 
 # Extract COMMAND.COM
 mcopy -i "$FREEDOS_DIR/144m/x86BOOT.img" ::FREEDOS/BIN/COMMAND.COM /tmp/
-mcopy -i "$IMAGE" /tmp/COMMAND.COM ::
+mcopy -o -i "$IMAGE" /tmp/COMMAND.COM ::
 
 # Create minimal CONFIG.SYS
 cat > /tmp/config.sys << 'EOF'

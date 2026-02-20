@@ -367,13 +367,13 @@ void Graphics::DrawImage(const Image& image, Int32 x, Int32 y)
     {
         actualX = Int32(static_cast<int>(actualX) + static_cast<int>(_bounds.x));
         actualY = Int32(static_cast<int>(actualY) + static_cast<int>(_bounds.y));
-        img.CopyFrom(image, actualX, actualY);
+        img.CopyFromWithAlpha(image, actualX, actualY);
         MarkDirty(actualX, actualY, Int32(static_cast<int>(image.Width())),
                   Int32(static_cast<int>(image.Height())));
     }
     else
     {
-        img.CopyFrom(image, xi, yi);
+        img.CopyFromWithAlpha(image, xi, yi);
     }
 }
 
